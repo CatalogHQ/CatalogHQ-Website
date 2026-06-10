@@ -1,0 +1,192 @@
+import { BadRequestException } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { Test, TestingModule } from '@nestjs/testing';
+import {
+  OrderStatus,
+  PaymentStatus,
+  PlanTier,
+} from '@prisma/client';
+import { PaystackService } from '../payments/paystack.service';
+import { PaymentsService } from '../payments/payments.service';
+import { PrismaService } from '../prisma/prisma.service';
+import { OrdersService } from './orders.service';
+
+describe('OrdersService', () => {
+  const prisma = {
+    store: { findUnique: jest.fn() },
+    product: { findFirst: jest.fn() },
+    discountCode: { findFirst: jest.fn(), update: jest.fn(), findUnique: jest.fn() },
+    $transaction: jest.fn(),
+    order: {
+      create: jest.fn(),
+      findFirst: jest.fn(),
+      findUnique: jest.fn(),
+      findMany: jest.fn(),
+      update: jest.fn(),
+      updateMany: jest.fn(),
+      count: jest.fn(),
+    },
+    activityLog: { create: jest.fn() },
+  };
+
+  const eventEmitter = {
+    emit: jest.fn(),
+  };
+
+  const paystack = {
+    isConfigured: jest.fn().mockReturnValue(false),
+    initializeTransaction: jest.fn(),
+    getPublicKey: jest.fn().mockReturnValue('pk_test'),
+  };
+
+  const paymentsService = {
+    confirmPayment: jest.fn().mockResolvedValue(undefined),
+  };
+
+  let service: OrdersService;
+
+  const paidOrder = {
+    id: 'order-1',
+    paymentRef: 'SHP-TEST',
+    storeId: 'store-1',
+    productId: 'product-1',
+    productName: 'Shirt',
+    color: null,
+    size: null,
+    quantity: 2,
+    deliveryType: 'pickup',
+    unitPrice: 2500,
+    deliveryFee: 0,
+    discountAmount: 0,
+    discountCode: null,
+    totalPaid: 5000,
+    customerName: 'Ada',
+    customerPhone: '08012345678',
+    deliveryAddress: null,
+    status: OrderStatus.paid,
+    paymentStatus: PaymentStatus.paid,
+    paystackReference: 'ps_SHP-TEST',
+    transferReference: null,
+    reservedUntil: null,
+    internalNotes: null,
+    estimatedDeliveryAt: null,
+    riderName: null,
+    riderPhone: null,
+    vendorSeenAt: null,
+    createdAt: new Date('2026-06-08T10:00:00.000Z'),
+  };
+
+  beforeEach(async () => {
+    jest.clearAllMocks();
+    paystack.isConfigured.mockReturnValue(false);
+    prisma.$transaction.mockImplementation(
+      async (callback: (tx: typeof prisma) => Promise<unknown>) =>
+        callback(prisma),
+    );
+
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        OrdersService,
+        { provide: PrismaService, useValue: prisma },
+        { provide: EventEmitter2, useValue: eventEmitter },
+        { provide: PaystackService, useValue: paystack },
+        { provide: PaymentsService, useValue: paymentsService },
+      ],
+    }).compile();
+
+    service = module.get(OrdersService);
+  });
+
+  it('computes server-side pricing during create', async () => {
+    prisma.store.findUnique.mockResolvedValue({
+      vendorId: 'store-1',
+      slug: 'test-store',
+      setupComplete: true,
+      deliveryZones: [],
+      vendor: { planTier: PlanTier.starter },
+    });
+    prisma.product.findFirst.mockResolvedValue({
+      id: 'product-1',
+      price: 2500,
+      stock: 10,
+      deliveryOptions: ['pickup'],
+      published: true,
+    });
+    prisma.discountCode.findUnique.mockResolvedValue(null);
+    prisma.order.create.mockResolvedValue({
+      ...paidOrder,
+      status: OrderStatus.reserved,
+      paymentStatus: PaymentStatus.pending,
+    });
+    prisma.order.findUnique.mockResolvedValue(paidOrder);
+
+    const result = await service.create({
+      storeId: 'store-1',
+      productId: 'product-1',
+      productName: 'Shirt',
+      quantity: 2,
+      deliveryType: 'pickup',
+      customerName: 'Ada',
+      customerPhone: '08012345678',
+    });
+
+    expect(result.totalPaid).toBe(5000);
+    expect(result.unitPrice).toBe(2500);
+    expect(paymentsService.confirmPayment).toHaveBeenCalled();
+  });
+
+  it('rejects unavailable delivery types', async () => {
+    prisma.store.findUnique.mockResolvedValue({
+      vendorId: 'store-1',
+      slug: 'test-store',
+      setupComplete: true,
+      deliveryZones: [],
+      vendor: { planTier: PlanTier.starter },
+    });
+    prisma.product.findFirst.mockResolvedValue({
+      id: 'product-1',
+      price: 2500,
+      stock: 10,
+      deliveryOptions: ['pickup'],
+      published: true,
+    });
+
+    await expect(
+      service.create({
+        storeId: 'store-1',
+        productId: 'product-1',
+        productName: 'Shirt',
+        quantity: 1,
+        deliveryType: 'delivery',
+        customerName: 'Ada',
+        customerPhone: '08012345678',
+        deliveryAddress: 'Lagos',
+      }),
+    ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it('emits delivered event when status changes to delivered', async () => {
+    prisma.order.findFirst.mockResolvedValue({
+      id: 'order-1',
+      storeId: 'store-1',
+      status: OrderStatus.confirmed,
+      paymentStatus: PaymentStatus.paid,
+      customerPhone: '08012345678',
+      paymentRef: 'SHP-TEST',
+      store: { businessName: 'Test Store' },
+    });
+    prisma.order.update.mockResolvedValue({
+      ...paidOrder,
+      quantity: 1,
+      totalPaid: 2500,
+      status: OrderStatus.delivered,
+    });
+
+    await service.updateStatus('store-1', 'order-1', OrderStatus.delivered);
+
+    expect(eventEmitter.emit).toHaveBeenCalledWith(
+      'order.delivered',
+      expect.objectContaining({ orderId: 'order-1' }),
+    );
+  });
+});

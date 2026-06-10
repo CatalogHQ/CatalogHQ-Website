@@ -1,0 +1,53 @@
+---
+description: Gate full-stack compliance claims on backend + frontend audits and green commands
+alwaysApply: true
+---
+
+# Full-stack compliance
+
+Use this rule when the user asks for codebase compliance, best practices, or "make it production-ready" across **api/** and **app/**.
+
+## Forbidden until both gates pass
+
+Do **not** say the project is "fully compliant", "production-ready", or "best practices ensured" until **both**:
+
+- `.cursor/rules/nestjs-compliance.mdc` (backend gate), and
+- `.cursor/rules/frontend-compliance.mdc` (frontend gate)
+
+have been satisfied.
+
+Allowed before both gates: **"Full-stack compliance in progress"** with per-stack status.
+
+## Required workflow
+
+1. **Implement** features (backend and/or frontend).
+2. **Backend verify** — follow `nestjs-compliance.mdc` on `api/`.
+3. **Frontend verify** — follow `frontend-compliance.mdc` on `app/`.
+4. **Contract verify** — confirm API payloads, enums, and field names match frontend types/repositories (see cross-stack checklist below).
+5. **Report** — one summary with backend table, frontend table, command output, cross-stack gaps, and final status.
+
+## Cross-stack checklist
+
+- Request/response shapes in `app/src/lib/repositories/api-*.ts` match NestJS DTOs
+- Shared enums/status values (order status, payment status, plan tiers) consistent on both sides
+- `api/.env.example` and `app/.env.example` document required vars (`VITE_API_URL`, `VITE_USE_API`, Paystack, etc.)
+- New vendor/plan features respect gating in `app/src/data/plans.ts` and backend authorization
+
+## User prompt template
+
+When auditing both stacks:
+
+```
+Full-stack compliance gate on api/ and app/.
+Follow fullstack-compliance.mdc, nestjs-compliance.mdc, and frontend-compliance.mdc.
+Fix partials without scope creep. Do not claim compliant until both gates pass.
+```
+
+## Final deliverable
+
+| Section | Content |
+|---------|---------|
+| Backend | Rule table + `npm test` + `npm run test:e2e` + `tsc --noEmit` in `api/` |
+| Frontend | Checklist table + `npm run lint` + `npm run build` in `app/` |
+| Cross-stack | Contract alignment notes |
+| Status | **Full-stack compliant** or **not yet compliant** (list gaps per stack) |

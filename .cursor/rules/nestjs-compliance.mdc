@@ -1,0 +1,53 @@
+---
+description: Gate NestJS compliance claims on full SKILL.md audit and green API tests
+globs: api/**/*
+alwaysApply: false
+---
+
+# NestJS compliance claims (api/)
+
+Part of full-stack gate: see `.cursor/rules/fullstack-compliance.mdc`.
+
+Reference: `.agents/skills/nestjs-best-practices/SKILL.md` (full rules in `AGENTS.md`).
+
+## Forbidden until the gate passes
+
+Do **not** say the API is "compliant", "already ensured", "follows best practices", or "done" for NestJS alignment unless **all** conditions below are met.
+
+Allowed before the gate: **"NestJS alignment in progress"** or **"addressed X, Y, Z; audit not complete."**
+
+## Compliance gate (all required)
+
+1. **Rule audit** — Check every rule in `SKILL.md` (40 rules, 10 categories). Produce a table with `pass` / `partial` / `N/A` and brief evidence (file path or pattern).
+2. **Tests green** — Run in `api/`:
+   - `npm test`
+   - `npm run test:e2e`
+3. **Typecheck** — Run `npx tsc --noEmit` in `api/` (or confirm CI equivalent).
+4. **Zero partials** — Any `partial` item must be fixed or listed explicitly with reason; do not claim full compliance while partials remain.
+
+## Audit must include (common gaps)
+
+- All `@Body()` / `@Query()` use validated DTOs (no inline object types)
+- No `process.env` in services (use `ConfigService`; `main.ts` bootstrap is acceptable)
+- Global `ValidationPipe`, `HttpExceptionFilter`, guards, and throttling where required
+- Multi-step DB writes use `$transaction`
+- Service specs use `TestingModule` where practical; external services mocked
+- Security-sensitive routes (webhooks, auth) have correct guards/throttles/signature checks
+
+## Deliverable format
+
+End compliance work with:
+
+1. Rule-by-rule summary table
+2. Test command output (pass/fail)
+3. Explicit list of remaining `partial` / `N/A` items, if any
+4. Final status: **compliant** (all pass, tests green) or **not yet compliant** (with gaps)
+
+## Two-phase workflow
+
+When asked to implement features **and** comply with NestJS practices:
+
+1. **Implement** the feature first.
+2. **Verify** in a separate pass: read `SKILL.md`, run the gate, fix gaps, re-run tests.
+
+Do not conflate "feature implemented" with "skill compliance verified."

@@ -1,0 +1,63 @@
+---
+description: Gate frontend compliance claims on React/Vite audit and green lint/build
+globs: app/**/*
+alwaysApply: false
+---
+
+# Frontend compliance (app/)
+
+Shopoint frontend: React 19, Vite, TypeScript, Tailwind, react-hook-form + Zod, repository pattern.
+
+## Forbidden until the gate passes
+
+Do **not** say the frontend is "compliant" or "done" unless **all** conditions below are met.
+
+Allowed before the gate: **"Frontend alignment in progress"** or **"addressed X, Y; audit not complete."**
+
+## Compliance gate (all required)
+
+1. **Checklist audit** — Score each item `pass` / `partial` / `N/A` with file evidence.
+2. **Lint** — `npm run lint` in `app/` (exit 0).
+3. **Build** — `npm run build` in `app/` (includes `tsc -b`; exit 0).
+4. **Zero partials** — Fix or explicitly list remaining partials; do not claim full compliance while partials remain.
+
+## Audit checklist
+
+### Architecture & data access
+- API calls go through `lib/repositories/` or `lib/api-client.ts`, not ad-hoc `fetch` in pages/components
+- `VITE_*` env vars read only in `lib/` (not scattered in UI)
+- Domain types live in `types/`; repositories map API JSON to those types
+
+### Forms & validation
+- User input forms use **Zod schema** + **react-hook-form** (`zodResolver`), not unvalidated local state
+- Phone, money, and slug fields use shared helpers/schemas where they exist
+
+### Auth & routing
+- Protected dashboard/admin routes guard on auth (and admin role where required)
+- Auth state flows through `AuthContext` / repositories, not duplicated session logic
+
+### Feature gating
+- Pro/business features respect `data/plans.ts` and backend-enforced limits (UI hide is not enough for security; API must enforce)
+
+### UX & errors
+- Async actions surface failures (toast or inline error), not silent failures
+- Loading states on submit/fetch where user would otherwise double-submit
+
+### Security
+- No secrets in frontend code or committed `.env`
+- User-generated content rendered safely (no `dangerouslySetInnerHTML` without sanitization)
+
+### Consistency
+- Reuse `components/ui/` primitives; avoid one-off styled duplicates for the same pattern
+- New dashboard features follow existing page/layout patterns
+
+## Deliverable format
+
+1. Checklist table (pass/partial/N/A + evidence)
+2. `npm run lint` and `npm run build` output
+3. Remaining partials, if any
+4. Final status: **frontend compliant** or **not yet compliant**
+
+## Note on tests
+
+`app/` has no test script today — mark `test-use-testing-module` analog as **N/A** unless Vitest is added. Do not skip lint/build.

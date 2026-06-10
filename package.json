@@ -1,0 +1,10 @@
+{
+  "name": "shopoint",
+  "private": true,
+  "scripts": {
+    "dev:app": "npm run dev --prefix app",
+    "dev:api": "npm run start:dev --prefix api",
+    "build:app": "npm run build --prefix app",
+    "build:api": "npm run build --prefix api"
+  }
+}

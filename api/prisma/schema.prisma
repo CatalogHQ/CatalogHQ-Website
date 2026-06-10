@@ -1,0 +1,262 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum PlanTier {
+  starter
+  pro
+  business
+}
+
+enum UserRole {
+  vendor
+  admin
+}
+
+enum VendorVerificationStatus {
+  unsubmitted
+  pending
+  verified
+  rejected
+}
+
+model User {
+  id           String   @id @default(uuid())
+  phone        String   @unique
+  email        String?
+  passwordHash String
+  planTier     PlanTier @default(starter)
+  role         UserRole @default(vendor)
+  createdAt    DateTime @default(now())
+  store        Store?
+}
+
+enum OrderStatus {
+  reserved
+  paid
+  confirmed
+  shipped
+  delivered
+  cancelled
+}
+
+enum PaymentStatus {
+  pending
+  paid
+  failed
+}
+
+model Store {
+  vendorId                String                   @id
+  vendor                  User                     @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  slug                    String                   @unique
+  businessName            String
+  bio                     String
+  whatsapp                String
+  nin                     String
+  category                String?
+  city                    String?
+  state                   String?
+  setupComplete           Boolean                  @default(false)
+  verificationStatus      VendorVerificationStatus @default(unsubmitted)
+  verificationSubmittedAt DateTime?
+  verifiedAt              DateTime?
+  rejectionReason         String?
+  quickReplyTemplates     Json                     @default("[]")
+  deliveryZones           Json                     @default("[]")
+  products                Product[]
+  orders                  Order[]
+  reviews                 Review[]
+  discountCodes           DiscountCode[]
+  storeMembers            StoreMember[]
+  activityLogs            ActivityLog[]
+}
+
+enum TicketStatus {
+  open
+  in_progress
+  resolved
+}
+
+enum TicketType {
+  vendor
+  customer
+}
+
+enum TicketPriority {
+  low
+  medium
+  high
+}
+
+model Review {
+  id          String   @id @default(uuid())
+  storeId     String
+  store       Store    @relation(fields: [storeId], references: [vendorId], onDelete: Cascade)
+  buyerName   String
+  rating      Int
+  comment     String
+  productName String?
+  verified    Boolean  @default(false)
+  orderId     String?  @unique
+  createdAt   DateTime @default(now())
+
+  @@index([storeId])
+}
+
+model SupportTicket {
+  id           String         @id @default(uuid())
+  subject      String
+  description  String
+  type         TicketType
+  status       TicketStatus   @default(open)
+  priority     TicketPriority @default(medium)
+  contactName  String
+  contactPhone String
+  contactEmail String?
+  storeName    String?
+  orderRef     String?
+  vendorId     String?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+}
+
+model PasswordOtp {
+  id        String    @id @default(uuid())
+  phone     String
+  codeHash  String
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([phone])
+}
+
+model Product {
+  id                String                 @id @default(uuid())
+  storeId           String
+  store             Store                  @relation(fields: [storeId], references: [vendorId], onDelete: Cascade)
+  name              String
+  description       String                 @default("")
+  price             Int
+  imageUrl          String?
+  images            Json                   @default("[]")
+  colors            Json                   @default("[]")
+  productCategory   String
+  sizingType        String                 @default("none")
+  sizes             Json                   @default("[]")
+  deliveryOptions   Json                   @default("[]")
+  stock             Int                    @default(0)
+  lowStockThreshold Int                    @default(5)
+  published         Boolean                @default(false)
+  createdAt         DateTime               @default(now())
+  stockLocations    ProductStockLocation[]
+
+  @@index([storeId])
+}
+
+model ProductStockLocation {
+  id           String  @id @default(uuid())
+  productId    String
+  product      Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  locationName String
+  stock        Int     @default(0)
+
+  @@unique([productId, locationName])
+}
+
+model DiscountCode {
+  id          String    @id @default(uuid())
+  storeId     String
+  store       Store     @relation(fields: [storeId], references: [vendorId], onDelete: Cascade)
+  code        String
+  type        String
+  value       Int
+  expiresAt   DateTime?
+  maxUses     Int?
+  useCount    Int       @default(0)
+  active      Boolean   @default(true)
+  flashEndsAt DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@unique([storeId, code])
+  @@index([storeId])
+}
+
+model AbandonedCart {
+  id            String    @id @default(uuid())
+  storeId       String
+  productId     String
+  customerPhone String?
+  customerName  String?
+  cartData      Json
+  recoveredAt   DateTime?
+  notifiedAt    DateTime?
+  createdAt     DateTime  @default(now())
+
+  @@index([storeId])
+}
+
+model StoreMember {
+  id        String   @id @default(uuid())
+  storeId   String
+  store     Store    @relation(fields: [storeId], references: [vendorId], onDelete: Cascade)
+  userId    String
+  role      String
+  createdAt DateTime @default(now())
+
+  @@unique([storeId, userId])
+}
+
+model ActivityLog {
+  id        String   @id @default(uuid())
+  storeId   String
+  store     Store    @relation(fields: [storeId], references: [vendorId], onDelete: Cascade)
+  userId    String
+  action    String
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  @@index([storeId])
+}
+
+model Order {
+  id                  String        @id @default(uuid())
+  paymentRef          String        @unique
+  storeId             String
+  store               Store         @relation(fields: [storeId], references: [vendorId], onDelete: Cascade)
+  productId           String
+  productName         String
+  color               String?
+  size                String?
+  quantity            Int
+  deliveryType        String
+  unitPrice           Int
+  deliveryFee         Int           @default(0)
+  discountAmount      Int           @default(0)
+  discountCode        String?
+  totalPaid           Int
+  customerName        String
+  customerPhone       String
+  deliveryAddress     String?
+  status              OrderStatus   @default(reserved)
+  paymentStatus       PaymentStatus @default(pending)
+  paystackReference   String?       @unique
+  transferReference   String?
+  reservedUntil       DateTime?
+  internalNotes       String?
+  estimatedDeliveryAt DateTime?
+  riderName           String?
+  riderPhone          String?
+  vendorSeenAt        DateTime?
+  createdAt           DateTime      @default(now())
+
+  @@index([storeId])
+  @@index([paymentRef])
+  @@index([customerPhone])
+}
