@@ -18,7 +18,7 @@ export type StoreDto = {
 };
 
 export type PublicStoreDto = Omit<StoreDto, 'nin'> & {
-  planTier: 'starter' | 'pro' | 'business';
+  planTier: 'starter' | 'pro' | 'growth' | 'business';
   deliveryZones: unknown;
 };
 

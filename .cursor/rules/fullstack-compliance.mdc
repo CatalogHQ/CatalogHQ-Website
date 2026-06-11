@@ -7,6 +7,26 @@ alwaysApply: true
 
 Use this rule when the user asks for codebase compliance, best practices, or "make it production-ready" across **api/** and **app/**.
 
+## Trigger aliases (short codes)
+
+If the user message is **only** one of these (case-insensitive, optional leading `/`), treat it as the full compliance gate prompt below. Do not ask what they mean. Start the gate immediately.
+
+| Alias | Example |
+|-------|---------|
+| **`/gate`** | `/gate` |
+| `gate` | `gate` |
+| `/comply` | `/comply` |
+| `comply` | `comply` |
+| `/fcg` | `/fcg` |
+
+**Equivalent to:**
+
+```
+Full-stack compliance gate on api/ and app/.
+Follow fullstack-compliance.mdc, nestjs-compliance.mdc, and frontend-compliance.mdc.
+Fix partials without scope creep. Do not claim compliant until both gates pass.
+```
+
 ## Forbidden until both gates pass
 
 Do **not** say the project is "fully compliant", "production-ready", or "best practices ensured" until **both**:

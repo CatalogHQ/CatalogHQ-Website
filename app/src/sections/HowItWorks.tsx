@@ -15,7 +15,7 @@ const steps = [
     icon: Share2,
     title: "Share your link everywhere",
     description:
-      "Paste your store link in your WhatsApp bio, Status, or broadcasts. Anyone with a browser can visit.",
+      "Paste your store link in your bio, stories, posts, or DMs on WhatsApp, Instagram, Facebook, or X. Anyone with a browser can visit.",
   },
   {
     number: "3",
@@ -41,7 +41,7 @@ export default function HowItWorks() {
             Up and running in under 3 minutes
           </h2>
           <p className="section-subheading">
-            Three simple steps to transform your WhatsApp business
+            Three simple steps to turn social selling into a real store
           </p>
         </motion.div>
 

@@ -57,7 +57,7 @@ export default function Features() {
             Automate the messages you repeat every day.
           </h2>
           <p className="section-subheading">
-            Prices, payments, stock, and orders, handled before the DM starts.
+            Prices, payments, stock, and orders, handled before the chat starts.
           </p>
         </motion.div>
 

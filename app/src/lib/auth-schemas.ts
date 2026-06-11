@@ -20,9 +20,9 @@ function isValidNigerianPhone(phone: string): boolean {
 
 export const phoneSchema = z
   .string()
-  .min(1, "WhatsApp phone number is required")
+  .min(1, "Phone number is required")
   .refine(isValidNigerianPhone, {
-    message: "Enter a valid Nigerian WhatsApp number (e.g. 08012345678)",
+    message: "Enter a valid Nigerian phone number (e.g. 08012345678)",
   });
 
 export const passwordSchema = z

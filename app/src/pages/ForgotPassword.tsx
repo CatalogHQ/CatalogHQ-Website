@@ -100,7 +100,7 @@ export default function ForgotPassword() {
       title={step === "request" ? "Forgot password" : "Enter reset code"}
       subtitle={
         step === "request"
-          ? "We'll send a 6-digit code to your WhatsApp number."
+          ? "We'll send a 6-digit code to your phone number."
           : `Enter the code sent to ${phone || "your phone"}.`
       }
       footerText="Remember your password?"
@@ -118,7 +118,7 @@ export default function ForgotPassword() {
               name="phone"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>WhatsApp Phone Number</FormLabel>
+                  <FormLabel>Phone number</FormLabel>
                   <FormControl>
                     <Input
                       type="tel"

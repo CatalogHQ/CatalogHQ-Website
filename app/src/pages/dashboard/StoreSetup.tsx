@@ -169,12 +169,13 @@ export default function StoreSetup() {
                 name="whatsapp"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>WhatsApp number</FormLabel>
+                    <FormLabel>Contact number</FormLabel>
                     <FormControl>
                       <Input type="tel" placeholder="08012345678" {...field} />
                     </FormControl>
                     <FormDescription>
-                      Customers will reach you on this number for orders.
+                      Customers can reach you here after ordering (WhatsApp,
+                      calls, etc.).
                     </FormDescription>
                     <FormMessage />
                   </FormItem>

@@ -1,0 +1,29 @@
+---
+description: Never use em dashes in user-facing copy or project text
+alwaysApply: true
+---
+
+# No em dashes
+
+Do **not** use em dashes (`—`, Unicode U+2014) anywhere in this project.
+
+This applies to marketing copy, UI strings, docs, comments that mirror user-facing text, error messages, emails, and commit/PR descriptions.
+
+## Use instead
+
+| Instead of | Use |
+|------------|-----|
+| `Less DMs—more sales` | `Less DMs. More sales.` or `Less DMs, more sales` |
+| `One link—paid checkout` | `One link with paid checkout` or `One link. Paid checkout.` |
+| `Whether you sell on WhatsApp—Instagram` | `Whether you sell on WhatsApp, Instagram` |
+| `Plans from ₦3,000/month—no card needed` | `Plans from ₦3,000/month. No card needed.` |
+
+## Allowed
+
+- Hyphens in compound words: `shareable`, `first-time`, `link-in-bio`
+- En dashes in numeric ranges only if required: `2024–2025` (prefer `2024 to 2025` in prose)
+- Minus sign in code/math: `a - b`
+
+## Before finishing copy edits
+
+Search changed files for `—` and replace with a period, comma, colon, or rephrase.

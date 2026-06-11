@@ -28,13 +28,18 @@ export default function Hero() {
             transition={{ duration: 0.45, delay: 0.08, ease: [0, 0, 0.2, 1] }}
             className="order-2 flex flex-col items-center text-center sm:mt-0 lg:order-1 lg:items-start lg:text-left"
           >
-            <h1 className="max-w-[14ch] text-[1.75rem] font-extrabold leading-[1.1] tracking-tight text-balance text-gray-900 sm:max-w-none sm:text-4xl lg:text-6xl xl:text-7xl">
+            <p className="text-xs font-semibold uppercase tracking-[0.08em] text-whatsapp-green">
+              Built for every Nigerian Vendor
+            </p>
+
+            <h1 className="mt-2 max-w-[14ch] text-[1.75rem] font-extrabold leading-[1.1] tracking-tight text-balance text-gray-900 sm:max-w-none sm:text-4xl lg:text-6xl xl:text-7xl">
               Everything you sell, organized in {" "}
               <span className="text-whatsapp-green">one place.</span>
             </h1>
 
-            <p className="mt-3 max-w-xs text-base leading-snug text-gray-500 sm:mt-4 sm:max-w-sm sm:text-lg">
-              Share your storefront link and let customers shop without the back-and-forth.
+            <p className="mt-3 max-w-xs text-base leading-snug text-gray-500 sm:mt-4 sm:max-w-md sm:text-lg">
+              Share one link on WhatsApp, Instagram, Facebook, or X. Works even
+              if you&apos;ve never sold online.
             </p>
 
             <div className="mt-5 flex w-full max-w-sm flex-col gap-2 sm:mt-6 lg:max-w-xs">
@@ -44,6 +49,13 @@ export default function Hero() {
               >
                 Create my store
               </Button>
+              <p className="text-center text-xs leading-relaxed text-gray-500 lg:text-left">
+                <span className="font-semibold text-gray-800">From ₦3,000/mo</span>
+                <span className="text-gray-300"> · </span>
+                less than ₦100 a day
+                <span className="text-gray-300"> · </span>
+                live in 3 minutes
+              </p>
             </div>
           </motion.div>
         </div>

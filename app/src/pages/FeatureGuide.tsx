@@ -59,17 +59,18 @@ export default function FeatureGuide() {
           </h1>
           <p className="text-lg text-gray-600 mt-3">
             Automate the messages you repeat every day. Built for Nigerian
-            vendors who sell on WhatsApp.
+            social sellers on WhatsApp, Instagram, Facebook, and X, plus
+            first-time online vendors.
           </p>
         </header>
 
         <section className="mb-10">
           <h2 className="text-xl font-bold text-gray-900 mb-3">The problem</h2>
           <p className="text-gray-600 leading-relaxed">
-            WhatsApp selling means endless back-and-forth: price questions,
-            transfer screenshots, stock checks, and missed sales while you sleep.
-            CatalogHQ replaces that friction with one store link. Buyers see
-            prices, pay via Paystack, and you fulfil the order.
+            Selling through DMs on social media means endless back-and-forth:
+            price questions, transfer screenshots, stock checks, and missed sales
+            while you sleep. CatalogHQ replaces that friction with one store
+            link. Buyers see prices, pay via Paystack, and you fulfil the order.
           </p>
         </section>
 
@@ -161,7 +162,7 @@ export default function FeatureGuide() {
 
         <footer className="border-t border-gray-200 pt-6 text-sm text-gray-500">
           <p>One extra sale per month covers the entire Pro plan.</p>
-          <p className="mt-1">© CatalogHQ Nigeria. Built for Nigerian vendors.</p>
+          <p className="mt-1">© CatalogHQ Nigeria. Built for Nigerian sellers online.</p>
         </footer>
       </article>
       <SupportFab audience="customer" />

@@ -51,7 +51,7 @@ export default function StoreLinkCard({
           </Button>
         </div>
         <p className="text-sm text-gray-500">
-          Share this link on WhatsApp Status, Instagram bio, or anywhere you
+          Share this link on WhatsApp, Instagram, Facebook, X, or anywhere you
           sell online.
         </p>
       </CardContent>

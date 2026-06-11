@@ -166,7 +166,7 @@ export default function Settings() {
                 name="whatsapp"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>WhatsApp number</FormLabel>
+                    <FormLabel>Contact number</FormLabel>
                     <FormControl>
                       <Input type="tel" {...field} />
                     </FormControl>

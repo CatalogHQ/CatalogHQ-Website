@@ -1,14 +1,14 @@
 # CatalogHQ — Features & Pricing Guide
 
-**Built for Nigerian vendors who sell on WhatsApp**
+**Built for Nigerian sellers online**
 
-*Your WhatsApp hustle deserves a real store.*
+*Social media sales deserve a real store. One link on WhatsApp, Instagram, Facebook, or X.*
 
 ---
 
 ## The problem
 
-Running a business on WhatsApp means endless back-and-forth:
+Selling through DMs on social media means endless back-and-forth:
 
 - "How much is this one?"
 - "I sent the transfer, have you seen it?"
@@ -22,7 +22,7 @@ Running a business on WhatsApp means endless back-and-forth:
 ## How it works
 
 1. **Sign up and add your products** — Upload photos, set prices, and descriptions. Your store is ready in minutes.
-2. **Share your link everywhere** — Paste your store link in your WhatsApp bio, Status, or broadcasts.
+2. **Share your link everywhere** — Paste your store link in your bio, stories, posts, or DMs on WhatsApp, Instagram, Facebook, or X.
 3. **Customers order and pay automatically** — Paystack handles checkout. You get notified. You just fulfil the order.
 
 ---
@@ -104,9 +104,9 @@ Less than ₦167 a day. Advanced inventory, analytics, and growth tools for stor
 
 ---
 
-## vs WhatsApp Business catalog
+## Selling in DMs vs CatalogHQ
 
-| Capability | WhatsApp Business | CatalogHQ |
+| Capability | DM selling | CatalogHQ |
 |------------|:-----------------:|:--------:|
 | Automatic payment confirmation | No | Yes |
 | Takes orders while offline | No | Yes |
@@ -135,4 +135,4 @@ Features roll out in phases as the NestJS backend is built:
 - **Starter:** Free forever — no credit card required
 - **Pro:** Paid monthly — upgrade anytime from your dashboard
 
-*CatalogHQ Nigeria — Built for Nigerian vendors.*
+*CatalogHQ Nigeria — Built for Nigerian sellers online.*

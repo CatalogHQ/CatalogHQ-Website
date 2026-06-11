@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -66,7 +67,7 @@ export default function SignUp() {
             name="phone"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>WhatsApp Phone Number</FormLabel>
+                <FormLabel>Phone number</FormLabel>
                 <FormControl>
                   <Input
                     type="tel"
@@ -77,6 +78,9 @@ export default function SignUp() {
                     {...field}
                   />
                 </FormControl>
+                <FormDescription>
+                  Your Nigerian mobile number for login and customer contact.
+                </FormDescription>
                 <FormMessage />
               </FormItem>
             )}

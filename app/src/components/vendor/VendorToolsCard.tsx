@@ -102,7 +102,7 @@ export default function VendorToolsCard() {
           <CardHeader>
             <CardTitle>Quick-reply templates</CardTitle>
             <CardDescription>
-              Copy-paste blocks for WhatsApp: payment details, delivery time, store link.
+              Copy-paste blocks for customer chats: payment details, delivery time, store link.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">

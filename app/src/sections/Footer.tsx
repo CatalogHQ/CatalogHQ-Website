@@ -32,7 +32,7 @@ export default function Footer() {
           <div>
             <p className="text-xl font-bold text-white">CatalogHQ</p>
             <p className="text-sm text-gray-400 mt-2">
-              Built for Nigerian vendors.
+              Built for Nigerian sellers online.
             </p>
           </div>
 

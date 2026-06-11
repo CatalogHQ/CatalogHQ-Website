@@ -35,8 +35,8 @@ export default function FinalCTA() {
           transition={{ duration: 0.5, delay: 0.2 }}
           className="text-base sm:text-lg text-whatsapp-light mt-3 sm:mt-4 opacity-90 text-pretty"
         >
-          Join Nigerian vendors who stopped chasing payments and started
-          building a real business.
+          Join Nigerian social sellers and first-time online vendors who
+          stopped chasing payments and started building a real business.
         </motion.p>
 
         <motion.div

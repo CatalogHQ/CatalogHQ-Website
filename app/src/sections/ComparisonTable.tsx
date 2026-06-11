@@ -14,10 +14,11 @@ export default function ComparisonTable() {
           className="text-center"
         >
           <h2 className="section-heading text-gray-900">
-            WhatsApp Business catalog vs CatalogHQ
+            Selling in DMs vs CatalogHQ
           </h2>
           <p className="section-subheading">
-            Here is exactly what you are missing right now.
+            Catalogs in chat, screenshots in DMs, and chasing transfers vs one
+            real storefront with checkout.
           </p>
         </motion.div>
 
@@ -34,7 +35,7 @@ export default function ComparisonTable() {
                 Feature
               </div>
               <div className="px-2 py-3 text-center text-[10px] font-semibold leading-tight text-red-500 border-l border-gray-200">
-                WhatsApp
+                DM selling
               </div>
               <div className="px-2 py-3 text-center text-[10px] font-semibold leading-tight text-whatsapp-green border-l border-gray-200">
                 CatalogHQ
@@ -68,7 +69,7 @@ export default function ComparisonTable() {
                     Feature
                   </th>
                   <th className="text-center py-3 px-4 text-sm font-semibold text-red-500 w-[25%]">
-                    WhatsApp Business
+                    DM selling
                   </th>
                   <th className="text-center py-3 px-4 text-sm font-semibold text-whatsapp-green w-[25%]">
                     CatalogHQ

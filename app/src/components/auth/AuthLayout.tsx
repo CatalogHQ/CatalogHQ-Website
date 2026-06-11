@@ -41,13 +41,14 @@ export default function AuthLayout({
             </div>
             <p className="text-2xl font-bold text-white">CatalogHQ</p>
             <p className="mt-3 max-w-sm text-base leading-relaxed text-white/75">
-              Turn your WhatsApp hustle into a real store. Share a link, accept
-              Paystack payments, and sell even while you sleep.
+              Turn social media sales into a real store. Share one link on
+              WhatsApp, Instagram, Facebook, or X, or start selling online for
+              the first time.
             </p>
           </div>
 
           <p className="relative text-sm text-white/50">
-            Built for Nigerian vendors.
+            Built for Nigerian sellers online.
           </p>
         </div>
 

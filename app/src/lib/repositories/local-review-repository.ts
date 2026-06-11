@@ -17,7 +17,7 @@ function seedReviewsForStore(store: Store): StoreReview[] {
       buyerName: "Chioma A.",
       rating: 5,
       comment:
-        "Ordered a gown and it arrived exactly as pictured. Delivery was fast and the seller kept me updated on WhatsApp.",
+        "Ordered a gown and it arrived exactly as pictured. Delivery was fast and the seller kept me updated.",
       productName: "Ankara set",
       verified: true,
       createdAt: new Date(now - 1000 * 60 * 60 * 24 * 4).toISOString(),

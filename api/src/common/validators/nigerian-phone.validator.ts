@@ -11,6 +11,6 @@ export class IsNigerianPhoneConstraint implements ValidatorConstraintInterface {
   }
 
   defaultMessage() {
-    return 'Enter a valid Nigerian WhatsApp number (e.g. 08012345678)';
+    return 'Enter a valid Nigerian phone number (e.g. 08012345678)';
   }
 }
