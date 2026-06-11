@@ -1,8 +1,14 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import {
+  Sheet,
+  SheetClose,
+  SheetContent,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import { Menu, X } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const navLinks = [
   { label: "How it works", href: "#how-it-works" },
@@ -54,7 +60,10 @@ export default function Navbar() {
         <div className="flex items-center justify-between h-16">
           <Link
             to="/"
-            className="text-lg sm:text-xl font-bold text-whatsapp-dark hover:opacity-80 transition-opacity"
+            className={cn(
+              "text-lg sm:text-xl font-bold text-whatsapp-dark hover:opacity-80 transition-opacity",
+              open && "max-lg:invisible",
+            )}
           >
             CatalogHQ
           </Link>
@@ -92,18 +101,20 @@ export default function Navbar() {
                 <Menu className="h-6 w-6" />
               </button>
             </SheetTrigger>
-            <SheetContent side="right" className="w-[280px] p-0">
+            <SheetContent
+              side="right"
+              showCloseButton={false}
+              className="w-[280px] p-0"
+            >
               <div className="flex flex-col h-full">
-                <div className="flex items-center justify-between p-4 border-b border-gray-100">
+                <div className="flex items-center justify-between border-b border-gray-100 p-4">
                   <span className="text-xl font-bold text-whatsapp-dark">
                     CatalogHQ
                   </span>
-                  <button
-                    onClick={() => setOpen(false)}
-                    className="text-gray-500 p-1"
-                  >
+                  <SheetClose className="rounded-sm p-1 text-gray-500 opacity-70 transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-gray-300">
                     <X className="h-5 w-5" />
-                  </button>
+                    <span className="sr-only">Close</span>
+                  </SheetClose>
                 </div>
                 <div className="flex-1 py-4">
                   {navLinks.map((link) => (
