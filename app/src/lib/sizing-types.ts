@@ -149,7 +149,7 @@ export const SIZING_TYPES: Record<SizingTypeId, SizingTypeDefinition> = {
   one_size: {
     id: "one_size",
     label: "One size",
-    description: "Fits most — no size options needed.",
+    description: "Fits most. No size options needed.",
     sizes: ["One Size"],
   },
   custom: {

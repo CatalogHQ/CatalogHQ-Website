@@ -14,7 +14,7 @@ export default function ComparisonTable() {
           className="text-center"
         >
           <h2 className="section-heading text-gray-900">
-            WhatsApp Business catalog vs ShopEase
+            WhatsApp Business catalog vs CatalogHQ
           </h2>
           <p className="section-subheading">
             Here is exactly what you are missing right now.
@@ -37,7 +37,7 @@ export default function ComparisonTable() {
                 WhatsApp
               </div>
               <div className="px-2 py-3 text-center text-[10px] font-semibold leading-tight text-whatsapp-green border-l border-gray-200">
-                ShopEase
+                CatalogHQ
               </div>
             </div>
             {COMPARISON_ROWS.map((row, index) => (
@@ -71,7 +71,7 @@ export default function ComparisonTable() {
                     WhatsApp Business
                   </th>
                   <th className="text-center py-3 px-4 text-sm font-semibold text-whatsapp-green w-[25%]">
-                    ShopEase
+                    CatalogHQ
                   </th>
                 </tr>
               </thead>

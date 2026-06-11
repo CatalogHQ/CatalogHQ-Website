@@ -35,7 +35,7 @@ export default function VendorSupportCard({
             Need help?
           </CardTitle>
           <CardDescription>
-            Chat with ShopEase support about your store, orders, or verification.
+            Chat with CatalogHQ support about your store, orders, or verification.
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
@@ -74,7 +74,7 @@ export default function VendorSupportCard({
       <CardHeader>
         <CardTitle className="text-base">Customer support</CardTitle>
         <CardDescription>
-          Reach the ShopEase team for help with your store, payouts, or
+          Reach the CatalogHQ team for help with your store, payouts, or
           verification.
         </CardDescription>
       </CardHeader>

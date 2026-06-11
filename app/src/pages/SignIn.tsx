@@ -73,7 +73,7 @@ export default function SignIn() {
       title="Welcome back"
       subtitle=""
       footerText="Don't have an account?"
-      footerLinkText="Create one free"
+      footerLinkText="Create an account"
       footerLinkTo="/sign-up"
     >
       <Form {...form}>

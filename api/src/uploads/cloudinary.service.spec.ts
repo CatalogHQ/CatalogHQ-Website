@@ -41,7 +41,7 @@ describe('CloudinaryService', () => {
     const service = await createService(configService);
 
     await expect(
-      service.uploadImage(Buffer.from('test'), 'shopoint/products/vendor-1'),
+      service.uploadImage(Buffer.from('test'), 'cataloghq/products/vendor-1'),
     ).rejects.toBeInstanceOf(InternalServerErrorException);
   });
 });

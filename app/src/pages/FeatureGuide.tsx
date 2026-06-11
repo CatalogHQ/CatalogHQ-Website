@@ -35,7 +35,7 @@ export default function FeatureGuide() {
             Back to home
           </Link>
           <div className="flex items-center gap-2">
-            <a href="/ShopEase-Features-and-Pricing.pdf" download>
+            <a href="/CatalogHQ-Features-and-Pricing.pdf" download>
               <Button variant="outline" size="sm" className="gap-2">
                 <FileDown className="h-4 w-4" />
                 Download PDF
@@ -52,7 +52,7 @@ export default function FeatureGuide() {
       <article className="max-w-4xl mx-auto px-5 py-10 sm:py-16 print:py-8">
         <header className="border-b border-gray-200 pb-8 mb-10">
           <p className="text-sm font-semibold text-whatsapp-green uppercase tracking-wide">
-            ShopEase Nigeria
+            CatalogHQ Nigeria
           </p>
           <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mt-2">
             Features &amp; Pricing Guide
@@ -66,16 +66,16 @@ export default function FeatureGuide() {
         <section className="mb-10">
           <h2 className="text-xl font-bold text-gray-900 mb-3">The problem</h2>
           <p className="text-gray-600 leading-relaxed">
-            WhatsApp selling means endless back-and-forth — price questions,
+            WhatsApp selling means endless back-and-forth: price questions,
             transfer screenshots, stock checks, and missed sales while you sleep.
-            ShopEase replaces that friction with one store link. Buyers see
+            CatalogHQ replaces that friction with one store link. Buyers see
             prices, pay via Paystack, and you fulfil the order.
           </p>
         </section>
 
         <section className="mb-10">
           <h2 className="text-xl font-bold text-gray-900 mb-4">Pricing tiers</h2>
-          <div className="grid gap-4 sm:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {PLANS.map((plan) => (
               <div
                 key={plan.id}
@@ -84,11 +84,9 @@ export default function FeatureGuide() {
                 <p className="font-bold text-gray-900">{plan.name}</p>
                 <p className="text-2xl font-bold text-gray-900 mt-1">
                   {plan.price}
-                  {plan.price !== "Free" && (
-                    <span className="text-sm font-normal text-gray-500">
-                      /month
-                    </span>
-                  )}
+                  <span className="text-sm font-normal text-gray-500">
+                    /month
+                  </span>
                 </p>
                 <p className="text-sm text-gray-500 mt-2">{plan.tagline}</p>
               </div>
@@ -99,8 +97,7 @@ export default function FeatureGuide() {
         {PLANS.map((plan) => (
           <section key={plan.id} className="mb-10 break-inside-avoid">
             <h2 className="text-xl font-bold text-gray-900 mb-3">
-              {plan.name} — {plan.price}
-              {plan.price !== "Free" ? "/month" : ""}
+              {plan.name}: {plan.price}/month
             </h2>
             <ul className="space-y-2">
               {getPricingFeaturesForTier(plan.id).map((feature, i) => (
@@ -131,7 +128,7 @@ export default function FeatureGuide() {
                       <span className="font-medium text-gray-800">
                         {f.title}
                       </span>{" "}
-                      — {f.description}{" "}
+                      {f.description}{" "}
                       <span className="text-whatsapp-dark text-xs font-medium uppercase">
                         ({PLAN_TIER_LABELS[f.tier]}
                         {f.comingSoon ? ", coming soon" : ""})
@@ -164,7 +161,7 @@ export default function FeatureGuide() {
 
         <footer className="border-t border-gray-200 pt-6 text-sm text-gray-500">
           <p>One extra sale per month covers the entire Pro plan.</p>
-          <p className="mt-1">© ShopEase Nigeria — Built for Nigerian vendors.</p>
+          <p className="mt-1">© CatalogHQ Nigeria. Built for Nigerian vendors.</p>
         </footer>
       </article>
       <SupportFab audience="customer" />

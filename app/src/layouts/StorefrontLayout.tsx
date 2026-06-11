@@ -63,7 +63,7 @@ export default function StorefrontLayout({
               to="/"
               className="font-semibold text-whatsapp-dark hover:text-whatsapp-green"
             >
-              ShopEase
+              CatalogHQ
             </Link>
           </p>
         </div>

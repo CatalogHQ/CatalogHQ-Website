@@ -2,7 +2,7 @@ export type SafeUser = {
   id: string;
   phone: string;
   email?: string;
-  planTier: 'starter' | 'pro' | 'business';
+  planTier: 'starter' | 'pro' | 'growth' | 'business';
   role: 'vendor' | 'admin';
   createdAt: string;
 };

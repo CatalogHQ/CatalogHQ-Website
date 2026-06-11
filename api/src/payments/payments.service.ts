@@ -98,7 +98,7 @@ export class PaymentsService {
 
     const reference = order.paystackReference ?? `ps_${order.paymentRef}`;
     const init = await this.paystack.initializeTransaction({
-      email: `${order.customerPhone}@shopease.ng`,
+      email: `${order.customerPhone}@cataloghq.ng`,
       amountKobo: order.totalPaid * 100,
       reference,
       callbackPath: `/s/${order.store.slug}/order/${order.paymentRef}?paid=1`,

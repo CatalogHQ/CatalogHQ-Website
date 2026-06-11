@@ -9,7 +9,7 @@ export function buildOrderWhatsAppMessage(
   const lines = [
     `Hi ${storeName},`,
     "",
-    "I've paid for my order on ShopEase.",
+    "I've paid for my order on CatalogHQ.",
     "",
     `Order ref: ${order.paymentRef}`,
     `Product: ${order.productName}`,

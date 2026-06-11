@@ -1,4 +1,4 @@
-# Backend setup (ShopEase API)
+# Backend setup (CatalogHQ API)
 
 NestJS + PostgreSQL API for vendor signup, sign-in, store setup, Cloudinary uploads, support tickets, and SendChamp notifications.
 
@@ -69,10 +69,10 @@ Frontend runs at `http://localhost:3000` and proxies `/api` to the backend. Prod
 | `CLOUDINARY_CLOUD_NAME` | For uploads | Cloudinary cloud name |
 | `CLOUDINARY_API_KEY` | For uploads | Cloudinary API key |
 | `CLOUDINARY_API_SECRET` | For uploads | Cloudinary API secret |
-| `CLOUDINARY_FOLDER` | No | Upload folder prefix (default `shopoint/products`) |
+| `CLOUDINARY_FOLDER` | No | Upload folder prefix (default `cataloghq/products`) |
 | `SENDCHAMP_API_KEY` | For notifications | SendChamp bearer token |
 | `SENDCHAMP_MODE` | No | `test` (sandbox) or `live` |
-| `SENDCHAMP_SMS_SENDER` | No | SMS sender name (default `ShopEase`) |
+| `SENDCHAMP_SMS_SENDER` | No | SMS sender name (default `CatalogHQ`) |
 | `SENDCHAMP_FROM_EMAIL` | No | From email for verification emails |
 | `SENDCHAMP_FROM_NAME` | No | From name for verification emails |
 
@@ -201,7 +201,7 @@ Recommended production layout without Docker:
 cd api
 npm ci
 npm run build
-pm2 start dist/main.js --name shopease-api
+pm2 start dist/main.js --name cataloghq-api
 ```
 
 3. **Frontend** — `npm run build` in `app/`, serve `app/dist` via nginx or a CDN. Set `VITE_USE_API=true` and `VITE_API_URL` to your public API URL at build time.

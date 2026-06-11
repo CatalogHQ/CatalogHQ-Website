@@ -1,5 +1,30 @@
-node_modules
-dist
+# Dependencies
+node_modules/
+
+# Build
+dist/
+
+# Environment (keep .env.example — template for developers)
 .env
+.env.local
+.env.*.local
+
+# Tests
+coverage/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Uploads (user-generated; keep folder placeholder)
 uploads/*
 !uploads/.gitkeep
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/*
+!.vscode/extensions.json
+.idea

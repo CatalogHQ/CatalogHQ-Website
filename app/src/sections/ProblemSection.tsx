@@ -69,7 +69,7 @@ export default function ProblemSection() {
           transition={{ duration: 0.4, delay: 0.5 }}
           className="text-whatsapp-green font-semibold text-center mt-10 text-lg"
         >
-          ShopEase fixes every one of these.
+          CatalogHQ fixes every one of these.
         </motion.p>
       </div>
     </section>

@@ -36,7 +36,7 @@ export default function Dashboard() {
       <div className="mx-auto max-w-6xl space-y-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">
-            Welcome to ShopEase
+            Welcome to CatalogHQ
           </h1>
           <p className="mt-2 text-gray-600">
             Complete your store setup to get your shareable link and start adding

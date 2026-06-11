@@ -1,4 +1,4 @@
-# ShopEase — Features & Pricing Guide
+# CatalogHQ — Features & Pricing Guide
 
 **Built for Nigerian vendors who sell on WhatsApp**
 
@@ -15,7 +15,7 @@ Running a business on WhatsApp means endless back-and-forth:
 - "Is this still available? I need it today."
 - "Which sizes do you have left?"
 
-**ShopEase automates the messages you repeat every day.** Share one store link. Buyers see prices, stock, and pay via Paystack. You fulfil the order.
+**CatalogHQ automates the messages you repeat every day.** Share one store link. Buyers see prices, stock, and pay via Paystack. You fulfil the order.
 
 ---
 
@@ -106,7 +106,7 @@ Less than ₦167 a day. Advanced inventory, analytics, and growth tools for stor
 
 ## vs WhatsApp Business catalog
 
-| Capability | WhatsApp Business | ShopEase |
+| Capability | WhatsApp Business | CatalogHQ |
 |------------|:-----------------:|:--------:|
 | Automatic payment confirmation | No | Yes |
 | Takes orders while offline | No | Yes |
@@ -131,8 +131,8 @@ Features roll out in phases as the NestJS backend is built:
 
 ## Get started
 
-- **Website:** shopease.ng
+- **Website:** cataloghq.ng
 - **Starter:** Free forever — no credit card required
 - **Pro:** Paid monthly — upgrade anytime from your dashboard
 
-*ShopEase Nigeria — Built for Nigerian vendors.*
+*CatalogHQ Nigeria — Built for Nigerian vendors.*

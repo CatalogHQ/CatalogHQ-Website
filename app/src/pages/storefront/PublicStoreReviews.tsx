@@ -36,7 +36,7 @@ export default function PublicStoreReviews() {
           Store not found
         </h1>
         <Button asChild className="mt-6">
-          <Link to="/">Go to ShopEase</Link>
+          <Link to="/">Go to CatalogHQ</Link>
         </Button>
       </div>
     );
@@ -71,7 +71,7 @@ export default function PublicStoreReviews() {
             </span>
           </div>
           <p className="mt-2 text-xs text-gray-500 sm:mt-3 sm:text-sm">
-            Only reviews from confirmed ShopEase orders are shown here.
+            Only reviews from confirmed CatalogHQ orders are shown here.
           </p>
         </div>
 

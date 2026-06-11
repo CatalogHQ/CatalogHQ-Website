@@ -10,8 +10,9 @@ import { ProductInputDto } from './dto/product-input.dto';
 import { ProductDto, toProductDto } from './products.mapper';
 
 const PRODUCT_LIMITS: Record<PlanTier, number> = {
-  starter: 5,
+  starter: 15,
   pro: 30,
+  growth: 50,
   business: 100,
 };
 

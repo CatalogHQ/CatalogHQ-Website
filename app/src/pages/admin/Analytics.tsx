@@ -104,7 +104,7 @@ export default function AdminAnalytics() {
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Platform analytics</h1>
         <p className="mt-1 text-gray-600">
-          Revenue trends and top-performing vendors across ShopEase.
+          Revenue trends and top-performing vendors across CatalogHQ.
         </p>
       </div>
 

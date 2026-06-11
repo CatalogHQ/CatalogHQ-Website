@@ -54,7 +54,7 @@ export class NotificationsListener {
 
     if (!order) return;
 
-    const message = `New ShopEase order ${order.paymentRef}: ${order.productName} x${order.quantity} (${order.totalPaid} NGN) from ${order.customerName}. Check your dashboard.`;
+    const message = `New CatalogHQ order ${order.paymentRef}: ${order.productName} x${order.quantity} (${order.totalPaid} NGN) from ${order.customerName}. Check your dashboard.`;
     await this.sendChamp.sendSms(order.store.vendor.phone, message);
   }
 
@@ -67,7 +67,7 @@ export class NotificationsListener {
     }
 
     const label = STATUS_LABELS[event.status] ?? event.status;
-    const message = `Your ShopEase order ${event.paymentRef} from ${event.storeName} is now ${label}. Track your order on ShopEase.`;
+    const message = `Your CatalogHQ order ${event.paymentRef} from ${event.storeName} is now ${label}. Track your order on CatalogHQ.`;
     await this.sendChamp.sendSms(event.customerPhone, message);
   }
 
@@ -79,7 +79,7 @@ export class NotificationsListener {
 
   @OnEvent(LOW_STOCK_EVENT)
   async handleLowStock(event: LowStockEvent): Promise<void> {
-    const message = `ShopEase alert: "${event.productName}" has only ${event.stock} left in stock. Restock soon.`;
+    const message = `CatalogHQ alert: "${event.productName}" has only ${event.stock} left in stock. Restock soon.`;
     await this.sendChamp.sendSms(event.vendorPhone, message);
   }
 
@@ -106,7 +106,7 @@ export class NotificationsListener {
 
   @OnEvent(TICKET_RESOLVED_EVENT)
   async handleTicketResolved(event: TicketResolvedEvent): Promise<void> {
-    const message = `Your ShopEase support ticket "${event.subject}" has been resolved. Reply on WhatsApp if you need more help.`;
+    const message = `Your CatalogHQ support ticket "${event.subject}" has been resolved. Reply on WhatsApp if you need more help.`;
     await this.sendChamp.sendSms(event.contactPhone, message);
   }
 
@@ -131,8 +131,8 @@ export class NotificationsListener {
     if (event.approved) {
       await this.sendChamp.sendEmail(
         user.email,
-        'Your ShopEase store is verified',
-        `<p>Hi,</p><p>Great news! <strong>${storeName}</strong> has been verified on ShopEase. Your verified badge is now visible on your storefront.</p><p>— ShopEase Team</p>`,
+        'Your CatalogHQ store is verified',
+        `<p>Hi,</p><p>Great news! <strong>${storeName}</strong> has been verified on CatalogHQ. Your verified badge is now visible on your storefront.</p><p>— CatalogHQ Team</p>`,
         storeName,
       );
       return;
@@ -141,8 +141,8 @@ export class NotificationsListener {
     const reason = event.reason ?? 'Verification requirements were not met.';
     await this.sendChamp.sendEmail(
       user.email,
-      'ShopEase verification update',
-      `<p>Hi,</p><p>We could not approve verification for <strong>${storeName}</strong>.</p><p><strong>Reason:</strong> ${reason}</p><p>You can resubmit updated documents from your dashboard settings.</p><p>— ShopEase Team</p>`,
+      'CatalogHQ verification update',
+      `<p>Hi,</p><p>We could not approve verification for <strong>${storeName}</strong>.</p><p><strong>Reason:</strong> ${reason}</p><p>You can resubmit updated documents from your dashboard settings.</p><p>— CatalogHQ Team</p>`,
       storeName,
     );
   }

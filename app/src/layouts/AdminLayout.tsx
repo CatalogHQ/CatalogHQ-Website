@@ -91,7 +91,7 @@ export default function AdminLayout() {
             </div>
             <div className="min-w-0">
               <p className="truncate text-sm font-semibold text-sidebar-foreground">
-                ShopEase
+                CatalogHQ
               </p>
               <p className="truncate text-xs text-sidebar-foreground/70">
                 Admin dashboard

@@ -43,7 +43,7 @@ export function toStoreDto(store: Store): StoreDto {
 
 export function toPublicStoreDto(
   store: Store,
-  planTier: 'starter' | 'pro' | 'business',
+  planTier: 'starter' | 'pro' | 'growth' | 'business',
 ): PublicStoreDto {
   const dto = toStoreDto(store);
   const { nin: _nin, ...publicFields } = dto;

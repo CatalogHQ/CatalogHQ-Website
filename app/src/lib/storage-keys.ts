@@ -1,8 +1,8 @@
 export const STORAGE_KEYS = {
-  users: "shopease:users",
-  stores: "shopease:stores",
-  products: "shopease:products",
-  session: "shopease:session",
-  reviews: "shopease:reviews",
-  orders: "shopease:orders",
+  users: "cataloghq:users",
+  stores: "cataloghq:stores",
+  products: "cataloghq:products",
+  session: "cataloghq:session",
+  reviews: "cataloghq:reviews",
+  orders: "cataloghq:orders",
 } as const;

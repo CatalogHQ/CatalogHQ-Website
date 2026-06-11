@@ -129,7 +129,7 @@ export default function OrderDetailSheet({
 
           {customerOrderCount !== null && customerOrderCount > 1 && (
             <p className="rounded-lg bg-whatsapp-green/10 px-3 py-2 text-sm text-whatsapp-dark">
-              Repeat customer — {customerOrderCount} paid orders from this phone.
+              Repeat customer: {customerOrderCount} paid orders from this phone.
             </p>
           )}
 

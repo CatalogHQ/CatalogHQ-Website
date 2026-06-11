@@ -85,7 +85,7 @@ export default function StorefrontHeader({ store }: StorefrontHeaderProps) {
                 {/* <div className="mt-3 flex flex-wrap gap-1.5">
                   <span className="inline-flex items-center gap-1 rounded-full bg-gray-50 px-2 py-1 text-[10px] text-gray-500 sm:text-[11px]">
                     <ShieldCheck className="h-3 w-3 text-whatsapp-green sm:h-3.5 sm:w-3.5" />
-                    ShopEase verified
+                    CatalogHQ verified
                   </span>
                   <span className="inline-flex items-center gap-1 rounded-full bg-gray-50 px-2 py-1 text-[10px] text-gray-500 sm:text-[11px]">
                     <Store className="h-3 w-3 text-gray-400 sm:h-3.5 sm:w-3.5" />

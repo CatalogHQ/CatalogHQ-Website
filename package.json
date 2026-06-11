@@ -1,5 +1,5 @@
 {
-  "name": "shopoint",
+  "name": "cataloghq",
   "private": true,
   "scripts": {
     "dev:app": "npm run dev --prefix app",

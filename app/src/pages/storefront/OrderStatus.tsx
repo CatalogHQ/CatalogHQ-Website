@@ -122,7 +122,7 @@ export default function OrderStatusPage() {
           </Button>
         ) : (
           <Button asChild className="mt-6">
-            <Link to="/">Go to ShopEase</Link>
+            <Link to="/">Go to CatalogHQ</Link>
           </Button>
         )}
       </div>

@@ -60,7 +60,7 @@ export default function VerifyReceipt() {
       <div className="flex min-h-screen flex-col items-center justify-center bg-gray-50 px-4 text-center">
         <h1 className="text-xl font-bold text-gray-900">Receipt not found</h1>
         <Button asChild className="mt-6">
-          <Link to="/">Go to ShopEase</Link>
+          <Link to="/">Go to CatalogHQ</Link>
         </Button>
       </div>
     );
@@ -121,7 +121,7 @@ export default function VerifyReceipt() {
         </Card>
 
         <Button asChild variant="outline" className="w-full">
-          <Link to="/">Back to ShopEase</Link>
+          <Link to="/">Back to CatalogHQ</Link>
         </Button>
       </div>
     </div>

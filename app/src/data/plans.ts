@@ -1,4 +1,4 @@
-export type PlanTier = "starter" | "pro" | "business";
+export type PlanTier = "starter" | "pro" | "growth" | "business";
 
 export type FeatureCategory =
   | "core"
@@ -34,12 +34,14 @@ const COMING_SOON = " (Coming soon)";
 export const PLAN_TIER_LABELS: Record<PlanTier, string> = {
   starter: "Starter",
   pro: "Pro",
+  growth: "Growth",
   business: "Business",
 };
 
 const PRODUCT_LIMITS: Record<PlanTier, number> = {
-  starter: 5,
+  starter: 15,
   pro: 30,
+  growth: 50,
   business: 100,
 };
 
@@ -56,11 +58,11 @@ export const PLANS: Plan[] = [
   {
     id: "starter",
     name: "Starter",
-    price: "Free",
-    priceSubtext: "Forever. No credit card needed.",
+    price: "₦3,000",
+    priceSubtext: "Less than ₦100 a day",
     tagline:
       "Perfect for new sellers. Stop chasing transfers and answering \"how much?\" all day.",
-    cta: "Create free store",
+    cta: "Get Starter",
   },
   {
     id: "pro",
@@ -73,13 +75,13 @@ export const PLANS: Plan[] = [
     popular: true,
   },
   {
-    id: "business",
-    name: "Business",
-    price: "₦15,000",
-    priceSubtext: "For teams and high-volume sellers",
+    id: "growth",
+    name: "Growth",
+    price: "₦8,000",
+    priceSubtext: "Less than ₦267 a day",
     tagline:
-      "Staff seats, multi-location stock, advanced analytics, and priority support.",
-    cta: "Get Business",
+      "More catalog room and the same Pro tools for vendors with a larger inventory.",
+    cta: "Get Growth",
   },
 ];
 
@@ -144,17 +146,17 @@ export const FEATURES: Feature[] = [
   },
   {
     id: "product-limit",
-    title: "Up to 5 products",
-    description: "Enough to launch and validate your store for free.",
+    title: "Up to 15 products",
+    description: "Enough room to launch and grow your first catalog.",
     category: "catalog",
     tier: "starter",
-    pricingLabel: "Up to 5 products",
+    pricingLabel: "Up to 15 products",
   },
   {
     id: "product-variants",
     title: "Product variants",
     description:
-      "Sell sizes, colors, and options — no more \"which size do you have?\"",
+      "Sell sizes, colors, and options. No more \"which size do you have?\"",
     category: "catalog",
     tier: "starter",
     showOnLanding: true,
@@ -294,6 +296,14 @@ export const FEATURES: Feature[] = [
     tier: "pro",
   },
   {
+    id: "product-limit-growth",
+    title: "Up to 50 products",
+    description: "Scale your catalog without jumping to enterprise pricing.",
+    category: "catalog",
+    tier: "growth",
+    pricingLabel: "Up to 50 products",
+  },
+  {
     id: "staff-roles",
     title: "Staff roles and activity log",
     description: "Let helpers fulfil orders without full store access.",
@@ -331,7 +341,7 @@ export const FEATURES: Feature[] = [
   },
 ];
 
-const TIER_ORDER: PlanTier[] = ["starter", "pro", "business"];
+const TIER_ORDER: PlanTier[] = ["starter", "pro", "growth", "business"];
 
 export function tierIncludes(tier: PlanTier, featureTier: PlanTier): boolean {
   return TIER_ORDER.indexOf(tier) >= TIER_ORDER.indexOf(featureTier);
@@ -364,7 +374,7 @@ export function getPricingFeaturesForTier(tier: PlanTier): string[] {
       "Basic order management",
       "Buyer order status page",
       "WhatsApp share on products",
-      "Up to 5 products",
+      "Up to 15 products",
       "Product variants (size, color)",
       "Basic inventory tracking",
       "Delivery types",
@@ -383,6 +393,10 @@ export function getPricingFeaturesForTier(tier: PlanTier): string[] {
       `Customer referral links${COMING_SOON}`,
       `Loyalty points${COMING_SOON}`,
       "WhatsApp order confirmations",
+    ],
+    growth: [
+      "Everything in Pro, plus:",
+      "Up to 50 products",
     ],
     business: [
       "Everything in Pro, plus:",
@@ -405,42 +419,42 @@ export const COMPARISON_ROWS = [
   {
     feature: "Automatic payment confirmation (no transfer screenshots)",
     whatsapp: false,
-    shopease: true,
+    cataloghq: true,
   },
   {
     feature: "Takes orders while you are offline",
     whatsapp: false,
-    shopease: true,
+    cataloghq: true,
   },
   {
     feature: "Inventory tracking with sold-out auto-hide",
     whatsapp: false,
-    shopease: true,
+    cataloghq: true,
   },
   {
     feature: "Product variants and delivery options",
     whatsapp: false,
-    shopease: true,
+    cataloghq: true,
   },
   {
     feature: "Order tracking for buyers",
     whatsapp: false,
-    shopease: true,
+    cataloghq: true,
   },
   {
     feature: "Protected if Meta restricts your account",
     whatsapp: false,
-    shopease: true,
+    cataloghq: true,
   },
   {
     feature: "Sales analytics dashboard",
     whatsapp: false,
-    shopease: true,
+    cataloghq: true,
   },
   {
     feature: "Flash sales, referrals, and loyalty (Pro)",
     whatsapp: false,
-    shopease: true,
+    cataloghq: true,
   },
 ];
 

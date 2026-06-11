@@ -276,7 +276,7 @@ export default function VendorToolsCard() {
                 className="flex items-center justify-between rounded-lg border px-3 py-2 text-sm"
               >
                 <span>
-                  <strong>{code.code}</strong> — {code.value}
+                  <strong>{code.code}</strong>: {code.value}
                   {code.type === "percent" ? "%" : "₦"} off · used {code.useCount}
                   {code.maxUses ? `/${code.maxUses}` : ""}
                 </span>

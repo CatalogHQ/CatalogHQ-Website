@@ -6,7 +6,7 @@ alwaysApply: false
 
 # Frontend compliance (app/)
 
-Shopoint frontend: React 19, Vite, TypeScript, Tailwind, react-hook-form + Zod, repository pattern.
+CatalogHQ frontend: React 19, Vite, TypeScript, Tailwind, react-hook-form + Zod, repository pattern.
 
 ## Forbidden until the gate passes
 

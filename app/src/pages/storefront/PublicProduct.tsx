@@ -190,7 +190,7 @@ export default function PublicProduct() {
           Store not found
         </h1>
         <Button asChild className="mt-6">
-          <Link to="/">Go to ShopEase</Link>
+          <Link to="/">Go to CatalogHQ</Link>
         </Button>
       </div>
     );

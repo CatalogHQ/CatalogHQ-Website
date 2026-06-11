@@ -5,15 +5,15 @@ export const HERO_SLIDE_HEIGHT = 1100;
 const FEED_SLIDES = [
   {
     src: "/images/hero-feed-slide-1.png",
-    alt: "Male Gucci Shirt — ₦30,000 on Amaka's Fashion Store",
+    alt: "Male Gucci Shirt, ₦30,000 on Amaka's Fashion Store",
   },
   {
     src: "/images/hero-feed-slide-2.png",
-    alt: "Female Satin Gown — ₦20,000 on Amaka's Fashion Store",
+    alt: "Female Satin Gown, ₦30,000 on Amaka's Fashion Store",
   },
   {
     src: "/images/hero-feed-slide-3.png",
-    alt: "Male Jeans — ₦25,000 on Amaka's Fashion Store",
+    alt: "Male Jeans, ₦25,000 on Amaka's Fashion Store",
   },
 ] as const;
 
@@ -32,7 +32,7 @@ export default function HeroFeedShowcase() {
             <img
               src={slide.src}
               alt={slide.alt}
-              className="block h-full w-full object-cover object-top"
+              className="block h-full w-full object-contain object-top"
               draggable={false}
             />
           </div>

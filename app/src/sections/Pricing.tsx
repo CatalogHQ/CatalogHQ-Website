@@ -11,7 +11,7 @@ export default function Pricing() {
 
   return (
     <section id="pricing" className="bg-white section-padding">
-      <div className="max-w-7xl mx-auto px-5 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -23,11 +23,11 @@ export default function Pricing() {
             Simple, honest pricing.
           </h2>
           <p className="section-subheading">
-            Start free. Upgrade when you are ready to grow.
+            Plans from ₦3,000/month. Upgrade as your catalog grows.
           </p>
         </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 max-w-4xl mx-auto mt-8 sm:mt-12">
+        <div className="mx-auto mt-8 grid max-w-6xl grid-cols-1 gap-4 sm:mt-12 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3 lg:gap-6">
           {PLANS.map((plan, index) => {
             const features = getPricingFeaturesForTier(plan.id);
             const isPopular = plan.popular;
@@ -38,60 +38,60 @@ export default function Pricing() {
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, amount: 0.1 }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
+                transition={{ duration: 0.5, delay: index * 0.08 }}
+                className={
+                  index === PLANS.length - 1 && PLANS.length % 2 === 1
+                    ? "sm:col-span-2 sm:max-w-md sm:justify-self-center lg:col-span-1 lg:max-w-none"
+                    : undefined
+                }
               >
                 <Card
-                  className={`rounded-2xl h-full ${
+                  className={`flex h-full flex-col rounded-2xl ${
                     isPopular
                       ? "border-2 border-whatsapp-green shadow-xl"
                       : "border-gray-200"
                   }`}
                 >
-                  <CardContent className="p-6 sm:p-8">
-                    <div className="flex items-center gap-2 flex-wrap">
+                  <CardContent className="flex flex-1 flex-col p-5 sm:p-6 lg:p-7">
+                    <div className="flex flex-wrap items-center gap-2">
                       <p className="text-lg font-bold text-gray-900">
                         {plan.name}
                       </p>
                       {isPopular && (
-                        <Badge className="bg-whatsapp-green text-white text-xs px-2.5 py-0.5 rounded-full font-medium hover:bg-whatsapp-green">
+                        <Badge className="rounded-full bg-whatsapp-green px-2.5 py-0.5 text-xs font-medium text-white hover:bg-whatsapp-green">
                           Most Popular
                         </Badge>
                       )}
                     </div>
 
-                    <div className="flex items-baseline mt-2">
-                      <span className="text-4xl font-bold text-gray-900">
+                    <div className="mt-2 flex flex-wrap items-baseline gap-x-1">
+                      <span className="text-3xl font-bold text-gray-900 sm:text-4xl">
                         {plan.price}
                       </span>
-                      {plan.price !== "Free" && (
-                        <span className="text-base font-normal text-gray-500 ml-1">
-                          /month
-                        </span>
-                      )}
+                      <span className="text-sm font-normal text-gray-500 sm:text-base">
+                        /month
+                      </span>
                     </div>
-                    <p className="text-sm text-gray-500 mt-1">
+                    <p className="mt-1 text-sm text-gray-500">
                       {plan.priceSubtext}
                     </p>
-                    <p className="text-sm text-gray-600 mt-3 leading-relaxed">
+                    <p className="mt-3 text-sm leading-relaxed text-gray-600">
                       {plan.tagline}
                     </p>
 
-                    <ul className="mt-6 space-y-2.5">
+                    <ul className="mt-5 flex-1 space-y-2 sm:mt-6 sm:space-y-2.5">
                       {features.map((feature, featureIndex) => (
                         <li
                           key={featureIndex}
                           className={`flex items-start gap-2 ${
                             feature.startsWith("Everything in")
                               ? "font-medium"
-                              : featureIndex > 0 &&
-                                  features[0]?.startsWith("Everything in")
-                                ? "pl-0"
-                                : ""
+                              : ""
                           }`}
                         >
-                          <Check className="h-4 w-4 text-whatsapp-green flex-shrink-0 mt-0.5" />
+                          <Check className="mt-0.5 h-4 w-4 shrink-0 text-whatsapp-green" />
                           <span
-                            className={`text-sm ${
+                            className={`text-sm leading-snug ${
                               feature.includes("(Coming soon)")
                                 ? "text-gray-400"
                                 : "text-gray-700"
@@ -106,9 +106,9 @@ export default function Pricing() {
                     <Button
                       onClick={() => navigate("/sign-up")}
                       variant={isPopular ? "default" : "outline"}
-                      className={`w-full mt-8 font-semibold py-3 h-auto rounded-lg ${
+                      className={`mt-6 h-auto w-full rounded-lg py-3 font-semibold sm:mt-8 ${
                         isPopular
-                          ? "bg-whatsapp-green hover:bg-whatsapp-green/90 text-white transition-all hover:scale-[1.02]"
+                          ? "bg-whatsapp-green text-white transition-all hover:scale-[1.02] hover:bg-whatsapp-green/90"
                           : "border-gray-300 text-gray-700 hover:bg-gray-50"
                       }`}
                     >
@@ -120,16 +120,6 @@ export default function Pricing() {
             );
           })}
         </div>
-
-        <motion.div
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true, amount: 0.1 }}
-          transition={{ duration: 0.4, delay: 0.3 }}
-          className="flex flex-col items-center gap-4 mt-6 sm:mt-8"
-        >
-          
-        </motion.div>
       </div>
     </section>
   );

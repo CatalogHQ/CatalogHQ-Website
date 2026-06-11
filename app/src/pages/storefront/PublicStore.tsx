@@ -30,7 +30,7 @@ export default function PublicStore() {
           This store link does not exist or has not finished setup yet.
         </p>
         <Button asChild className="mt-6">
-          <Link to="/">Go to ShopEase</Link>
+          <Link to="/">Go to CatalogHQ</Link>
         </Button>
       </div>
     );

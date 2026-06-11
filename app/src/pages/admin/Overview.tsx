@@ -74,7 +74,7 @@ export default function AdminOverview() {
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Platform overview</h1>
         <p className="mt-1 text-gray-600">
-          Monitor vendors, customers, sales, and support across ShopEase.
+          Monitor vendors, customers, sales, and support across CatalogHQ.
         </p>
       </div>
 

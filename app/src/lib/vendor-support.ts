@@ -3,7 +3,7 @@ import { normalizePhoneForWhatsApp } from "@/lib/format";
 
 export const SUPPORT_CONTACT = {
   whatsapp: "07019062597",
-  email: "support@shopease.ng",
+  email: "support@cataloghq.ng",
   hours: "Mon–Sat, 9am–6pm WAT",
 } as const;
 
@@ -12,7 +12,7 @@ export const VENDOR_SUPPORT = SUPPORT_CONTACT;
 
 export function buildVendorSupportWhatsAppUrl(storeName?: string): string {
   const lines = [
-    "Hi ShopEase support,",
+    "Hi CatalogHQ support,",
     "",
     "I need help with my vendor account.",
     "",
@@ -47,7 +47,7 @@ export function buildCustomerSupportWhatsAppUrl(options?: {
   orderRef?: string;
 }): string {
   const lines = [
-    "Hi ShopEase support,",
+    "Hi CatalogHQ support,",
     "",
     "I need help with a purchase or order.",
     "",

@@ -44,7 +44,7 @@ export class OtpService {
       },
     });
 
-    const message = `Your ShopEase password reset code is ${code}. It expires in 10 minutes. Do not share this code.`;
+    const message = `Your CatalogHQ password reset code is ${code}. It expires in 10 minutes. Do not share this code.`;
     await this.sendChamp.sendSms(normalized, message);
   }
 

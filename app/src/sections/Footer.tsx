@@ -30,7 +30,7 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 text-center md:text-left">
           {/* Left: Logo + Tagline */}
           <div>
-            <p className="text-xl font-bold text-white">ShopEase</p>
+            <p className="text-xl font-bold text-white">CatalogHQ</p>
             <p className="text-sm text-gray-400 mt-2">
               Built for Nigerian vendors.
             </p>
@@ -59,7 +59,7 @@ export default function Footer() {
         <Separator className="my-8 bg-white/10" />
 
         <p className="text-xs text-gray-500 text-center">
-          &copy; 2025 ShopEase Nigeria. All rights reserved.
+          &copy; {new Date().getFullYear()} CatalogHQ. All rights reserved.
         </p>
       </div>
     </motion.footer>

@@ -39,7 +39,7 @@ export default function AuthLayout({
             <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-xl bg-whatsapp-green/20">
               <Store className="h-6 w-6 text-whatsapp-green" />
             </div>
-            <p className="text-2xl font-bold text-white">ShopEase</p>
+            <p className="text-2xl font-bold text-white">CatalogHQ</p>
             <p className="mt-3 max-w-sm text-base leading-relaxed text-white/75">
               Turn your WhatsApp hustle into a real store. Share a link, accept
               Paystack payments, and sell even while you sleep.
@@ -55,7 +55,7 @@ export default function AuthLayout({
         <div className="flex flex-col justify-center px-5 py-10 sm:px-8 lg:px-16">
           <div className="mx-auto w-full max-w-md">
             <div className="mb-8 text-center lg:hidden">
-              <p className="text-xl font-bold text-whatsapp-dark">ShopEase</p>
+              <p className="text-xl font-bold text-whatsapp-dark">CatalogHQ</p>
             </div>
 
             <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm sm:p-8">

@@ -145,7 +145,7 @@ export default function SignUp() {
             disabled={loading}
             className="mt-2 h-11 w-full rounded-xl bg-whatsapp-green text-base font-semibold hover:bg-whatsapp-green/90"
           >
-            {loading ? "Creating account..." : "Create free store"}
+            {loading ? "Creating account..." : "Create my store"}
           </Button>
         </form>
       </Form>

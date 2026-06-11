@@ -25,15 +25,15 @@ export class SendChampService {
         : 'https://sandbox-api.sendchamp.com/api/v1';
     this.smsSender = this.configService.get<string>(
       'SENDCHAMP_SMS_SENDER',
-      'ShopEase',
+      'CatalogHQ',
     );
     this.fromEmail = this.configService.get<string>(
       'SENDCHAMP_FROM_EMAIL',
-      'support@shopease.ng',
+      'support@cataloghq.ng',
     );
     this.fromName = this.configService.get<string>(
       'SENDCHAMP_FROM_NAME',
-      'ShopEase',
+      'CatalogHQ',
     );
   }
 

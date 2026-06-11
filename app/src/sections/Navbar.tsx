@@ -56,7 +56,7 @@ export default function Navbar() {
             to="/"
             className="text-lg sm:text-xl font-bold text-whatsapp-dark hover:opacity-80 transition-opacity"
           >
-            ShopEase
+            CatalogHQ
           </Link>
 
           <div className="hidden lg:flex items-center gap-8">
@@ -82,7 +82,7 @@ export default function Navbar() {
               onClick={goToSignUp}
               className="bg-whatsapp-green hover:bg-whatsapp-green/90 text-white font-semibold text-sm px-5 py-2 rounded-lg transition-all hover:scale-[1.02]"
             >
-              Create free store
+              Create my store
             </Button>
           </div>
 
@@ -96,7 +96,7 @@ export default function Navbar() {
               <div className="flex flex-col h-full">
                 <div className="flex items-center justify-between p-4 border-b border-gray-100">
                   <span className="text-xl font-bold text-whatsapp-dark">
-                    ShopEase
+                    CatalogHQ
                   </span>
                   <button
                     onClick={() => setOpen(false)}
@@ -127,7 +127,7 @@ export default function Navbar() {
                     onClick={goToSignUp}
                     className="w-full bg-whatsapp-green hover:bg-whatsapp-green/90 text-white font-semibold py-3 rounded-lg"
                   >
-                    Create free store
+                    Create my store
                   </Button>
                 </div>
               </div>

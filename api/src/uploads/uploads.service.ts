@@ -38,7 +38,7 @@ export class UploadsService {
 
     const baseFolder = this.configService.get<string>(
       'CLOUDINARY_FOLDER',
-      'shopoint/products',
+      'cataloghq/products',
     );
     const folder = `${baseFolder}/${vendorId}`;
 

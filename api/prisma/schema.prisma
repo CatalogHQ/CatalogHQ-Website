@@ -10,6 +10,7 @@ datasource db {
 enum PlanTier {
   starter
   pro
+  growth
   business
 }
 

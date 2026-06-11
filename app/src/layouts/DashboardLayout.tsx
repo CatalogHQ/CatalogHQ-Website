@@ -75,7 +75,7 @@ export default function DashboardLayout() {
             </div>
             <div className="min-w-0">
               <p className="truncate text-sm font-semibold text-sidebar-foreground">
-                {store?.businessName || "ShopEase"}
+                {store?.businessName || "CatalogHQ"}
               </p>
               <p className="truncate text-xs text-sidebar-foreground/70">
                 Vendor dashboard

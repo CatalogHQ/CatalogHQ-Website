@@ -2,7 +2,7 @@ import { readJson, writeJson } from "@/lib/local-storage";
 import type { Store } from "@/types/domain";
 import type { StoreRatingSummary, StoreReview } from "@/types/reviews";
 
-const REVIEWS_KEY = "shopease:reviews";
+const REVIEWS_KEY = "cataloghq:reviews";
 
 function generateId(): string {
   return crypto.randomUUID();

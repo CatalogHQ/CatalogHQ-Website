@@ -5,9 +5,9 @@ import PDFDocument from "pdfkit";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(__dirname, "..");
-const input = path.resolve(root, "../docs/ShopEase-Features-and-Pricing.md");
+const input = path.resolve(root, "../docs/CatalogHQ-Features-and-Pricing.md");
 const outputDir = path.resolve(root, "public");
-const output = path.join(outputDir, "ShopEase-Features-and-Pricing.pdf");
+const output = path.join(outputDir, "CatalogHQ-Features-and-Pricing.pdf");
 
 if (!fs.existsSync(outputDir)) {
   fs.mkdirSync(outputDir, { recursive: true });

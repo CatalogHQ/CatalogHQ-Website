@@ -31,13 +31,13 @@ const COPY: Record<
 > = {
   vendor: {
     description:
-      "Contact ShopEase support about your store, orders, or verification.",
-    ariaLabel: "Need help? Contact ShopEase vendor support",
+      "Contact CatalogHQ support about your store, orders, or verification.",
+    ariaLabel: "Need help? Contact CatalogHQ vendor support",
   },
   customer: {
     description:
-      "Contact ShopEase support about your order, payment, or delivery.",
-    ariaLabel: "Need help? Contact ShopEase customer support",
+      "Contact CatalogHQ support about your order, payment, or delivery.",
+    ariaLabel: "Need help? Contact CatalogHQ customer support",
   },
 };
 

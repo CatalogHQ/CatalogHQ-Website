@@ -10,7 +10,7 @@ const faqs = [
   {
     question: "Why not just use WhatsApp Business catalog?",
     answer:
-      "WhatsApp Business catalog cannot take payment, cannot sell when you are offline, and has no inventory system. It is a product display tool, nothing more. Your store on ShopEase has checkout, order tracking, reviews, and analytics all built in.",
+      "WhatsApp Business catalog cannot take payment, cannot sell when you are offline, and has no inventory system. It is a product display tool, nothing more. Your store on CatalogHQ has checkout, order tracking, reviews, and analytics all built in.",
   },
   {
     question: "Do my customers need to download an app?",
@@ -25,22 +25,22 @@ const faqs = [
   {
     question: "What if I am not good with technology?",
     answer:
-      "If you can post on WhatsApp, you can use ShopEase. Adding a product takes less than 2 minutes. Setup takes under 3 minutes. No technical knowledge is needed at any point.",
+      "If you can post on WhatsApp, you can use CatalogHQ. Adding a product takes less than 2 minutes. Setup takes under 3 minutes. No technical knowledge is needed at any point.",
   },
   {
-    question: "Can I try it before paying?",
+    question: "Can I start on a lower plan and upgrade later?",
     answer:
-      "Yes. Starter is completely free with no time limit — no credit card needed. When you are ready to grow, upgrade to Pro from your dashboard.",
+      "Yes. Start on Starter at ₦3,000/month and upgrade to Pro or Growth from your dashboard whenever your catalog or sales volume needs more room.",
   },
   {
-    question: "What is the difference between Starter and Pro?",
+    question: "What is the difference between Starter, Pro, and Growth?",
     answer:
-      "Starter includes your storefront, checkout, order management, buyer tracking, variants, and basic inventory for up to 5 products. Pro adds up to 30 products, advanced inventory with auto-hide sold-out, low-stock alerts, verified reviews, sales analytics, and WhatsApp order confirmations.",
+      "Starter (₦3,000/month) includes your storefront, checkout, order management, buyer tracking, variants, and basic inventory for up to 15 products. Pro (₦5,000/month) adds up to 30 products, advanced inventory with auto-hide sold-out, low-stock alerts, verified reviews, sales analytics, and WhatsApp order confirmations. Growth (₦8,000/month) includes everything in Pro with up to 50 products.",
   },
   {
     question: "What if WhatsApp restricts or bans my account?",
     answer:
-      "Your store exists on ShopEase, not on WhatsApp. If Meta restricts your account, your catalog, your customer records, your orders, and your payment history are all still safe and accessible. You own your business data completely.",
+      "Your store exists on CatalogHQ, not on WhatsApp. If Meta restricts your account, your catalog, your customer records, your orders, and your payment history are all still safe and accessible. You own your business data completely.",
   },
 ];
 
