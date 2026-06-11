@@ -26,15 +26,41 @@ enum VendorVerificationStatus {
   rejected
 }
 
+enum EmailOtpPurpose {
+  signup
+  password_reset
+}
+
 model User {
+  id              String    @id @default(uuid())
+  email           String    @unique
+  phone           String?
+  passwordHash    String
+  emailVerifiedAt DateTime?
+  planTier        PlanTier  @default(starter)
+  role            UserRole  @default(vendor)
+  createdAt       DateTime  @default(now())
+  store           Store?
+}
+
+model SignupPending {
   id           String   @id @default(uuid())
-  phone        String   @unique
-  email        String?
+  email        String   @unique
   passwordHash String
-  planTier     PlanTier @default(starter)
-  role         UserRole @default(vendor)
+  expiresAt    DateTime
   createdAt    DateTime @default(now())
-  store        Store?
+}
+
+model EmailOtp {
+  id        String          @id @default(uuid())
+  email     String
+  purpose   EmailOtpPurpose
+  codeHash  String
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime        @default(now())
+
+  @@index([email, purpose])
 }
 
 enum OrderStatus {
@@ -125,17 +151,6 @@ model SupportTicket {
   vendorId     String?
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
-}
-
-model PasswordOtp {
-  id        String    @id @default(uuid())
-  phone     String
-  codeHash  String
-  expiresAt DateTime
-  usedAt    DateTime?
-  createdAt DateTime  @default(now())
-
-  @@index([phone])
 }
 
 model Product {

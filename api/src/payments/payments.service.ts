@@ -75,12 +75,11 @@ export class PaymentsService {
     if (newStock <= product.lowStockThreshold) {
       const store = await tx.store.findUnique({
         where: { vendorId: storeId },
-        include: { vendor: true },
       });
-      if (store) {
+      if (store?.whatsapp) {
         this.eventEmitter.emit(
           LOW_STOCK_EVENT,
-          new LowStockEvent(store.vendor.phone, product.name, newStock),
+          new LowStockEvent(store.whatsapp, product.name, newStock),
         );
       }
     }

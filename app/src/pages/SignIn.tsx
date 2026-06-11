@@ -10,7 +10,6 @@ import { Label } from "@/components/ui/label";
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -35,7 +34,7 @@ export default function SignIn() {
   const form = useForm<SignInFormValues>({
     resolver: zodResolver(signInSchema),
     defaultValues: {
-      phone: "",
+      email: "",
       password: "",
     },
   });
@@ -43,7 +42,7 @@ export default function SignIn() {
   const onSubmit = async (data: SignInFormValues) => {
     setLoading(true);
     try {
-      const user = await signIn(data.phone, data.password);
+      const user = await signIn(data.email.trim().toLowerCase(), data.password);
       toast.success("Signed in successfully.");
 
       const returnTo = searchParams.get("returnTo");
@@ -81,23 +80,19 @@ export default function SignIn() {
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
           <FormField
             control={form.control}
-            name="phone"
+            name="email"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Phone number</FormLabel>
+                <FormLabel>Email</FormLabel>
                 <FormControl>
                   <Input
-                    type="tel"
-                    inputMode="tel"
-                    autoComplete="tel"
-                    placeholder="08012345678"
+                    type="email"
+                    autoComplete="email"
+                    placeholder="you@example.com"
                     className="h-11"
                     {...field}
                   />
                 </FormControl>
-                <FormDescription>
-                  Your Nigerian mobile number for login and customer contact.
-                </FormDescription>
                 <FormMessage />
               </FormItem>
             )}

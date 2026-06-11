@@ -1,4 +1,4 @@
-import { ConflictException, UnauthorizedException } from '@nestjs/common';
+import { UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
 import * as bcrypt from 'bcrypt';
@@ -11,7 +11,6 @@ describe('AuthService', () => {
   const prisma = {
     user: {
       findUnique: jest.fn(),
-      create: jest.fn(),
     },
   };
 
@@ -35,38 +34,31 @@ describe('AuthService', () => {
     service = module.get(AuthService);
   });
 
-  it('creates a new vendor account on signup', async () => {
-    prisma.user.findUnique.mockResolvedValue(null);
-    (bcrypt.hash as jest.Mock).mockResolvedValue('hashed-password');
-    prisma.user.create.mockResolvedValue({
+  it('signs in with email and password', async () => {
+    prisma.user.findUnique.mockResolvedValue({
       id: 'user-1',
-      phone: '08012345678',
+      email: 'vendor@example.com',
+      phone: null,
+      passwordHash: 'hashed',
       planTier: 'starter',
       role: 'vendor',
       createdAt: new Date('2026-06-08T10:00:00.000Z'),
     });
+    (bcrypt.compare as jest.Mock).mockResolvedValue(true);
 
-    const result = await service.signUp({
-      phone: '08012345678',
+    const result = await service.signIn({
+      email: 'vendor@example.com',
       password: 'password123',
     });
 
     expect(result.session.token).toBe('token-123');
-    expect(prisma.user.create).toHaveBeenCalled();
-  });
-
-  it('rejects duplicate phone on signup', async () => {
-    prisma.user.findUnique.mockResolvedValue({ id: 'existing' });
-
-    await expect(
-      service.signUp({ phone: '08012345678', password: 'password123' }),
-    ).rejects.toBeInstanceOf(ConflictException);
+    expect(result.user.email).toBe('vendor@example.com');
   });
 
   it('rejects invalid credentials on signin', async () => {
     prisma.user.findUnique.mockResolvedValue({
       id: 'user-1',
-      phone: '08012345678',
+      email: 'vendor@example.com',
       passwordHash: 'hashed',
       planTier: 'starter',
       role: 'vendor',
@@ -74,7 +66,7 @@ describe('AuthService', () => {
     (bcrypt.compare as jest.Mock).mockResolvedValue(false);
 
     await expect(
-      service.signIn({ phone: '08012345678', password: 'wrong' }),
+      service.signIn({ email: 'vendor@example.com', password: 'wrong' }),
     ).rejects.toBeInstanceOf(UnauthorizedException);
   });
 });

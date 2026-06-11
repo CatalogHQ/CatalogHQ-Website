@@ -8,6 +8,7 @@ import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { SignInDto } from './dto/sign-in.dto';
 import { SignUpDto } from './dto/sign-up.dto';
+import { VerifySignUpDto } from './dto/verify-sign-up.dto';
 import { OtpService } from './otp.service';
 
 @Controller('auth')
@@ -20,8 +21,16 @@ export class AuthController {
   @Public()
   @Throttle({ auth: { limit: 5, ttl: 60_000 } })
   @Post('signup')
-  signUp(@Body() dto: SignUpDto) {
-    return this.authService.signUp(dto);
+  async signUp(@Body() dto: SignUpDto) {
+    await this.otpService.initSignUp(dto.email, dto.password);
+    return { success: true };
+  }
+
+  @Public()
+  @Throttle({ auth: { limit: 5, ttl: 60_000 } })
+  @Post('signup/verify')
+  verifySignUp(@Body() dto: VerifySignUpDto) {
+    return this.otpService.verifySignUp(dto.email, dto.code);
   }
 
   @Public()
@@ -35,7 +44,7 @@ export class AuthController {
   @Throttle({ auth: { limit: 5, ttl: 60_000 } })
   @Post('forgot-password')
   async forgotPassword(@Body() dto: ForgotPasswordDto) {
-    await this.otpService.sendPasswordResetOtp(dto.phone);
+    await this.otpService.sendPasswordResetOtp(dto.email);
     return { success: true };
   }
 
@@ -44,7 +53,7 @@ export class AuthController {
   @Post('reset-password')
   async resetPassword(@Body() dto: ResetPasswordDto) {
     await this.otpService.resetPassword(
-      dto.phone,
+      dto.email,
       dto.code,
       dto.newPassword,
     );

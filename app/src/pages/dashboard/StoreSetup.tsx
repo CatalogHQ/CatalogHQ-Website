@@ -22,7 +22,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { useAuth } from "@/contexts/AuthContext";
 import { useVendor } from "@/contexts/VendorContext";
 import {
   createSlugFromName,
@@ -33,7 +32,6 @@ import { getStoreUrl } from "@/lib/slug";
 
 export default function StoreSetup() {
   const navigate = useNavigate();
-  const { user } = useAuth();
   const { store, completeSetup, isSlugAvailable } = useVendor();
   const [loading, setLoading] = useState(false);
   const [slugEdited, setSlugEdited] = useState(false);
@@ -43,7 +41,7 @@ export default function StoreSetup() {
     defaultValues: {
       businessName: store?.businessName ?? "",
       bio: store?.bio ?? "",
-      whatsapp: store?.whatsapp ?? user?.phone ?? "",
+      whatsapp: store?.whatsapp ?? "",
       nin: store?.nin ?? "",
       slug: store?.slug ?? "",
       category: store?.category ?? "",
@@ -65,10 +63,8 @@ export default function StoreSetup() {
         state: store.state ?? "",
       });
       if (store.slug) setSlugEdited(true);
-    } else if (user?.phone) {
-      form.setValue("whatsapp", user.phone);
     }
-  }, [store, user, form]);
+  }, [store, form]);
 
   const businessName = form.watch("businessName");
   const slug = form.watch("slug");

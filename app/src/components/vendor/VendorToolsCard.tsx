@@ -35,7 +35,7 @@ export default function VendorToolsCard() {
   const [zones, setZones] = useState<DeliveryZone[]>([]);
   const [discountCodes, setDiscountCodes] = useState<DiscountCode[]>([]);
   const [team, setTeam] = useState<TeamMember[]>([]);
-  const [newMemberPhone, setNewMemberPhone] = useState("");
+  const [newMemberEmail, setNewMemberEmail] = useState("");
   const [newCode, setNewCode] = useState({ code: "", value: "10", type: "percent" as const });
   const [loading, setLoading] = useState(true);
 
@@ -308,19 +308,20 @@ export default function VendorToolsCard() {
           <CardContent className="space-y-3">
             <div className="flex gap-2">
               <Input
-                placeholder="Helper phone (080...)"
-                value={newMemberPhone}
-                onChange={(event) => setNewMemberPhone(event.target.value)}
+                type="email"
+                placeholder="helper@example.com"
+                value={newMemberEmail}
+                onChange={(event) => setNewMemberEmail(event.target.value)}
               />
               <Button
                 type="button"
                 onClick={async () => {
                   const member = await vendorToolsRepository.addTeamMember(
-                    newMemberPhone,
+                    newMemberEmail.trim().toLowerCase(),
                     "fulfiller",
                   );
                   setTeam([...team, member]);
-                  setNewMemberPhone("");
+                  setNewMemberEmail("");
                   toast.success("Team member added.");
                 }}
               >
@@ -333,7 +334,7 @@ export default function VendorToolsCard() {
                 className="flex items-center justify-between rounded-lg border px-3 py-2 text-sm"
               >
                 <span>
-                  {member.phone} · {member.role}
+                  {member.email} · {member.role}
                 </span>
                 <Button
                   type="button"

@@ -49,13 +49,13 @@ export class NotificationsListener {
   async handleOrderCreated(event: OrderCreatedEvent): Promise<void> {
     const order = await this.prisma.order.findUnique({
       where: { id: event.orderId },
-      include: { store: { include: { vendor: true } } },
+      include: { store: true },
     });
 
-    if (!order) return;
+    if (!order?.store.whatsapp) return;
 
     const message = `New CatalogHQ order ${order.paymentRef}: ${order.productName} x${order.quantity} (${order.totalPaid} NGN) from ${order.customerName}. Check your dashboard.`;
-    await this.sendChamp.sendSms(order.store.vendor.phone, message);
+    await this.sendChamp.sendSms(order.store.whatsapp, message);
   }
 
   @OnEvent(ORDER_STATUS_UPDATED_EVENT)

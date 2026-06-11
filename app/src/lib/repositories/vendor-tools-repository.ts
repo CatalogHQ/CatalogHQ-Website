@@ -24,7 +24,7 @@ export type DiscountCode = {
 export type TeamMember = {
   id: string;
   userId: string;
-  phone: string;
+  email: string;
   role: string;
   createdAt: string;
 };
@@ -145,10 +145,10 @@ export const vendorToolsRepository = {
     return apiClient<TeamMember[]>("/stores/me/team");
   },
 
-  async addTeamMember(phone: string, role: "fulfiller"): Promise<TeamMember> {
+  async addTeamMember(email: string, role: "fulfiller"): Promise<TeamMember> {
     return apiClient<TeamMember>("/stores/me/team", {
       method: "POST",
-      body: JSON.stringify({ phone, role }),
+      body: JSON.stringify({ email, role }),
     });
   },
 

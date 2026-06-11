@@ -1,8 +1,6 @@
-import { IsString, MinLength, Validate } from 'class-validator';
-import { IsNigerianPhoneConstraint } from '../../common/validators/nigerian-phone.validator';
+import { IsEmail } from 'class-validator';
 
 export class ForgotPasswordDto {
-  @IsString()
-  @Validate(IsNigerianPhoneConstraint)
-  phone!: string;
+  @IsEmail()
+  email!: string;
 }

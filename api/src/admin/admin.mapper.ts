@@ -97,7 +97,7 @@ export function toAdminVendorDto(
 ): AdminVendorDto {
   return {
     id: store.vendorId,
-    phone: store.vendor.phone,
+    phone: store.whatsapp,
     planTier: store.vendor.planTier,
     createdAt: store.vendor.createdAt.toISOString(),
     businessName: store.businessName,

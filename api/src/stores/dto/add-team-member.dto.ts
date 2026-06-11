@@ -1,10 +1,8 @@
-import { IsIn, IsString, Validate } from 'class-validator';
-import { IsNigerianPhoneConstraint } from '../../common/validators/nigerian-phone.validator';
+import { IsEmail, IsIn } from 'class-validator';
 
 export class AddTeamMemberDto {
-  @IsString()
-  @Validate(IsNigerianPhoneConstraint)
-  phone!: string;
+  @IsEmail()
+  email!: string;
 
   @IsIn(['fulfiller'])
   role!: 'fulfiller';

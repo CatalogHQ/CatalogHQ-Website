@@ -7,11 +7,10 @@ function normalizeUser(user: StoredUser): StoredUser {
   return { ...user, role: user.role ?? "vendor" };
 }
 
-function normalizePhone(phone: string): string {
-  return phone.replace(/\D/g, "");
+function normalizeEmail(email: string): string {
+  return email.trim().toLowerCase();
 }
 
-// Dev-only placeholder — replace with bcrypt on the NestJS backend.
 function hashPassword(password: string): string {
   return btoa(password);
 }
@@ -47,18 +46,36 @@ export class LocalAuthRepository implements AuthRepository {
     return this.getUsers().find((user) => user.id === userId) ?? null;
   }
 
-  async signUp(phone: string, password: string, _email?: string): Promise<StoredUser> {
-    const normalized = normalizePhone(phone);
+  async initSignUp(email: string, password: string): Promise<void> {
+    const normalized = normalizeEmail(email);
     const users = this.getUsers();
 
-    if (users.some((user) => normalizePhone(user.phone) === normalized)) {
-      throw new Error("An account with this phone number already exists.");
+    if (users.some((user) => normalizeEmail(user.email) === normalized)) {
+      throw new Error("An account with this email already exists.");
     }
 
+    writeJson(`cataloghq:signup-pending:${normalized}`, {
+      email: normalized,
+      passwordHash: hashPassword(password),
+    });
+  }
+
+  async verifySignUp(email: string, code: string): Promise<StoredUser> {
+    const normalized = normalizeEmail(email);
+    const pending = readJson<{ email: string; passwordHash: string } | null>(
+      `cataloghq:signup-pending:${normalized}`,
+      null,
+    );
+
+    if (!pending || code !== "123456") {
+      throw new Error("Invalid or expired code. Use 123456 in local dev mode.");
+    }
+
+    const users = this.getUsers();
     const user: StoredUser = {
       id: generateId(),
-      phone: normalized,
-      passwordHash: hashPassword(password),
+      email: normalized,
+      passwordHash: pending.passwordHash,
       planTier: "starter",
       role: "vendor" satisfies UserRole,
       createdAt: new Date().toISOString(),
@@ -66,6 +83,7 @@ export class LocalAuthRepository implements AuthRepository {
 
     users.push(user);
     this.saveUsers(users);
+    localStorage.removeItem(`cataloghq:signup-pending:${normalized}`);
 
     const session: AuthSession = { userId: user.id, token: "local-dev" };
     writeJson(STORAGE_KEYS.session, session);
@@ -73,14 +91,14 @@ export class LocalAuthRepository implements AuthRepository {
     return user;
   }
 
-  async signIn(phone: string, password: string): Promise<StoredUser> {
-    const normalized = normalizePhone(phone);
+  async signIn(email: string, password: string): Promise<StoredUser> {
+    const normalized = normalizeEmail(email);
     const user = this.getUsers().find(
-      (entry) => normalizePhone(entry.phone) === normalized,
+      (entry) => normalizeEmail(entry.email) === normalized,
     );
 
     if (!user || !verifyPassword(password, user.passwordHash)) {
-      throw new Error("Invalid phone number or password.");
+      throw new Error("Invalid email or password.");
     }
 
     const session: AuthSession = { userId: user.id, token: "local-dev" };
@@ -93,12 +111,12 @@ export class LocalAuthRepository implements AuthRepository {
     localStorage.removeItem(STORAGE_KEYS.session);
   }
 
-  async forgotPassword(_phone: string): Promise<void> {
+  async forgotPassword(_email: string): Promise<void> {
     throw new Error("Password reset requires API mode (VITE_USE_API=true).");
   }
 
   async resetPassword(
-    _phone: string,
+    _email: string,
     _code: string,
     _newPassword: string,
   ): Promise<void> {
@@ -106,4 +124,4 @@ export class LocalAuthRepository implements AuthRepository {
   }
 }
 
-export const authRepository: AuthRepository = new LocalAuthRepository();
+export const authRepository: LocalAuthRepository = new LocalAuthRepository();

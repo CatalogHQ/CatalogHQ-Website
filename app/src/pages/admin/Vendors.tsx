@@ -81,7 +81,7 @@ export default function AdminVendors() {
       <div className="relative max-w-sm">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
         <Input
-          placeholder="Search by name, phone, or location..."
+          placeholder="Search by name, WhatsApp, or location..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="pl-9"
@@ -93,7 +93,7 @@ export default function AdminVendors() {
           <TableHeader>
             <TableRow>
               <TableHead>Business</TableHead>
-              <TableHead>Phone</TableHead>
+              <TableHead>WhatsApp</TableHead>
               <TableHead>Plan</TableHead>
               <TableHead>Verification</TableHead>
               <TableHead>Orders</TableHead>

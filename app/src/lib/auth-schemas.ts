@@ -25,18 +25,18 @@ export const phoneSchema = z
     message: "Enter a valid Nigerian phone number (e.g. 08012345678)",
   });
 
+export const emailSchema = z
+  .string()
+  .min(1, "Email is required")
+  .email("Enter a valid email address");
+
 export const passwordSchema = z
   .string()
   .min(8, "Password must be at least 8 characters");
 
 export const signUpSchema = z
   .object({
-    phone: phoneSchema,
-    email: z
-      .string()
-      .email("Enter a valid email")
-      .optional()
-      .or(z.literal("")),
+    email: emailSchema,
     password: passwordSchema,
     confirmPassword: z.string().min(1, "Please confirm your password"),
   })
@@ -45,10 +45,36 @@ export const signUpSchema = z
     path: ["confirmPassword"],
   });
 
+export const verifySignUpSchema = z.object({
+  email: emailSchema,
+  code: z.string().length(6, "Enter the 6-digit code"),
+});
+
 export const signInSchema = z.object({
-  phone: phoneSchema,
+  email: emailSchema,
   password: z.string().min(1, "Password is required"),
 });
 
+export const forgotPasswordRequestSchema = z.object({
+  email: emailSchema,
+});
+
+export const resetPasswordSchema = z
+  .object({
+    email: emailSchema,
+    code: z.string().length(6, "Enter the 6-digit code"),
+    newPassword: passwordSchema,
+    confirmPassword: z.string().min(1, "Please confirm your password"),
+  })
+  .refine((data) => data.newPassword === data.confirmPassword, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
+  });
+
 export type SignUpFormValues = z.infer<typeof signUpSchema>;
+export type VerifySignUpFormValues = z.infer<typeof verifySignUpSchema>;
 export type SignInFormValues = z.infer<typeof signInSchema>;
+export type ForgotPasswordRequestValues = z.infer<
+  typeof forgotPasswordRequestSchema
+>;
+export type ResetPasswordFormValues = z.infer<typeof resetPasswordSchema>;

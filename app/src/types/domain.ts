@@ -19,7 +19,8 @@ export type UserRole = "vendor" | "admin";
 
 export type StoredUser = {
   id: string;
-  phone: string;
+  email: string;
+  phone?: string;
   passwordHash: string;
   planTier: PlanTier;
   role?: UserRole;

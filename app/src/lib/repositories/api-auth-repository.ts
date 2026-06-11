@@ -45,19 +45,26 @@ export class ApiAuthRepository implements AuthRepository {
     return null;
   }
 
-  async signUp(phone: string, password: string, email?: string): Promise<StoredUser> {
-    const response = await apiClient<AuthResponse>("/auth/signup", {
+  async initSignUp(email: string, password: string): Promise<void> {
+    await apiClient("/auth/signup", {
       method: "POST",
-      body: JSON.stringify({ phone, password, email }),
+      body: JSON.stringify({ email, password }),
+    });
+  }
+
+  async verifySignUp(email: string, code: string): Promise<StoredUser> {
+    const response = await apiClient<AuthResponse>("/auth/signup/verify", {
+      method: "POST",
+      body: JSON.stringify({ email, code }),
     });
     saveSession(response.session);
     return toStoredUser(response.user);
   }
 
-  async signIn(phone: string, password: string): Promise<StoredUser> {
+  async signIn(email: string, password: string): Promise<StoredUser> {
     const response = await apiClient<AuthResponse>("/auth/signin", {
       method: "POST",
-      body: JSON.stringify({ phone, password }),
+      body: JSON.stringify({ email, password }),
     });
     saveSession(response.session);
     return toStoredUser(response.user);
@@ -75,21 +82,21 @@ export class ApiAuthRepository implements AuthRepository {
     localStorage.removeItem(STORAGE_KEYS.session);
   }
 
-  async forgotPassword(phone: string): Promise<void> {
+  async forgotPassword(email: string): Promise<void> {
     await apiClient("/auth/forgot-password", {
       method: "POST",
-      body: JSON.stringify({ phone }),
+      body: JSON.stringify({ email }),
     });
   }
 
   async resetPassword(
-    phone: string,
+    email: string,
     code: string,
     newPassword: string,
   ): Promise<void> {
     await apiClient("/auth/reset-password", {
       method: "POST",
-      body: JSON.stringify({ phone, code, newPassword }),
+      body: JSON.stringify({ email, code, newPassword }),
     });
   }
 }

@@ -29,7 +29,7 @@ export class SendChampService {
     );
     this.fromEmail = this.configService.get<string>(
       'SENDCHAMP_FROM_EMAIL',
-      'support@cataloghq.ng',
+      'support@cataloghq.store',
     );
     this.fromName = this.configService.get<string>(
       'SENDCHAMP_FROM_NAME',

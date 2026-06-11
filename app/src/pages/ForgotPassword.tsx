@@ -3,7 +3,6 @@ import { Link, useNavigate } from "react-router";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
-import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -17,56 +16,43 @@ import {
 import AuthLayout from "@/components/auth/AuthLayout";
 import PasswordInput from "@/components/auth/PasswordInput";
 import { authRepository } from "@/lib/repositories";
-import { passwordSchema, phoneSchema } from "@/lib/auth-schemas";
-
-const requestSchema = z.object({
-  phone: phoneSchema,
-});
-
-const resetSchema = z
-  .object({
-    phone: phoneSchema,
-    code: z.string().min(6, "Enter the 6-digit code").max(6),
-    newPassword: passwordSchema,
-    confirmPassword: z.string().min(1, "Please confirm your password"),
-  })
-  .refine((data) => data.newPassword === data.confirmPassword, {
-    message: "Passwords do not match",
-    path: ["confirmPassword"],
-  });
-
-type RequestValues = z.infer<typeof requestSchema>;
-type ResetValues = z.infer<typeof resetSchema>;
+import {
+  forgotPasswordRequestSchema,
+  resetPasswordSchema,
+  type ForgotPasswordRequestValues,
+  type ResetPasswordFormValues,
+} from "@/lib/auth-schemas";
 
 export default function ForgotPassword() {
   const navigate = useNavigate();
   const [step, setStep] = useState<"request" | "reset">("request");
   const [loading, setLoading] = useState(false);
-  const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
 
-  const requestForm = useForm<RequestValues>({
-    resolver: zodResolver(requestSchema),
-    defaultValues: { phone: "" },
+  const requestForm = useForm<ForgotPasswordRequestValues>({
+    resolver: zodResolver(forgotPasswordRequestSchema),
+    defaultValues: { email: "" },
   });
 
-  const resetForm = useForm<ResetValues>({
-    resolver: zodResolver(resetSchema),
+  const resetForm = useForm<ResetPasswordFormValues>({
+    resolver: zodResolver(resetPasswordSchema),
     defaultValues: {
-      phone: "",
+      email: "",
       code: "",
       newPassword: "",
       confirmPassword: "",
     },
   });
 
-  const onRequestOtp = async (values: RequestValues) => {
+  const onRequestOtp = async (values: ForgotPasswordRequestValues) => {
     setLoading(true);
     try {
-      await authRepository.forgotPassword(values.phone);
-      setPhone(values.phone);
-      resetForm.setValue("phone", values.phone);
+      const normalized = values.email.trim().toLowerCase();
+      await authRepository.forgotPassword(normalized);
+      setEmail(normalized);
+      resetForm.setValue("email", normalized);
       setStep("reset");
-      toast.success("We sent a reset code to your phone.");
+      toast.success("We sent a reset code to your email.");
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Could not send reset code.",
@@ -76,11 +62,11 @@ export default function ForgotPassword() {
     }
   };
 
-  const onResetPassword = async (values: ResetValues) => {
+  const onResetPassword = async (values: ResetPasswordFormValues) => {
     setLoading(true);
     try {
       await authRepository.resetPassword(
-        values.phone,
+        values.email.trim().toLowerCase(),
         values.code,
         values.newPassword,
       );
@@ -100,8 +86,8 @@ export default function ForgotPassword() {
       title={step === "request" ? "Forgot password" : "Enter reset code"}
       subtitle={
         step === "request"
-          ? "We'll send a 6-digit code to your phone number."
-          : `Enter the code sent to ${phone || "your phone"}.`
+          ? "We'll send a 6-digit code to your email address."
+          : `Enter the code sent to ${email || "your email"}.`
       }
       footerText="Remember your password?"
       footerLinkText="Sign in"
@@ -115,14 +101,15 @@ export default function ForgotPassword() {
           >
             <FormField
               control={requestForm.control}
-              name="phone"
+              name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Phone number</FormLabel>
+                  <FormLabel>Email</FormLabel>
                   <FormControl>
                     <Input
-                      type="tel"
-                      placeholder="08012345678"
+                      type="email"
+                      autoComplete="email"
+                      placeholder="you@example.com"
                       className="h-11"
                       {...field}
                     />
@@ -216,7 +203,7 @@ export default function ForgotPassword() {
               className="w-full"
               onClick={() => setStep("request")}
             >
-              Use a different number
+              Use a different email
             </Button>
           </form>
         </Form>

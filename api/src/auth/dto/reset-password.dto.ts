@@ -1,13 +1,11 @@
-import { IsString, MinLength, Validate } from 'class-validator';
-import { IsNigerianPhoneConstraint } from '../../common/validators/nigerian-phone.validator';
+import { IsEmail, IsString, Length, MinLength } from 'class-validator';
 
 export class ResetPasswordDto {
-  @IsString()
-  @Validate(IsNigerianPhoneConstraint)
-  phone!: string;
+  @IsEmail()
+  email!: string;
 
   @IsString()
-  @MinLength(6)
+  @Length(6, 6, { message: 'Enter the 6-digit code' })
   code!: string;
 
   @IsString()

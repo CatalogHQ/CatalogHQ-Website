@@ -130,7 +130,7 @@ export class StoresController {
     @CurrentUser() user: User,
     @Body() dto: AddTeamMemberDto,
   ) {
-    return this.storeStaffService.addMember(user.id, dto.phone, dto.role);
+    return this.storeStaffService.addMember(user.id, dto.email, dto.role);
   }
 
   @Delete('me/team/:memberId')

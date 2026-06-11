@@ -19,33 +19,62 @@ import PasswordInput from "@/components/auth/PasswordInput";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   signUpSchema,
+  verifySignUpSchema,
   type SignUpFormValues,
+  type VerifySignUpFormValues,
 } from "@/lib/auth-schemas";
 
 export default function SignUp() {
   const navigate = useNavigate();
-  const { signUp } = useAuth();
+  const { initSignUp, verifySignUp } = useAuth();
+  const [step, setStep] = useState<"details" | "verify">("details");
   const [loading, setLoading] = useState(false);
+  const [pendingEmail, setPendingEmail] = useState("");
 
-  const form = useForm<SignUpFormValues>({
+  const detailsForm = useForm<SignUpFormValues>({
     resolver: zodResolver(signUpSchema),
     defaultValues: {
-      phone: "",
       email: "",
       password: "",
       confirmPassword: "",
     },
   });
 
-  const onSubmit = async (data: SignUpFormValues) => {
+  const verifyForm = useForm<VerifySignUpFormValues>({
+    resolver: zodResolver(verifySignUpSchema),
+    defaultValues: {
+      email: "",
+      code: "",
+    },
+  });
+
+  const onSubmitDetails = async (data: SignUpFormValues) => {
     setLoading(true);
     try {
-      await signUp(data.phone, data.password, data.email?.trim() || undefined);
-      toast.success("Account created! Let's set up your store.");
+      const email = data.email.trim().toLowerCase();
+      await initSignUp(email, data.password);
+      setPendingEmail(email);
+      verifyForm.setValue("email", email);
+      setStep("verify");
+      toast.success("We sent a verification code to your email.");
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Could not start sign up.",
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const onSubmitVerify = async (data: VerifySignUpFormValues) => {
+    setLoading(true);
+    try {
+      await verifySignUp(data.email.trim().toLowerCase(), data.code);
+      toast.success("Account verified! Let's set up your store.");
       navigate("/dashboard/setup");
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Could not create account.",
+        error instanceof Error ? error.message : "Could not verify your code.",
       );
     } finally {
       setLoading(false);
@@ -54,105 +83,136 @@ export default function SignUp() {
 
   return (
     <AuthLayout
-      title="Create your store"
-      subtitle=""
+      title={step === "details" ? "Create your store" : "Verify your email"}
+      subtitle={
+        step === "details"
+          ? "Sign up with your email. You'll add your WhatsApp number when you set up your store."
+          : `Enter the 6-digit code sent to ${pendingEmail || "your email"}.`
+      }
       footerText="Already have an account?"
       footerLinkText="Sign in"
       footerLinkTo="/sign-in"
     >
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-          <FormField
-            control={form.control}
-            name="phone"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Phone number</FormLabel>
-                <FormControl>
-                  <Input
-                    type="tel"
-                    inputMode="tel"
-                    autoComplete="tel"
-                    placeholder="08012345678"
-                    className="h-11"
-                    {...field}
-                  />
-                </FormControl>
-                <FormDescription>
-                  Your Nigerian mobile number for login and customer contact.
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="email"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Email (optional)</FormLabel>
-                <FormControl>
-                  <Input
-                    type="email"
-                    autoComplete="email"
-                    placeholder="you@example.com"
-                    className="h-11"
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="password"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Password</FormLabel>
-                <FormControl>
-                  <PasswordInput
-                    autoComplete="new-password"
-                    placeholder="At least 8 characters"
-                    className="h-11"
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="confirmPassword"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Confirm password</FormLabel>
-                <FormControl>
-                  <PasswordInput
-                    autoComplete="new-password"
-                    placeholder="Re-enter your password"
-                    className="h-11"
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <Button
-            type="submit"
-            disabled={loading}
-            className="mt-2 h-11 w-full rounded-xl bg-whatsapp-green text-base font-semibold hover:bg-whatsapp-green/90"
+      {step === "details" ? (
+        <Form {...detailsForm}>
+          <form
+            onSubmit={detailsForm.handleSubmit(onSubmitDetails)}
+            className="space-y-4"
           >
-            {loading ? "Creating account..." : "Create my store"}
-          </Button>
-        </form>
-      </Form>
+            <FormField
+              control={detailsForm.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Email</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="email"
+                      autoComplete="email"
+                      placeholder="you@example.com"
+                      className="h-11"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Used to sign in and receive order alerts.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={detailsForm.control}
+              name="password"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Password</FormLabel>
+                  <FormControl>
+                    <PasswordInput
+                      autoComplete="new-password"
+                      placeholder="At least 8 characters"
+                      className="h-11"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={detailsForm.control}
+              name="confirmPassword"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Confirm password</FormLabel>
+                  <FormControl>
+                    <PasswordInput
+                      autoComplete="new-password"
+                      placeholder="Re-enter your password"
+                      className="h-11"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <Button
+              type="submit"
+              disabled={loading}
+              className="mt-2 h-11 w-full rounded-xl bg-whatsapp-green text-base font-semibold hover:bg-whatsapp-green/90"
+            >
+              {loading ? "Sending code..." : "Continue"}
+            </Button>
+          </form>
+        </Form>
+      ) : (
+        <Form {...verifyForm}>
+          <form
+            onSubmit={verifyForm.handleSubmit(onSubmitVerify)}
+            className="space-y-4"
+          >
+            <FormField
+              control={verifyForm.control}
+              name="code"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>6-digit code</FormLabel>
+                  <FormControl>
+                    <Input
+                      inputMode="numeric"
+                      placeholder="123456"
+                      className="h-11"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <Button
+              type="submit"
+              disabled={loading}
+              className="h-11 w-full rounded-xl bg-whatsapp-green text-base font-semibold hover:bg-whatsapp-green/90"
+            >
+              {loading ? "Verifying..." : "Verify and create account"}
+            </Button>
+
+            <Button
+              type="button"
+              variant="ghost"
+              className="w-full"
+              onClick={() => setStep("details")}
+            >
+              Use a different email
+            </Button>
+          </form>
+        </Form>
+      )}
     </AuthLayout>
   );
 }

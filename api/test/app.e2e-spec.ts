@@ -58,6 +58,20 @@ describe('AppController (e2e)', () => {
     expect(prisma.$queryRaw).toHaveBeenCalled();
   });
 
+  it('POST /webhooks/sendchamp accepts delivery callbacks', async () => {
+    await request(app.getHttpServer())
+      .post('/webhooks/sendchamp')
+      .send({
+        service: 'email',
+        status: 'delivered',
+        email: 'vendor@example.com',
+        email_uid: 'test-uid',
+        reference: 'test-ref',
+      })
+      .expect(201)
+      .expect({ received: true });
+  });
+
   it('GET /auth/me requires authentication', async () => {
     await request(app.getHttpServer()).get('/auth/me').expect(401);
   });

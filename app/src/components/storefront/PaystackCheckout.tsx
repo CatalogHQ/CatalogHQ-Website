@@ -255,9 +255,7 @@ export default function PaystackCheckout({
               name="customerPhone"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>
-                    {isDelivery ? "Reachable mobile number" : "Phone number"}
-                  </FormLabel>
+                  <FormLabel>WhatsApp / reachable number</FormLabel>
                   <FormControl>
                     <Input
                       placeholder="08012345678"
