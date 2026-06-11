@@ -1,13 +1,13 @@
 import { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-type PasswordInputProps = React.ComponentProps<typeof Input>;
+type PasswordInputProps = Omit<React.ComponentProps<typeof Input>, "type">;
 
 export default function PasswordInput({
   className,
+  style,
   ...props
 }: PasswordInputProps) {
   const [visible, setVisible] = useState(false);
@@ -15,25 +15,28 @@ export default function PasswordInput({
   return (
     <div className="relative">
       <Input
-        type={visible ? "text" : "password"}
-        className={cn("pr-10", className)}
         {...props}
+        type="text"
+        autoCapitalize="none"
+        autoCorrect="off"
+        spellCheck={false}
+        className={cn("pr-10", className)}
+        style={{
+          ...style,
+          WebkitTextSecurity: visible ? "none" : "disc",
+        } as React.CSSProperties}
       />
-      <Button
+      <button
         type="button"
-        variant="ghost"
-        size="icon"
-        className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
-        onClick={() => setVisible((v) => !v)}
-        tabIndex={-1}
+        className="absolute right-0 top-0 flex h-full items-center px-3 text-gray-400 hover:text-gray-600"
+        onPointerDown={(event) => {
+          event.preventDefault();
+          setVisible((value) => !value);
+        }}
         aria-label={visible ? "Hide password" : "Show password"}
       >
-        {visible ? (
-          <EyeOff className="h-4 w-4 text-gray-400" />
-        ) : (
-          <Eye className="h-4 w-4 text-gray-400" />
-        )}
-      </Button>
+        {visible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+      </button>
     </div>
   );
 }
