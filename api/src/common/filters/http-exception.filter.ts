@@ -12,6 +12,7 @@ type ErrorResponseBody = {
   statusCode: number;
   message: string;
   error?: string;
+  code?: string;
   path: string;
   timestamp: string;
 };
@@ -35,8 +36,16 @@ export class HttpExceptionFilter implements ExceptionFilter {
         'error' in exceptionResponse
           ? String((exceptionResponse as { error?: string }).error)
           : HttpStatus[status];
+      const code =
+        typeof exceptionResponse === 'object' &&
+        exceptionResponse !== null &&
+        'code' in exceptionResponse
+          ? String((exceptionResponse as { code?: string }).code)
+          : undefined;
 
-      response.status(status).json(this.buildBody(status, message, request.url, error));
+      response
+        .status(status)
+        .json(this.buildBody(status, message, request.url, error, code));
       return;
     }
 
@@ -76,11 +85,13 @@ export class HttpExceptionFilter implements ExceptionFilter {
     message: string,
     path: string,
     error?: string,
+    code?: string,
   ): ErrorResponseBody {
     return {
       statusCode,
       message,
       error,
+      code,
       path,
       timestamp: new Date().toISOString(),
     };

@@ -2,6 +2,7 @@ import type { AuthSession, StoredUser } from "@/types/domain";
 
 export interface AuthRepository {
   initSignUp(email: string, password: string): Promise<void>;
+  resendSignUpOtp(email: string, password: string): Promise<void>;
   verifySignUp(email: string, code: string): Promise<StoredUser>;
   signIn(email: string, password: string): Promise<StoredUser>;
   signOut(): Promise<void>;

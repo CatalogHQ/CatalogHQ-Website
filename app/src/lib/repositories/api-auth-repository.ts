@@ -52,6 +52,13 @@ export class ApiAuthRepository implements AuthRepository {
     });
   }
 
+  async resendSignUpOtp(email: string, password: string): Promise<void> {
+    await apiClient("/auth/signup/resend-otp", {
+      method: "POST",
+      body: JSON.stringify({ email, password }),
+    });
+  }
+
   async verifySignUp(email: string, code: string): Promise<StoredUser> {
     const response = await apiClient<AuthResponse>("/auth/signup/verify", {
       method: "POST",

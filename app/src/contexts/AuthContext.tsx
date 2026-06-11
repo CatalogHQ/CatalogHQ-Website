@@ -16,6 +16,7 @@ type AuthContextValue = {
   isAdmin: boolean;
   isLoading: boolean;
   initSignUp: (email: string, password: string) => Promise<void>;
+  resendSignUpOtp: (email: string, password: string) => Promise<void>;
   verifySignUp: (email: string, code: string) => Promise<StoredUser>;
   signIn: (email: string, password: string) => Promise<StoredUser>;
   signOut: () => Promise<void>;
@@ -60,6 +61,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await authRepository.initSignUp(email, password);
   }, []);
 
+  const resendSignUpOtp = useCallback(async (email: string, password: string) => {
+    await authRepository.resendSignUpOtp(email, password);
+  }, []);
+
   const verifySignUp = useCallback(async (email: string, code: string) => {
     const created = await authRepository.verifySignUp(email, code);
     setUser(created);
@@ -84,12 +89,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isAdmin: user?.role === "admin",
       isLoading,
       initSignUp,
+      resendSignUpOtp,
       verifySignUp,
       signIn,
       signOut,
       refreshUser,
     }),
-    [user, isLoading, initSignUp, verifySignUp, signIn, signOut, refreshUser],
+    [
+      user,
+      isLoading,
+      initSignUp,
+      resendSignUpOtp,
+      verifySignUp,
+      signIn,
+      signOut,
+      refreshUser,
+    ],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

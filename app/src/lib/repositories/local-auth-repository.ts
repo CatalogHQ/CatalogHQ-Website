@@ -1,3 +1,4 @@
+import { ApiError, SIGNUP_VERIFICATION_PENDING_CODE } from "@/lib/api-error";
 import { readJson, writeJson } from "@/lib/local-storage";
 import { STORAGE_KEYS } from "@/lib/storage-keys";
 import type { AuthRepository } from "@/lib/repositories/auth-repository";
@@ -60,6 +61,10 @@ export class LocalAuthRepository implements AuthRepository {
     });
   }
 
+  async resendSignUpOtp(_email: string, _password: string): Promise<void> {
+    return;
+  }
+
   async verifySignUp(email: string, code: string): Promise<StoredUser> {
     const normalized = normalizeEmail(email);
     const pending = readJson<{ email: string; passwordHash: string } | null>(
@@ -97,7 +102,24 @@ export class LocalAuthRepository implements AuthRepository {
       (entry) => normalizeEmail(entry.email) === normalized,
     );
 
-    if (!user || !verifyPassword(password, user.passwordHash)) {
+    if (!user) {
+      const pending = readJson<{ email: string; passwordHash: string } | null>(
+        `cataloghq:signup-pending:${normalized}`,
+        null,
+      );
+
+      if (pending && verifyPassword(password, pending.passwordHash)) {
+        throw new ApiError(
+          "Your sign-up is not complete. Request a new verification code to finish creating your account.",
+          401,
+          SIGNUP_VERIFICATION_PENDING_CODE,
+        );
+      }
+
+      throw new Error("Invalid email or password.");
+    }
+
+    if (!verifyPassword(password, user.passwordHash)) {
       throw new Error("Invalid email or password.");
     }
 

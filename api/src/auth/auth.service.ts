@@ -4,6 +4,7 @@ import * as bcrypt from 'bcrypt';
 import { User } from '@prisma/client';
 import { normalizeEmail } from '../common/email.util';
 import { PrismaService } from '../prisma/prisma.service';
+import { SIGNUP_VERIFICATION_PENDING_CODE } from './auth.constants';
 import { SignInDto } from './dto/sign-in.dto';
 import { AuthResponse, SafeUser } from './auth.types';
 
@@ -41,6 +42,7 @@ export class AuthService {
     const user = await this.prisma.user.findUnique({ where: { email } });
 
     if (!user) {
+      await this.assertNoPendingSignup(email, dto.password);
       throw new UnauthorizedException('Invalid email or password.');
     }
 
@@ -50,6 +52,34 @@ export class AuthService {
     }
 
     return this.createSession(user);
+  }
+
+  private async assertNoPendingSignup(
+    email: string,
+    password: string,
+  ): Promise<void> {
+    const pending = await this.prisma.signupPending.findUnique({
+      where: { email },
+    });
+
+    if (!pending) {
+      return;
+    }
+
+    const passwordMatches = await bcrypt.compare(
+      password,
+      pending.passwordHash,
+    );
+
+    if (!passwordMatches) {
+      return;
+    }
+
+    throw new UnauthorizedException({
+      message:
+        'Your sign-up is not complete. Request a new verification code to finish creating your account.',
+      code: SIGNUP_VERIFICATION_PENDING_CODE,
+    });
   }
 
   async getUserById(userId: string): Promise<SafeUser | null> {

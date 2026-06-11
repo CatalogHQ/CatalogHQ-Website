@@ -26,10 +26,12 @@ import {
 
 export default function SignUp() {
   const navigate = useNavigate();
-  const { initSignUp, verifySignUp } = useAuth();
+  const { initSignUp, verifySignUp, resendSignUpOtp } = useAuth();
   const [step, setStep] = useState<"details" | "verify">("details");
   const [loading, setLoading] = useState(false);
+  const [resending, setResending] = useState(false);
   const [pendingEmail, setPendingEmail] = useState("");
+  const [pendingPassword, setPendingPassword] = useState("");
 
   const detailsForm = useForm<SignUpFormValues>({
     resolver: zodResolver(signUpSchema),
@@ -54,6 +56,7 @@ export default function SignUp() {
       const email = data.email.trim().toLowerCase();
       await initSignUp(email, data.password);
       setPendingEmail(email);
+      setPendingPassword(data.password);
       verifyForm.setValue("email", email);
       setStep("verify");
       toast.success("We sent a verification code to your email.");
@@ -63,6 +66,22 @@ export default function SignUp() {
       );
     } finally {
       setLoading(false);
+    }
+  };
+
+  const onResendCode = async () => {
+    if (!pendingEmail || !pendingPassword) return;
+
+    setResending(true);
+    try {
+      await resendSignUpOtp(pendingEmail, pendingPassword);
+      toast.success("We sent a new verification code to your email.");
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Could not resend code.",
+      );
+    } finally {
+      setResending(false);
     }
   };
 
@@ -200,6 +219,16 @@ export default function SignUp() {
               className="h-11 w-full rounded-xl bg-whatsapp-green text-base font-semibold hover:bg-whatsapp-green/90"
             >
               {loading ? "Verifying..." : "Verify and create account"}
+            </Button>
+
+            <Button
+              type="button"
+              variant="outline"
+              disabled={resending}
+              className="h-11 w-full"
+              onClick={onResendCode}
+            >
+              {resending ? "Sending..." : "Resend verification code"}
             </Button>
 
             <Button

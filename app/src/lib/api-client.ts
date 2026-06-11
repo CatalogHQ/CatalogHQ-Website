@@ -1,3 +1,4 @@
+import { ApiError } from "@/lib/api-error";
 import { readJson } from "@/lib/local-storage";
 import { STORAGE_KEYS } from "@/lib/storage-keys";
 import type { AuthSession } from "@/types/domain";
@@ -28,25 +29,28 @@ function getSession(): AuthSession | null {
   return readJson<AuthSession | null>(STORAGE_KEYS.session, null);
 }
 
-async function parseErrorMessage(response: Response): Promise<string> {
+async function parseApiError(response: Response): Promise<ApiError> {
   const text = await response.text();
   if (!text) {
-    return `Request failed (${response.status})`;
+    return new ApiError(
+      `Request failed (${response.status})`,
+      response.status,
+    );
   }
 
   try {
-    const payload = JSON.parse(text) as { message?: string | string[] };
-    if (Array.isArray(payload.message)) {
-      return payload.message.join(", ");
-    }
-    if (payload.message) {
-      return payload.message;
-    }
-  } catch {
-    // Fall back to plain-text error bodies from older API responses.
-  }
+    const payload = JSON.parse(text) as {
+      message?: string | string[];
+      code?: string;
+    };
+    const message = Array.isArray(payload.message)
+      ? payload.message.join(", ")
+      : payload.message ?? text;
 
-  return text;
+    return new ApiError(message, response.status, payload.code);
+  } catch {
+    return new ApiError(text, response.status);
+  }
 }
 
 export async function apiClient<T>(
@@ -78,7 +82,7 @@ export async function apiClient<T>(
   }
 
   if (!response.ok) {
-    throw new Error(await parseErrorMessage(response));
+    throw await parseApiError(response);
   }
 
   if (response.status === 204) {

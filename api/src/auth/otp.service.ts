@@ -4,6 +4,7 @@ import {
   Injectable,
   NotFoundException,
   ServiceUnavailableException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { randomInt } from 'crypto';
@@ -131,6 +132,63 @@ export class OtpService {
       where: { email: normalized },
       create: { email: normalized, passwordHash, expiresAt },
       update: { passwordHash, expiresAt },
+    });
+
+    const code = await this.createEmailOtp(normalized, EmailOtpPurpose.signup);
+
+    try {
+      await this.sendOtpEmail(normalized, code, 'signup');
+    } catch (error) {
+      await this.prisma.emailOtp.updateMany({
+        where: {
+          email: normalized,
+          purpose: EmailOtpPurpose.signup,
+          usedAt: null,
+        },
+        data: { usedAt: new Date() },
+      });
+      throw error;
+    }
+  }
+
+  async resendSignUpOtp(email: string, password: string): Promise<void> {
+    this.assertSendChampConfigured();
+
+    const normalized = normalizeEmail(email);
+    const existing = await this.prisma.user.findUnique({
+      where: { email: normalized },
+    });
+
+    if (existing) {
+      throw new ConflictException(
+        'An account with this email already exists. Sign in instead.',
+      );
+    }
+
+    const pending = await this.prisma.signupPending.findUnique({
+      where: { email: normalized },
+    });
+
+    if (!pending) {
+      throw new NotFoundException(
+        'No pending sign-up found for this email. Create an account first.',
+      );
+    }
+
+    const passwordMatches = await bcrypt.compare(
+      password,
+      pending.passwordHash,
+    );
+
+    if (!passwordMatches) {
+      throw new UnauthorizedException('Invalid email or password.');
+    }
+
+    const expiresAt = new Date(Date.now() + SIGNUP_PENDING_TTL_MS);
+
+    await this.prisma.signupPending.update({
+      where: { email: normalized },
+      data: { expiresAt },
     });
 
     const code = await this.createEmailOtp(normalized, EmailOtpPurpose.signup);

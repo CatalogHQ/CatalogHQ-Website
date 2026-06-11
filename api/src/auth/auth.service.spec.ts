@@ -12,6 +12,9 @@ describe('AuthService', () => {
     user: {
       findUnique: jest.fn(),
     },
+    signupPending: {
+      findUnique: jest.fn(),
+    },
   };
 
   const jwtService = {
@@ -53,6 +56,24 @@ describe('AuthService', () => {
 
     expect(result.session.token).toBe('token-123');
     expect(result.user.email).toBe('vendor@example.com');
+  });
+
+  it('prompts pending sign-ups to verify email instead of signing in', async () => {
+    prisma.user.findUnique.mockResolvedValue(null);
+    prisma.signupPending.findUnique.mockResolvedValue({
+      email: 'vendor@example.com',
+      passwordHash: 'hashed',
+      expiresAt: new Date(Date.now() + 60_000),
+    });
+    (bcrypt.compare as jest.Mock).mockResolvedValue(true);
+
+    await expect(
+      service.signIn({ email: 'vendor@example.com', password: 'password123' }),
+    ).rejects.toMatchObject({
+      response: {
+        code: 'SIGNUP_VERIFICATION_PENDING',
+      },
+    });
   });
 
   it('rejects invalid credentials on signin', async () => {

@@ -13,6 +13,7 @@ describe('OtpService', () => {
     signupPending: {
       findUnique: jest.fn(),
       upsert: jest.fn(),
+      update: jest.fn(),
       delete: jest.fn(),
     },
     emailOtp: {
@@ -66,6 +67,24 @@ describe('OtpService', () => {
         }),
       }),
     );
+    expect(sendChamp.sendEmail).toHaveBeenCalled();
+  });
+
+  it('resends signup OTP for pending accounts', async () => {
+    prisma.user.findUnique.mockResolvedValue(null);
+    prisma.signupPending.findUnique.mockResolvedValue({
+      email: 'vendor@example.com',
+      passwordHash: await bcrypt.hash('password123', 10),
+      expiresAt: new Date(Date.now() - 60_000),
+    });
+    prisma.signupPending.update.mockResolvedValue({ id: 'pending-1' });
+    prisma.emailOtp.create.mockResolvedValue({ id: 'otp-1' });
+    prisma.emailOtp.updateMany.mockResolvedValue({ count: 0 });
+    sendChamp.sendEmail.mockResolvedValue(undefined);
+
+    await service.resendSignUpOtp('vendor@example.com', 'password123');
+
+    expect(prisma.signupPending.update).toHaveBeenCalled();
     expect(sendChamp.sendEmail).toHaveBeenCalled();
   });
 

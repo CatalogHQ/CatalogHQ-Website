@@ -35,6 +35,14 @@ export class AuthController {
 
   @Public()
   @Throttle({ auth: { limit: 5, ttl: 60_000 } })
+  @Post('signup/resend-otp')
+  async resendSignUpOtp(@Body() dto: SignInDto) {
+    await this.otpService.resendSignUpOtp(dto.email, dto.password);
+    return { success: true };
+  }
+
+  @Public()
+  @Throttle({ auth: { limit: 5, ttl: 60_000 } })
   @Post('signin')
   signIn(@Body() dto: SignInDto) {
     return this.authService.signIn(dto);
