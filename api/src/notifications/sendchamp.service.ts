@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, ServiceUnavailableException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
 type SendChampResponse = {
@@ -77,34 +77,59 @@ export class SendChampService {
     subject: string,
     htmlBody: string,
     recipientName?: string,
+    options?: { required?: boolean },
   ): Promise<void> {
+    const required = options?.required ?? false;
+
     if (!this.apiKey) {
       this.logger.warn('SendChamp not configured; skipping email.');
+      if (required) {
+        throw new ServiceUnavailableException(
+          'Email delivery is not configured. Contact support.',
+        );
+      }
       return;
     }
 
-    const response = await fetch(`${this.baseUrl}/email/send`, {
-      method: 'POST',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${this.apiKey}`,
-      },
-      body: JSON.stringify({
-        subject,
-        to: [{ email: to, name: recipientName ?? to }],
-        from: { email: this.fromEmail, name: this.fromName },
-        message_body: { type: 'text/html', value: htmlBody },
-      }),
-    });
+    let response: Response;
+
+    try {
+      response = await fetch(`${this.baseUrl}/email/send`, {
+        method: 'POST',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${this.apiKey}`,
+        },
+        body: JSON.stringify({
+          subject,
+          to: [{ email: to, name: recipientName ?? to }],
+          from: { email: this.fromEmail, name: this.fromName },
+          message_body: { type: 'text/html', value: htmlBody },
+        }),
+      });
+    } catch (error) {
+      this.logger.error('SendChamp email request failed.', error);
+      if (required) {
+        throw new ServiceUnavailableException(
+          'Could not send email right now. Please try again in a few minutes.',
+        );
+      }
+      return;
+    }
 
     if (!response.ok) {
       const body = await response.text();
       this.logger.error(`SendChamp email failed (${response.status}): ${body}`);
+      if (required) {
+        throw new ServiceUnavailableException(
+          'Could not send verification email. Check your email address or try again later.',
+        );
+      }
       return;
     }
 
     const payload = (await response.json()) as SendChampResponse;
-    this.logger.log(`Email sent via SendChamp: ${payload.message ?? 'ok'}`);
+    this.logger.log(`Email sent via SendChamp to ${to}: ${payload.message ?? 'ok'}`);
   }
 }

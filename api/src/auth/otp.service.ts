@@ -52,13 +52,20 @@ export class OtpService {
         : 'Use this code to reset your CatalogHQ password:';
     const htmlBody = `<p>Hi,</p><p>${intro}</p><p style="font-size:24px;font-weight:bold;letter-spacing:4px">${code}</p><p>This code expires in 10 minutes. Do not share it with anyone.</p><p>CatalogHQ Team</p>`;
 
-    await this.sendChamp.sendEmail(email, subject, htmlBody);
+    await this.sendChamp.sendEmail(email, subject, htmlBody, undefined, {
+      required: true,
+    });
   }
 
   private async createEmailOtp(
     email: string,
     purpose: EmailOtpPurpose,
   ): Promise<string> {
+    await this.prisma.emailOtp.updateMany({
+      where: { email, purpose, usedAt: null },
+      data: { usedAt: new Date() },
+    });
+
     const code = this.generateCode();
     const codeHash = await bcrypt.hash(code, 10);
     const expiresAt = new Date(Date.now() + OTP_TTL_MS);
@@ -127,7 +134,20 @@ export class OtpService {
     });
 
     const code = await this.createEmailOtp(normalized, EmailOtpPurpose.signup);
-    await this.sendOtpEmail(normalized, code, 'signup');
+
+    try {
+      await this.sendOtpEmail(normalized, code, 'signup');
+    } catch (error) {
+      await this.prisma.emailOtp.updateMany({
+        where: {
+          email: normalized,
+          purpose: EmailOtpPurpose.signup,
+          usedAt: null,
+        },
+        data: { usedAt: new Date() },
+      });
+      throw error;
+    }
   }
 
   async verifySignUp(email: string, code: string): Promise<AuthResponse> {

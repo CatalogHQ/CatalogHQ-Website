@@ -149,7 +149,7 @@ export default function SignUp() {
                   <FormLabel>Confirm password</FormLabel>
                   <FormControl>
                     <PasswordInput
-                      autoComplete="new-password"
+                      autoComplete="off"
                       placeholder="Re-enter your password"
                       className="h-11"
                       {...field}

@@ -1,4 +1,4 @@
-import { BadRequestException } from '@nestjs/common';
+import { BadRequestException, ServiceUnavailableException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import * as bcrypt from 'bcrypt';
 import { EmailOtpPurpose } from '@prisma/client';
@@ -19,6 +19,7 @@ describe('OtpService', () => {
       create: jest.fn(),
       findFirst: jest.fn(),
       update: jest.fn(),
+      updateMany: jest.fn(),
     },
     $transaction: jest.fn(),
   };
@@ -66,6 +67,22 @@ describe('OtpService', () => {
       }),
     );
     expect(sendChamp.sendEmail).toHaveBeenCalled();
+  });
+
+  it('surfaces email delivery failures during signup', async () => {
+    prisma.user.findUnique.mockResolvedValue(null);
+    prisma.signupPending.upsert.mockResolvedValue({ id: 'pending-1' });
+    prisma.emailOtp.create.mockResolvedValue({ id: 'otp-1' });
+    prisma.emailOtp.updateMany.mockResolvedValue({ count: 1 });
+    sendChamp.sendEmail.mockRejectedValue(
+      new ServiceUnavailableException('Could not send verification email.'),
+    );
+
+    await expect(
+      service.initSignUp('vendor@example.com', 'password123'),
+    ).rejects.toBeInstanceOf(ServiceUnavailableException);
+
+    expect(prisma.emailOtp.updateMany).toHaveBeenCalled();
   });
 
   it('rejects invalid reset code', async () => {

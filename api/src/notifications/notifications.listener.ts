@@ -129,21 +129,35 @@ export class NotificationsListener {
     const storeName = user.store?.businessName ?? 'your store';
 
     if (event.approved) {
-      await this.sendChamp.sendEmail(
-        user.email,
-        'Your CatalogHQ store is verified',
-        `<p>Hi,</p><p>Great news! <strong>${storeName}</strong> has been verified on CatalogHQ. Your verified badge is now visible on your storefront.</p><p>— CatalogHQ Team</p>`,
-        storeName,
-      );
+      try {
+        await this.sendChamp.sendEmail(
+          user.email,
+          'Your CatalogHQ store is verified',
+          `<p>Hi,</p><p>Great news! <strong>${storeName}</strong> has been verified on CatalogHQ. Your verified badge is now visible on your storefront.</p><p>— CatalogHQ Team</p>`,
+          storeName,
+        );
+      } catch (error) {
+        this.logger.error(
+          `Failed to send verification approval email to ${user.email}.`,
+          error,
+        );
+      }
       return;
     }
 
     const reason = event.reason ?? 'Verification requirements were not met.';
-    await this.sendChamp.sendEmail(
-      user.email,
-      'CatalogHQ verification update',
-      `<p>Hi,</p><p>We could not approve verification for <strong>${storeName}</strong>.</p><p><strong>Reason:</strong> ${reason}</p><p>You can resubmit updated documents from your dashboard settings.</p><p>— CatalogHQ Team</p>`,
-      storeName,
-    );
+    try {
+      await this.sendChamp.sendEmail(
+        user.email,
+        'CatalogHQ verification update',
+        `<p>Hi,</p><p>We could not approve verification for <strong>${storeName}</strong>.</p><p><strong>Reason:</strong> ${reason}</p><p>You can resubmit updated documents from your dashboard settings.</p><p>— CatalogHQ Team</p>`,
+        storeName,
+      );
+    } catch (error) {
+      this.logger.error(
+        `Failed to send verification rejection email to ${user.email}.`,
+        error,
+      );
+    }
   }
 }
