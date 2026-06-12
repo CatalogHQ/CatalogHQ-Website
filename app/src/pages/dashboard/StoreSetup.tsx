@@ -31,6 +31,7 @@ import {
   type StoreSetupFormValues,
 } from "@/lib/store-schemas";
 import { getStoreUrl } from "@/lib/slug";
+import { STORE_CATEGORY_SUGGESTIONS } from "@/lib/store-category-suggestions";
 import { cn } from "@/lib/utils";
 
 const TOTAL_STEPS = STORE_SETUP_STEPS.length;
@@ -227,7 +228,18 @@ export default function StoreSetup() {
                       <FormItem>
                         <FormLabel>Category</FormLabel>
                         <FormControl>
-                          <Input placeholder="Fashion" {...field} />
+                          <>
+                            <Input
+                              list="store-category-suggestions"
+                              placeholder="Fashion, Wigs & hair, Gift packages"
+                              {...field}
+                            />
+                            <datalist id="store-category-suggestions">
+                              {STORE_CATEGORY_SUGGESTIONS.map((suggestion) => (
+                                <option key={suggestion} value={suggestion} />
+                              ))}
+                            </datalist>
+                          </>
                         </FormControl>
                         <FormMessage />
                       </FormItem>

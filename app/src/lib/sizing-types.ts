@@ -7,6 +7,9 @@ export type SizingTypeId =
   | "shoe_uk"
   | "shoe_eu"
   | "kids"
+  | "wig_length"
+  | "wig_cap"
+  | "package_tier"
   | "one_size"
   | "custom";
 
@@ -145,6 +148,47 @@ export const SIZING_TYPES: Record<SizingTypeId, SizingTypeDefinition> = {
       "9–10Y": "134–140 cm",
       "11–12Y": "146–152 cm",
     },
+  },
+  wig_length: {
+    id: "wig_length",
+    label: "Wig length (inches)",
+    description: "Hair length for wigs, frontals, and extensions.",
+    sizes: ["10", "12", "14", "16", "18", "20", "22", "24", "26", "28", "30"],
+    equivalentLabel: "Typical style",
+    equivalents: {
+      "10": "Pixie / short bob",
+      "12": "Short bob",
+      "14": "Shoulder length",
+      "16": "Collarbone",
+      "18": "Mid-back",
+      "20": "Long",
+      "22": "Very long",
+      "24": "Waist length",
+      "26": "Extra long",
+      "28": "Extra long",
+      "30": "Extra long",
+    },
+  },
+  wig_cap: {
+    id: "wig_cap",
+    label: "Wig cap size",
+    description: "Cap circumference for fitted and lace wigs.",
+    sizes: ["21", "21.5", "22", "22.5", "23", "23.5"],
+    equivalentLabel: "Fit",
+    equivalents: {
+      "21": "Petite",
+      "21.5": "Petite",
+      "22": "Average",
+      "22.5": "Average",
+      "23": "Large",
+      "23.5": "Large",
+    },
+  },
+  package_tier: {
+    id: "package_tier",
+    label: "Package tier",
+    description: "Preset levels for birthday boxes and surprise packages.",
+    sizes: ["Basic", "Standard", "Premium", "Deluxe"],
   },
   one_size: {
     id: "one_size",

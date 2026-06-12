@@ -31,6 +31,7 @@ import {
   storeSetupSchema,
   type StoreSetupFormValues,
 } from "@/lib/store-schemas";
+import { STORE_CATEGORY_SUGGESTIONS } from "@/lib/store-category-suggestions";
 import { getStoreUrl } from "@/lib/slug";
 
 export default function Settings() {
@@ -304,7 +305,18 @@ export default function Settings() {
                     <FormItem>
                       <FormLabel>Category</FormLabel>
                       <FormControl>
-                        <Input {...field} />
+                        <>
+                          <Input
+                            list="store-category-suggestions-settings"
+                            placeholder="Fashion, Wigs & hair, Gift packages"
+                            {...field}
+                          />
+                          <datalist id="store-category-suggestions-settings">
+                            {STORE_CATEGORY_SUGGESTIONS.map((suggestion) => (
+                              <option key={suggestion} value={suggestion} />
+                            ))}
+                          </datalist>
+                        </>
                       </FormControl>
                       <FormMessage />
                     </FormItem>

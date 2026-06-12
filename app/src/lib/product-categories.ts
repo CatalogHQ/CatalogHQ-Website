@@ -12,6 +12,8 @@ export type ProductCategoryId =
   | "gown"
   | "skirt"
   | "kids"
+  | "wig"
+  | "gift_package"
   | "accessory"
   | "other";
 
@@ -142,6 +144,63 @@ const CATEGORY_DEFINITIONS: ProductCategoryDefinition[] = [
     sizingTypes: ["kids", "custom", "one_size", "none"],
   },
   {
+    id: "wig",
+    label: "Wigs & hair",
+    keywords: [
+      "wig",
+      "wigs",
+      "lace front",
+      "lacefront",
+      "frontal",
+      "frontals",
+      "closure",
+      "closures",
+      "bundle",
+      "bundles",
+      "extension",
+      "extensions",
+      "weave",
+      "weaves",
+      "hair piece",
+      "hairpiece",
+      "human hair",
+      "synthetic hair",
+      "braided wig",
+      "bob wig",
+      "headband wig",
+      "glueless wig",
+      "hd lace",
+    ],
+    sizingTypes: ["wig_length", "wig_cap", "custom", "one_size", "none"],
+  },
+  {
+    id: "gift_package",
+    label: "Gift & surprise packages",
+    keywords: [
+      "birthday",
+      "surprise",
+      "gift box",
+      "giftbox",
+      "gift hamper",
+      "hamper",
+      "hampers",
+      "celebration",
+      "party package",
+      "care package",
+      "romantic package",
+      "valentine",
+      "anniversary gift",
+      "gift set",
+      "gift basket",
+      "balloon",
+      "balloons",
+      "package deal",
+      "surprise box",
+      "birthday box",
+    ],
+    sizingTypes: ["package_tier", "custom", "one_size", "none"],
+  },
+  {
     id: "accessory",
     label: "Accessories",
     keywords: [
@@ -174,6 +233,9 @@ const CATEGORY_DEFINITIONS: ProductCategoryDefinition[] = [
       "uk_womens",
       "uk_mens",
       "waist",
+      "wig_length",
+      "wig_cap",
+      "package_tier",
       "custom",
       "one_size",
       "none",

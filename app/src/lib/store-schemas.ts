@@ -13,6 +13,9 @@ const sizingTypeSchema = z.enum([
   "shoe_uk",
   "shoe_eu",
   "kids",
+  "wig_length",
+  "wig_cap",
+  "package_tier",
   "one_size",
   "custom",
 ]);
@@ -25,6 +28,8 @@ const productCategorySchema = z.enum([
   "gown",
   "skirt",
   "kids",
+  "wig",
+  "gift_package",
   "accessory",
   "other",
 ]);

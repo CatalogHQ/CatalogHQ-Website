@@ -29,6 +29,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import NumericFormInput from "@/components/vendor/NumericFormInput";
 import ProductImageUpload from "@/components/vendor/ProductImageUpload";
 import ProductSizeSelector from "@/components/vendor/ProductSizeSelector";
 import {
@@ -109,6 +110,7 @@ export default function ProductFormDialog({
     useWatch({ control: form.control, name: "sizingType" }) ?? "none";
   const sizes = useWatch({ control: form.control, name: "sizes" }) ?? [];
   const customSizes = useWatch({ control: form.control, name: "customSizes" }) ?? "";
+  const numericFieldKey = `${product?.id ?? "new"}-${open ? "open" : "closed"}`;
 
   useEffect(() => {
     if (product) {
@@ -325,13 +327,14 @@ export default function ProductFormDialog({
                   <FormItem>
                     <FormLabel>Price (₦)</FormLabel>
                     <FormControl>
-                      <Input
-                        type="number"
-                        min={1}
+                      <NumericFormInput
+                        key={`price-${numericFieldKey}`}
+                        placeholder="e.g. 5000"
                         value={field.value}
-                        onChange={(event) =>
-                          field.onChange(Number(event.target.value) || 0)
-                        }
+                        onChange={field.onChange}
+                        onBlur={field.onBlur}
+                        name={field.name}
+                        ref={field.ref}
                       />
                     </FormControl>
                     <FormMessage />
@@ -346,13 +349,14 @@ export default function ProductFormDialog({
                   <FormItem>
                     <FormLabel>Stock quantity</FormLabel>
                     <FormControl>
-                      <Input
-                        type="number"
-                        min={0}
+                      <NumericFormInput
+                        key={`stock-${numericFieldKey}`}
+                        placeholder="e.g. 10"
                         value={field.value}
-                        onChange={(event) =>
-                          field.onChange(Number(event.target.value) || 0)
-                        }
+                        onChange={field.onChange}
+                        onBlur={field.onBlur}
+                        name={field.name}
+                        ref={field.ref}
                       />
                     </FormControl>
                     <FormMessage />
@@ -367,14 +371,14 @@ export default function ProductFormDialog({
                   <FormItem>
                     <FormLabel>Low-stock alert</FormLabel>
                     <FormControl>
-                      <Input
-                        type="number"
-                        min={1}
-                        max={100}
+                      <NumericFormInput
+                        key={`low-stock-${numericFieldKey}`}
+                        placeholder="e.g. 5"
                         value={field.value}
-                        onChange={(event) =>
-                          field.onChange(Number(event.target.value) || 1)
-                        }
+                        onChange={field.onChange}
+                        onBlur={field.onBlur}
+                        name={field.name}
+                        ref={field.ref}
                       />
                     </FormControl>
                     <FormDescription>
