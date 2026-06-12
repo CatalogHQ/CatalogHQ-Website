@@ -80,6 +80,38 @@ describe('AshlabNinVerificationService', () => {
     expect(result.status).toBe('not_found');
   });
 
+  it('uses api_key:api_secret when bearer token is not set', async () => {
+    const combined = new AshlabNinVerificationService({
+      get: jest.fn((key: string) => {
+        if (key === 'ASHLAB_VERIFY_API_KEY') return 'key-123';
+        if (key === 'ASHLAB_VERIFY_API_SECRET') return 'secret-456';
+        if (key === 'ASHLAB_VERIFY_BASE_URL') return 'https://verify.ashlabtech.ng/v1';
+        if (key === 'ASHLAB_VERIFY_PATH') return '/nin/verify';
+        return undefined;
+      }),
+    } as unknown as ConfigService);
+
+    const fetchMock = jest.spyOn(global, 'fetch').mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        success: true,
+        data: { nin: '11111111111', first_name: 'A', last_name: 'B' },
+      }),
+    } as Response);
+
+    await combined.verify('11111111111');
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({
+        headers: expect.objectContaining({
+          Authorization: 'Bearer key-123:secret-456',
+        }),
+      }),
+    );
+  });
+
   it('returns unavailable when not configured', async () => {
     const unconfigured = new AshlabNinVerificationService({
       get: jest.fn(() => undefined),

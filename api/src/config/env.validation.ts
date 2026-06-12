@@ -82,6 +82,10 @@ class EnvironmentVariables {
 
   @IsOptional()
   @IsString()
+  ASHLAB_VERIFY_API_SECRET?: string;
+
+  @IsOptional()
+  @IsString()
   ASHLAB_VERIFY_BEARER_TOKEN?: string;
 
   @IsOptional()

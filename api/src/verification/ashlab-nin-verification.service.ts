@@ -37,9 +37,7 @@ export class AshlabNinVerificationService {
   private readonly verifyUrl: string;
 
   constructor(private readonly configService: ConfigService) {
-    this.apiKey =
-      this.configService.get<string>('ASHLAB_VERIFY_API_KEY') ??
-      this.configService.get<string>('ASHLAB_VERIFY_BEARER_TOKEN');
+    this.apiKey = this.resolveBearerCredential();
 
     const baseUrl = (
       this.configService.get<string>('ASHLAB_VERIFY_BASE_URL') ??
@@ -48,6 +46,28 @@ export class AshlabNinVerificationService {
     const path =
       this.configService.get<string>('ASHLAB_VERIFY_PATH') ?? '/nin/verify';
     this.verifyUrl = `${baseUrl}${path.startsWith('/') ? path : `/${path}`}`;
+  }
+
+  private resolveBearerCredential(): string | undefined {
+    const bearerToken = this.configService.get<string>(
+      'ASHLAB_VERIFY_BEARER_TOKEN',
+    );
+    if (bearerToken?.trim()) {
+      return bearerToken.trim();
+    }
+
+    const apiKey = this.configService.get<string>('ASHLAB_VERIFY_API_KEY');
+    const apiSecret = this.configService.get<string>('ASHLAB_VERIFY_API_SECRET');
+
+    if (apiKey?.trim() && apiSecret?.trim()) {
+      return `${apiKey.trim()}:${apiSecret.trim()}`;
+    }
+
+    if (apiKey?.trim()) {
+      return apiKey.trim();
+    }
+
+    return undefined;
   }
 
   isConfigured(): boolean {
