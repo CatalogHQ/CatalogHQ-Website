@@ -14,7 +14,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import AuthLayout from "@/components/auth/AuthLayout";
-import OtpCodeInput from "@/components/auth/OtpCodeInput";
+import OtpCodeField from "@/components/auth/OtpCodeField";
 import PasswordInput from "@/components/auth/PasswordInput";
 import { authRepository } from "@/lib/repositories";
 import {
@@ -51,7 +51,12 @@ export default function ForgotPassword() {
       const normalized = values.email.trim().toLowerCase();
       await authRepository.forgotPassword(normalized);
       setEmail(normalized);
-      resetForm.setValue("email", normalized);
+      resetForm.reset({
+        email: normalized,
+        code: "",
+        newPassword: "",
+        confirmPassword: "",
+      });
       setStep("reset");
       toast.success("We sent a reset code to your email.");
     } catch (error) {
@@ -64,10 +69,16 @@ export default function ForgotPassword() {
   };
 
   const onResetPassword = async (values: ResetPasswordFormValues) => {
+    if (!email) {
+      toast.error("Reset session expired. Request a new code.");
+      setStep("request");
+      return;
+    }
+
     setLoading(true);
     try {
       await authRepository.resetPassword(
-        values.email.trim().toLowerCase(),
+        email,
         values.code,
         values.newPassword,
       );
@@ -135,31 +146,7 @@ export default function ForgotPassword() {
             onSubmit={resetForm.handleSubmit(onResetPassword)}
             className="space-y-4"
           >
-            <FormField
-              control={resetForm.control}
-              name="email"
-              render={({ field }) => <input type="hidden" {...field} />}
-            />
-
-            <FormField
-              control={resetForm.control}
-              name="code"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>6-digit code</FormLabel>
-                  <FormControl>
-                    <OtpCodeInput
-                      name={field.name}
-                      value={field.value}
-                      onChange={field.onChange}
-                      onBlur={field.onBlur}
-                      ref={field.ref}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <OtpCodeField control={resetForm.control} name="code" autoFocus />
 
             <FormField
               control={resetForm.control}

@@ -45,9 +45,13 @@ export const signUpSchema = z
     path: ["confirmPassword"],
   });
 
-export const verifySignUpSchema = z.object({
-  email: emailSchema,
+export const verifySignUpCodeSchema = z.object({
   code: z.string().length(6, "Enter the 6-digit code"),
+});
+
+/** @deprecated Use verifySignUpCodeSchema; email is held in page state during verify. */
+export const verifySignUpSchema = verifySignUpCodeSchema.extend({
+  email: emailSchema,
 });
 
 export const signInSchema = z.object({
@@ -72,7 +76,8 @@ export const resetPasswordSchema = z
   });
 
 export type SignUpFormValues = z.infer<typeof signUpSchema>;
-export type VerifySignUpFormValues = z.infer<typeof verifySignUpSchema>;
+export type VerifySignUpCodeFormValues = z.infer<typeof verifySignUpCodeSchema>;
+export type VerifySignUpFormValues = VerifySignUpCodeFormValues;
 export type SignInFormValues = z.infer<typeof signInSchema>;
 export type ForgotPasswordRequestValues = z.infer<
   typeof forgotPasswordRequestSchema

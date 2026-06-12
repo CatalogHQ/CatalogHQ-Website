@@ -15,14 +15,14 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import AuthLayout from "@/components/auth/AuthLayout";
-import OtpCodeInput from "@/components/auth/OtpCodeInput";
+import OtpCodeField from "@/components/auth/OtpCodeField";
 import PasswordInput from "@/components/auth/PasswordInput";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   signUpSchema,
-  verifySignUpSchema,
+  verifySignUpCodeSchema,
   type SignUpFormValues,
-  type VerifySignUpFormValues,
+  type VerifySignUpCodeFormValues,
 } from "@/lib/auth-schemas";
 
 export default function SignUp() {
@@ -43,10 +43,9 @@ export default function SignUp() {
     },
   });
 
-  const verifyForm = useForm<VerifySignUpFormValues>({
-    resolver: zodResolver(verifySignUpSchema),
+  const verifyForm = useForm<VerifySignUpCodeFormValues>({
+    resolver: zodResolver(verifySignUpCodeSchema),
     defaultValues: {
-      email: "",
       code: "",
     },
   });
@@ -58,7 +57,7 @@ export default function SignUp() {
       await initSignUp(email, data.password);
       setPendingEmail(email);
       setPendingPassword(data.password);
-      verifyForm.setValue("email", email);
+      verifyForm.reset({ code: "" });
       setStep("verify");
       toast.success("We sent a verification code to your email.");
     } catch (error) {
@@ -86,10 +85,16 @@ export default function SignUp() {
     }
   };
 
-  const onSubmitVerify = async (data: VerifySignUpFormValues) => {
+  const onSubmitVerify = async (data: VerifySignUpCodeFormValues) => {
+    if (!pendingEmail) {
+      toast.error("Sign-up session expired. Please start again.");
+      setStep("details");
+      return;
+    }
+
     setLoading(true);
     try {
-      await verifySignUp(data.email.trim().toLowerCase(), data.code);
+      await verifySignUp(pendingEmail, data.code);
       toast.success("Account verified! Let's set up your store.");
       navigate("/dashboard/setup");
     } catch (error) {
@@ -195,30 +200,10 @@ export default function SignUp() {
             onSubmit={verifyForm.handleSubmit(onSubmitVerify)}
             className="space-y-4"
           >
-            <FormField
-              control={verifyForm.control}
-              name="email"
-              render={({ field }) => <input type="hidden" {...field} />}
-            />
-
-            <FormField
+            <OtpCodeField
               control={verifyForm.control}
               name="code"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>6-digit code</FormLabel>
-                  <FormControl>
-                    <OtpCodeInput
-                      name={field.name}
-                      value={field.value}
-                      onChange={field.onChange}
-                      onBlur={field.onBlur}
-                      ref={field.ref}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+              autoFocus
             />
 
             <Button
