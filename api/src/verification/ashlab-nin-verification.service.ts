@@ -1,5 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import {
+  describeAshlabAuthMode,
+  isNinVerifyDebugEnabled,
+  maskNin,
+  sanitizeAshlabResponseBody,
+} from './nin-verify-debug.util';
 
 export type NinVerificationData = {
   nin: string;
@@ -91,6 +97,14 @@ export class AshlabNinVerificationService {
       };
     }
 
+    const requestBody = { nin: normalized, consent: true };
+
+    if (isNinVerifyDebugEnabled(this.configService)) {
+      this.logger.log(
+        `[NIN debug] Request → POST ${this.verifyUrl} | auth=${describeAshlabAuthMode(this.configService)} | nin=${maskNin(normalized)} | body=${JSON.stringify(requestBody)}`,
+      );
+    }
+
     try {
       const response = await fetch(this.verifyUrl, {
         method: 'POST',
@@ -99,18 +113,26 @@ export class AshlabNinVerificationService {
           'Content-Type': 'application/json',
           Accept: 'application/json',
         },
-        body: JSON.stringify({
-          nin: normalized,
-          consent: true,
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       const body = (await response.json().catch(() => ({}))) as
         | AshlabSuccessResponse
         | AshlabErrorResponse;
 
+      if (isNinVerifyDebugEnabled(this.configService)) {
+        this.logger.log(
+          `[NIN debug] Response ← HTTP ${response.status} ${response.statusText} | body=${JSON.stringify(sanitizeAshlabResponseBody(body))}`,
+        );
+      }
+
       if (response.ok && 'success' in body && body.success === true) {
         const { photo: _photo, ...data } = body.data;
+        if (isNinVerifyDebugEnabled(this.configService)) {
+          this.logger.log(
+            `[NIN debug] Ashlab success | first_name="${data.first_name}" last_name="${data.last_name}"`,
+          );
+        }
         return { status: 'verified', data };
       }
 
@@ -119,13 +141,20 @@ export class AshlabNinVerificationService {
         ('error' in body && body.error) ||
         'NIN could not be verified.';
 
+      if (isNinVerifyDebugEnabled(this.configService)) {
+        this.logger.warn(
+          `[NIN debug] Ashlab non-success | http=${response.status} | mappedMessage="${message}"`,
+        );
+      }
+
       switch (response.status) {
         case 400:
           return { status: 'invalid', message };
         case 404:
           return {
             status: 'not_found',
-            message: 'No identity record was found for this NIN.',
+            message:
+              message || 'No identity record was found for this NIN.',
           };
         case 402:
           return {

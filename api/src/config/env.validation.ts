@@ -95,6 +95,10 @@ class EnvironmentVariables {
   @IsOptional()
   @IsString()
   ASHLAB_VERIFY_PATH?: string;
+
+  @IsOptional()
+  @IsString()
+  ASHLAB_VERIFY_DEBUG?: string;
 }
 
 export function validateEnv(config: Record<string, unknown>) {

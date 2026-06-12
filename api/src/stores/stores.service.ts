@@ -3,9 +3,11 @@ import {
   HttpException,
   HttpStatus,
   Injectable,
+  Logger,
   NotFoundException,
   ServiceUnavailableException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Store, VendorVerificationStatus } from '@prisma/client';
 import { VENDOR_VERIFICATION_DECIDED_EVENT } from '../admin/events/admin.events';
@@ -17,16 +19,24 @@ import { AshlabNinVerificationService } from '../verification/ashlab-nin-verific
 import {
   NIN_NAME_MISMATCH_MESSAGE,
   ninIdentityMatchesVendor,
+  normalizePersonName,
 } from '../verification/nin-identity.util';
+import {
+  isNinVerifyDebugEnabled,
+  maskNin,
+} from '../verification/nin-verify-debug.util';
 import { StoreSetupDto } from './dto/store-setup.dto';
 import { PublicStoreDto, StoreDto, toPublicStoreDto, toStoreDto } from './stores.mapper';
 
 @Injectable()
 export class StoresService {
+  private readonly logger = new Logger(StoresService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly ninVerification: AshlabNinVerificationService,
     private readonly eventEmitter: EventEmitter2,
+    private readonly configService: ConfigService,
   ) {}
 
   private hasIdentityChanged(
@@ -198,6 +208,12 @@ export class StoresService {
       this.ninVerification.isConfigured() &&
       (identityChanged || currentStatus !== VendorVerificationStatus.verified);
 
+    if (isNinVerifyDebugEnabled(this.configService)) {
+      this.logger.log(
+        `[NIN debug] resolveVerification vendorId=${vendorId} | nin=${maskNin(identity.nin)} | legalFirstName="${identity.legalFirstName}" | legalLastName="${identity.legalLastName}" | configured=${this.ninVerification.isConfigured()} | identityChanged=${identityChanged} | currentStatus=${currentStatus} | shouldVerify=${shouldVerify}`,
+      );
+    }
+
     if (!shouldVerify) {
       if (currentStatus === VendorVerificationStatus.verified) {
         return {
@@ -218,16 +234,28 @@ export class StoresService {
 
     const result = await this.ninVerification.verify(identity.nin);
 
+    if (isNinVerifyDebugEnabled(this.configService)) {
+      this.logger.log(
+        `[NIN debug] Ashlab result status=${result.status}${result.status === 'verified' ? '' : ` message="${'message' in result ? result.message : ''}"`}`,
+      );
+    }
+
     if (result.status === 'verified') {
-      if (
-        !ninIdentityMatchesVendor(
-          {
-            legalFirstName: identity.legalFirstName,
-            legalLastName: identity.legalLastName,
-          },
-          result.data,
-        )
-      ) {
+      const nameMatches = ninIdentityMatchesVendor(
+        {
+          legalFirstName: identity.legalFirstName,
+          legalLastName: identity.legalLastName,
+        },
+        result.data,
+      );
+
+      if (isNinVerifyDebugEnabled(this.configService)) {
+        this.logger.log(
+          `[NIN debug] Name compare | vendor="${normalizePersonName(identity.legalFirstName)}" / "${normalizePersonName(identity.legalLastName)}" | nin="${normalizePersonName(result.data.first_name)}" / "${normalizePersonName(result.data.last_name)}" | match=${nameMatches}`,
+        );
+      }
+
+      if (!nameMatches) {
         this.eventEmitter.emit(
           VENDOR_VERIFICATION_DECIDED_EVENT,
           new VendorVerificationDecidedEvent(
