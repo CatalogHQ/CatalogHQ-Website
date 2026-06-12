@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/form";
 import {
   authMinimalFieldClass,
+  authMinimalIconClass,
   authMinimalMessageClass,
   authMinimalRowClass,
 } from "@/components/auth/auth-minimal-styles";
@@ -46,10 +47,10 @@ function OtpCodeInput({
       <div
         className={cn(
           authMinimalRowClass,
-          error && "border-red-300 focus-within:border-red-300",
+          error && "border-destructive focus-within:border-destructive",
         )}
       >
-        <Hash className="h-5 w-5 shrink-0 text-white/85" aria-hidden />
+        <Hash className={authMinimalIconClass} aria-hidden />
         <input
           id={formItemId}
           ref={inputRef}

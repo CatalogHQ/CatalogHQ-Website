@@ -4,6 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { Mail } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   Form,
   FormControl,
@@ -15,11 +16,8 @@ import {
 import AuthLayout from "@/components/auth/AuthLayout";
 import OtpCodeField from "@/components/auth/OtpCodeField";
 import {
-  AuthGhostButton,
   AuthMinimalInput,
   AuthMinimalPasswordInput,
-  AuthPrimaryButton,
-  AuthSecondaryButton,
 } from "@/components/auth/auth-minimal";
 import { authMinimalMessageClass } from "@/components/auth/auth-minimal-styles";
 import { useAuth } from "@/contexts/AuthContext";
@@ -29,6 +27,9 @@ import {
   type SignUpFormValues,
   type VerifySignUpCodeFormValues,
 } from "@/lib/auth-schemas";
+
+const submitButtonClass =
+  "h-11 w-full rounded-xl bg-whatsapp-green text-base font-semibold hover:bg-whatsapp-green/90";
 
 export default function SignUp() {
   const navigate = useNavigate();
@@ -113,11 +114,11 @@ export default function SignUp() {
 
   return (
     <AuthLayout
-      title={step === "details" ? "Vendor sign up" : "Verify email"}
+      title={step === "details" ? "Create a vendor account" : "Verify your email"}
       subtitle={
-        step === "verify"
-          ? `Enter the code sent to ${pendingEmail || "your email"}.`
-          : undefined
+        step === "details"
+          ? "Start selling with a shareable storefront link."
+          : `Enter the 6-digit code sent to ${pendingEmail || "your email"}.`
       }
       footerText="Already have an account?"
       footerLinkText="Sign in"
@@ -127,7 +128,7 @@ export default function SignUp() {
         <Form {...detailsForm}>
           <form
             onSubmit={detailsForm.handleSubmit(onSubmitDetails)}
-            className="space-y-6"
+            className="space-y-5"
           >
             <FormField
               control={detailsForm.control}
@@ -194,16 +195,16 @@ export default function SignUp() {
               )}
             />
 
-            <AuthPrimaryButton type="submit" disabled={loading}>
+            <Button type="submit" disabled={loading} className={submitButtonClass}>
               {loading ? "Sending code..." : "Continue"}
-            </AuthPrimaryButton>
+            </Button>
           </form>
         </Form>
       ) : (
         <Form {...verifyForm}>
           <form
             onSubmit={verifyForm.handleSubmit(onSubmitVerify)}
-            className="space-y-6"
+            className="space-y-4"
           >
             <OtpCodeField
               control={verifyForm.control}
@@ -211,21 +212,28 @@ export default function SignUp() {
               autoFocus
             />
 
-            <AuthPrimaryButton type="submit" disabled={loading}>
-              {loading ? "Verifying..." : "Create account"}
-            </AuthPrimaryButton>
+            <Button type="submit" disabled={loading} className={submitButtonClass}>
+              {loading ? "Verifying..." : "Verify and create account"}
+            </Button>
 
-            <AuthSecondaryButton
+            <Button
               type="button"
+              variant="outline"
               disabled={resending}
+              className="h-11 w-full"
               onClick={onResendCode}
             >
-              {resending ? "Sending..." : "Resend code"}
-            </AuthSecondaryButton>
+              {resending ? "Sending..." : "Resend verification code"}
+            </Button>
 
-            <AuthGhostButton type="button" onClick={() => setStep("details")}>
+            <Button
+              type="button"
+              variant="ghost"
+              className="w-full"
+              onClick={() => setStep("details")}
+            >
               Use a different email
-            </AuthGhostButton>
+            </Button>
           </form>
         </Form>
       )}

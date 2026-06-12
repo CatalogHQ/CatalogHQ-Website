@@ -87,25 +87,6 @@
 }
 
 @layer components {
-  .auth-minimal-bg {
-    background: linear-gradient(
-      145deg,
-      #6eb8e8 0%,
-      #4a9fd4 22%,
-      #3489c4 45%,
-      #256fa8 68%,
-      #1a5276 100%
-    );
-  }
-
-  .auth-minimal-bg input:-webkit-autofill,
-  .auth-minimal-bg input:-webkit-autofill:hover,
-  .auth-minimal-bg input:-webkit-autofill:focus {
-    -webkit-text-fill-color: #fff;
-    caret-color: #fff;
-    transition: background-color 9999s ease-out 0s;
-  }
-
   /* Sonner: keep dismiss inside the toast, right edge, vertically centered */
   [data-sonner-toaster].toaster [data-close-button] {
     top: 50%;

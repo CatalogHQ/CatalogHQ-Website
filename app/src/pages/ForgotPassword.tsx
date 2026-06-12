@@ -4,6 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { Mail } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   Form,
   FormControl,
@@ -15,11 +16,8 @@ import {
 import AuthLayout from "@/components/auth/AuthLayout";
 import OtpCodeField from "@/components/auth/OtpCodeField";
 import {
-  AuthGhostButton,
   AuthMinimalInput,
   AuthMinimalPasswordInput,
-  AuthPrimaryButton,
-  AuthSecondaryButton,
 } from "@/components/auth/auth-minimal";
 import { authMinimalMessageClass } from "@/components/auth/auth-minimal-styles";
 import { useAuth } from "@/contexts/AuthContext";
@@ -29,6 +27,9 @@ import {
   type ForgotPasswordRequestValues,
   type ResetPasswordCodeFormValues,
 } from "@/lib/auth-schemas";
+
+const submitButtonClass =
+  "h-11 w-full rounded-xl bg-whatsapp-green text-base font-semibold hover:bg-whatsapp-green/90";
 
 export default function ForgotPassword() {
   const navigate = useNavigate();
@@ -115,10 +116,10 @@ export default function ForgotPassword() {
 
   return (
     <AuthLayout
-      title={step === "request" ? "Forgot password" : "Reset password"}
+      title={step === "request" ? "Forgot password" : "Enter reset code"}
       subtitle={
         step === "request"
-          ? "We will send a 6-digit code if an account exists."
+          ? "Enter your vendor email. We will send a 6-digit code if an account exists."
           : `Enter the code sent to ${email || "your email"}.`
       }
       footerText="Remember your password?"
@@ -129,7 +130,7 @@ export default function ForgotPassword() {
         <Form {...requestForm}>
           <form
             onSubmit={requestForm.handleSubmit(onRequestOtp)}
-            className="space-y-6"
+            className="space-y-5"
           >
             <FormField
               control={requestForm.control}
@@ -154,16 +155,16 @@ export default function ForgotPassword() {
               )}
             />
 
-            <AuthPrimaryButton type="submit" disabled={loading}>
+            <Button type="submit" disabled={loading} className={submitButtonClass}>
               {loading ? "Sending..." : "Send reset code"}
-            </AuthPrimaryButton>
+            </Button>
           </form>
         </Form>
       ) : (
         <Form {...resetForm}>
           <form
             onSubmit={resetForm.handleSubmit(onResetPassword)}
-            className="space-y-6"
+            className="space-y-5"
           >
             <OtpCodeField control={resetForm.control} name="code" autoFocus />
 
@@ -209,21 +210,28 @@ export default function ForgotPassword() {
               )}
             />
 
-            <AuthPrimaryButton type="submit" disabled={loading}>
+            <Button type="submit" disabled={loading} className={submitButtonClass}>
               {loading ? "Updating..." : "Reset password"}
-            </AuthPrimaryButton>
+            </Button>
 
-            <AuthSecondaryButton
+            <Button
               type="button"
+              variant="outline"
               disabled={resending}
+              className="h-11 w-full"
               onClick={onResendCode}
             >
-              {resending ? "Sending..." : "Resend code"}
-            </AuthSecondaryButton>
+              {resending ? "Sending..." : "Resend reset code"}
+            </Button>
 
-            <AuthGhostButton type="button" onClick={() => setStep("request")}>
+            <Button
+              type="button"
+              variant="ghost"
+              className="w-full"
+              onClick={() => setStep("request")}
+            >
               Use a different email
-            </AuthGhostButton>
+            </Button>
           </form>
         </Form>
       )}

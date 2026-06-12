@@ -5,11 +5,11 @@ import {
   useState,
   type ChangeEvent,
   type InputHTMLAttributes,
-  type ReactNode,
 } from "react";
 import { Eye, EyeOff, Lock, type LucideIcon } from "lucide-react";
 import {
   authMinimalFieldClass,
+  authMinimalIconClass,
   authMinimalRowClass,
 } from "@/components/auth/auth-minimal-styles";
 import { cn } from "@/lib/utils";
@@ -25,10 +25,10 @@ export const AuthMinimalInput = forwardRef<HTMLInputElement, AuthMinimalInputPro
       <div
         className={cn(
           authMinimalRowClass,
-          invalid && "border-red-300 focus-within:border-red-300",
+          invalid && "border-destructive focus-within:border-destructive",
         )}
       >
-        <Icon className="h-5 w-5 shrink-0 text-white/85" aria-hidden />
+        <Icon className={authMinimalIconClass} aria-hidden />
         <input
           ref={ref}
           className={cn(authMinimalFieldClass, className)}
@@ -99,10 +99,10 @@ export const AuthMinimalPasswordInput = forwardRef<
     <div
       className={cn(
         authMinimalRowClass,
-        invalid && "border-red-300 focus-within:border-red-300",
+        invalid && "border-destructive focus-within:border-destructive",
       )}
     >
-      <Lock className="h-5 w-5 shrink-0 text-white/85" aria-hidden />
+      <Lock className={authMinimalIconClass} aria-hidden />
       <input
         {...props}
         name={name}
@@ -117,7 +117,7 @@ export const AuthMinimalPasswordInput = forwardRef<
       />
       <button
         type="button"
-        className="shrink-0 text-white/60 transition-colors hover:text-white"
+        className="shrink-0 text-gray-400 transition-colors hover:text-gray-600"
         onMouseDown={(event) => event.preventDefault()}
         onClick={toggleVisible}
         aria-label={visible ? "Hide password" : "Show password"}
@@ -131,91 +131,3 @@ export const AuthMinimalPasswordInput = forwardRef<
     </div>
   );
 });
-
-type AuthPrimaryButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement>;
-
-export function AuthPrimaryButton({
-  className,
-  children,
-  ...props
-}: AuthPrimaryButtonProps) {
-  return (
-    <button
-      type="button"
-      className={cn(
-        "h-12 w-full bg-[#0a2540] text-sm font-semibold uppercase tracking-[0.18em] text-white transition-colors hover:bg-[#0d3054] disabled:cursor-not-allowed disabled:opacity-60",
-        className,
-      )}
-      {...props}
-    >
-      {children}
-    </button>
-  );
-}
-
-type AuthSecondaryButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement>;
-
-export function AuthSecondaryButton({
-  className,
-  children,
-  ...props
-}: AuthSecondaryButtonProps) {
-  return (
-    <button
-      type="button"
-      className={cn(
-        "h-11 w-full border border-white/35 text-sm text-white/90 transition-colors hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60",
-        className,
-      )}
-      {...props}
-    >
-      {children}
-    </button>
-  );
-}
-
-export function AuthGhostButton({
-  className,
-  children,
-  ...props
-}: AuthSecondaryButtonProps) {
-  return (
-    <button
-      type="button"
-      className={cn(
-        "w-full py-2 text-sm text-white/75 transition-colors hover:text-white disabled:cursor-not-allowed disabled:opacity-60",
-        className,
-      )}
-      {...props}
-    >
-      {children}
-    </button>
-  );
-}
-
-type AuthMinimalCheckboxProps = {
-  id: string;
-  checked: boolean;
-  onCheckedChange: (checked: boolean) => void;
-  label: ReactNode;
-};
-
-export function AuthMinimalCheckbox({
-  id,
-  checked,
-  onCheckedChange,
-  label,
-}: AuthMinimalCheckboxProps) {
-  return (
-    <label htmlFor={id} className="flex cursor-pointer items-center gap-2.5">
-      <input
-        id={id}
-        type="checkbox"
-        checked={checked}
-        onChange={(event) => onCheckedChange(event.target.checked)}
-        className="h-4 w-4 rounded-sm border-white/50 bg-[#0a2540]/60 text-[#0a2540] accent-[#0a2540]"
-      />
-      <span className="text-sm text-white/85">{label}</span>
-    </label>
-  );
-}
