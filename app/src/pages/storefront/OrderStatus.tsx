@@ -16,7 +16,10 @@ import OrderStatusBadge from "@/components/vendor/OrderStatusBadge";
 import { usePublicStore } from "@/hooks/use-public-store";
 import { getDeliveryLabel } from "@/lib/delivery-types";
 import { formatNaira, normalizePhoneForWhatsApp } from "@/lib/format";
-import { buildWhatsAppUrl } from "@/lib/order-message";
+import {
+  buildOrderWhatsAppMessage,
+  buildWhatsAppUrl,
+} from "@/lib/order-message";
 import { loadPendingPaymentDetails } from "@/lib/flutterwave-payment-methods";
 import { orderRepository } from "@/lib/repositories";
 import { hasFeature } from "@/data/plans";
@@ -132,7 +135,10 @@ export default function OrderStatusPage() {
 
   const whatsappUrl = buildWhatsAppUrl(
     normalizePhoneForWhatsApp(store.whatsapp),
-    `Hi ${store.businessName}, I want an update on order ${order.paymentRef}.`,
+    buildOrderWhatsAppMessage(store.businessName, order, {
+      storeSlug: store.slug,
+      appOrigin: window.location.origin,
+    }),
   );
 
   const showReviewLink =

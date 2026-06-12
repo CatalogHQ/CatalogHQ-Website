@@ -114,7 +114,10 @@ export default function PublicProduct() {
   const handleOrderSuccess = (order: CustomerOrder) => {
     if (!store) return;
 
-    const message = buildOrderWhatsAppMessage(store.businessName, order);
+    const message = buildOrderWhatsAppMessage(store.businessName, order, {
+      storeSlug: store.slug,
+      appOrigin: window.location.origin,
+    });
     const whatsappUrl = buildWhatsAppUrl(
       normalizePhoneForWhatsApp(store.whatsapp),
       message,
