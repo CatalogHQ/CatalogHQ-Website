@@ -3,10 +3,7 @@ import { useNavigate, useSearchParams } from "react-router";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
+import { Mail } from "lucide-react";
 import {
   Form,
   FormControl,
@@ -17,7 +14,15 @@ import {
 } from "@/components/ui/form";
 import AuthLayout from "@/components/auth/AuthLayout";
 import OtpCodeField from "@/components/auth/OtpCodeField";
-import PasswordInput from "@/components/auth/PasswordInput";
+import {
+  AuthGhostButton,
+  AuthMinimalCheckbox,
+  AuthMinimalInput,
+  AuthMinimalPasswordInput,
+  AuthPrimaryButton,
+  AuthSecondaryButton,
+} from "@/components/auth/auth-minimal";
+import { authMinimalMessageClass } from "@/components/auth/auth-minimal-styles";
 import { useAuth } from "@/contexts/AuthContext";
 import { isSignupVerificationPending } from "@/lib/api-error";
 import { storeRepository } from "@/lib/repositories";
@@ -135,23 +140,19 @@ export default function SignIn() {
     }
   };
 
-  const handleForgotPassword = () => {
-    navigate("/forgot-password");
-  };
-
   if (pendingVerification) {
     return (
       <AuthLayout
-        title="Verify your email"
-        subtitle={`Your sign-up for ${pendingEmail} is not complete yet. Enter the code we email you, or request a new one.`}
+        title="Verify email"
+        subtitle={`Enter the code we sent to ${pendingEmail}.`}
         footerText="Already verified?"
-        footerLinkText="Try signing in again"
+        footerLinkText="Sign in"
         footerLinkTo="/sign-in"
       >
         <Form {...verifyForm}>
           <form
             onSubmit={verifyForm.handleSubmit(onSubmitVerify)}
-            className="space-y-4"
+            className="space-y-6"
           >
             <OtpCodeField
               control={verifyForm.control}
@@ -159,28 +160,20 @@ export default function SignIn() {
               autoFocus
             />
 
-            <Button
-              type="submit"
-              disabled={loading}
-              className="h-11 w-full rounded-xl bg-whatsapp-green text-base font-semibold hover:bg-whatsapp-green/90"
-            >
-              {loading ? "Verifying..." : "Verify and continue"}
-            </Button>
+            <AuthPrimaryButton type="submit" disabled={loading}>
+              {loading ? "Verifying..." : "Verify"}
+            </AuthPrimaryButton>
 
-            <Button
+            <AuthSecondaryButton
               type="button"
-              variant="outline"
               disabled={resending}
-              className="h-11 w-full"
               onClick={onResendCode}
             >
-              {resending ? "Sending..." : "Resend verification code"}
-            </Button>
+              {resending ? "Sending..." : "Resend code"}
+            </AuthSecondaryButton>
 
-            <Button
+            <AuthGhostButton
               type="button"
-              variant="ghost"
-              className="w-full"
               onClick={() => {
                 setPendingVerification(false);
                 setPendingEmail("");
@@ -188,7 +181,7 @@ export default function SignIn() {
               }}
             >
               Back to sign in
-            </Button>
+            </AuthGhostButton>
           </form>
         </Form>
       </AuthLayout>
@@ -197,30 +190,32 @@ export default function SignIn() {
 
   return (
     <AuthLayout
-      title="Welcome back"
-      subtitle=""
+      title="Vendor login"
       footerText="Don't have an account?"
-      footerLinkText="Create an account"
+      footerLinkText="Create account"
       footerLinkTo="/sign-up"
     >
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           <FormField
             control={form.control}
             name="email"
-            render={({ field }) => (
+            render={({ field, fieldState }) => (
               <FormItem>
-                <FormLabel>Email</FormLabel>
+                <FormLabel className="sr-only">Email</FormLabel>
                 <FormControl>
-                  <Input
+                  <AuthMinimalInput
+                    icon={Mail}
                     type="email"
                     autoComplete="email"
-                    placeholder="you@example.com"
-                    className="h-11"
+                    placeholder="Email"
+                    invalid={!!fieldState.error}
                     {...field}
                   />
                 </FormControl>
-                <FormMessage />
+                <FormMessage
+                  className={authMinimalMessageClass(!!fieldState.error)}
+                />
               </FormItem>
             )}
           />
@@ -228,51 +223,43 @@ export default function SignIn() {
           <FormField
             control={form.control}
             name="password"
-            render={({ field }) => (
+            render={({ field, fieldState }) => (
               <FormItem>
-                <div className="flex items-center justify-between">
-                  <FormLabel>Password</FormLabel>
-                  <button
-                    type="button"
-                    onClick={handleForgotPassword}
-                    className="text-xs font-medium text-whatsapp-dark hover:text-whatsapp-green transition-colors"
-                  >
-                    Forgot password?
-                  </button>
-                </div>
+                <FormLabel className="sr-only">Password</FormLabel>
                 <FormControl>
-                  <PasswordInput
+                  <AuthMinimalPasswordInput
                     autoComplete="current-password"
-                    placeholder="Enter your password"
-                    className="h-11"
+                    placeholder="Password"
+                    invalid={!!fieldState.error}
                     {...field}
                   />
                 </FormControl>
-                <FormMessage />
+                <FormMessage
+                  className={authMinimalMessageClass(!!fieldState.error)}
+                />
               </FormItem>
             )}
           />
 
-          <div className="flex items-center gap-2">
-            <Checkbox
+          <div className="flex items-center justify-between gap-4">
+            <AuthMinimalCheckbox
               id="remember"
               checked={rememberMe}
-              onCheckedChange={(checked) =>
-                setRememberMe(checked === true)
-              }
+              onCheckedChange={setRememberMe}
+              label="Remember me"
             />
-            <Label htmlFor="remember" className="text-sm font-normal text-gray-600">
-              Remember me
-            </Label>
+            <button
+              type="button"
+              onClick={() => navigate("/forgot-password")}
+              className="text-sm italic text-white/90 transition-colors hover:text-white"
+            >
+              Forgot password?
+            </button>
           </div>
 
-          <Button
-            type="submit"
-            disabled={loading}
-            className="mt-2 h-11 w-full rounded-xl bg-whatsapp-green text-base font-semibold hover:bg-whatsapp-green/90"
-          >
-            {loading ? "Signing in..." : "Sign in"}
-          </Button>
+          <AuthPrimaryButton type="submit" disabled={loading}>
+            {loading ? "Signing in..." : "Login"}
+          </AuthPrimaryButton>
         </form>
       </Form>
     </AuthLayout>

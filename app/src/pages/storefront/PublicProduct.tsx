@@ -88,7 +88,7 @@ export default function PublicProduct() {
       }
       setSelection(initial);
     }
-  }, [product?.id, store?.deliveryZones]);
+  }, [product, store?.deliveryZones]);
 
   const resolvedSelection = useMemo(
     () => (product ? resolveOrderSelection(product, selection) : null),

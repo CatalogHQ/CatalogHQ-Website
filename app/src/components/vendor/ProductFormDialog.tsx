@@ -1,5 +1,5 @@
-import { useEffect, useRef } from "react";
-import { useForm } from "react-hook-form";
+import { useEffect, useState } from "react";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Dialog,
@@ -96,18 +96,22 @@ export default function ProductFormDialog({
   product,
   onSubmit,
 }: ProductFormDialogProps) {
-  const categoryManuallySet = useRef(false);
+  const [categoryManuallySet, setCategoryManuallySet] = useState(false);
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
     defaultValues,
   });
 
-  const productName = form.watch("name");
-  const productCategory = form.watch("productCategory");
+  const productName = useWatch({ control: form.control, name: "name" }) ?? "";
+  const productCategory =
+    useWatch({ control: form.control, name: "productCategory" }) ?? "other";
+  const sizingType =
+    useWatch({ control: form.control, name: "sizingType" }) ?? "none";
+  const sizes = useWatch({ control: form.control, name: "sizes" }) ?? [];
+  const customSizes = useWatch({ control: form.control, name: "customSizes" }) ?? "";
 
   useEffect(() => {
     if (product) {
-      categoryManuallySet.current = true;
       form.reset({
         name: product.name,
         price: product.price,
@@ -129,23 +133,22 @@ export default function ProductFormDialog({
         published: product.published,
       });
     } else {
-      categoryManuallySet.current = false;
       form.reset(defaultValues);
     }
   }, [product, open, form]);
 
   useEffect(() => {
-    if (categoryManuallySet.current || !productName.trim()) return;
+    if (product || categoryManuallySet || !productName.trim()) return;
 
     const inferred = inferProductCategory(productName);
     if (inferred !== form.getValues("productCategory")) {
       form.setValue("productCategory", inferred, { shouldValidate: true });
       resetSizingForCategory(form, inferred);
     }
-  }, [productName, form]);
+  }, [product, productName, form, categoryManuallySet]);
 
   const handleCategoryChange = (value: ProductCategoryId) => {
-    categoryManuallySet.current = true;
+    setCategoryManuallySet(true);
     form.setValue("productCategory", value, { shouldValidate: true });
     resetSizingForCategory(form, value);
   };
@@ -180,12 +183,20 @@ export default function ProductFormDialog({
   };
 
   const categoryWasInferred =
-    !categoryManuallySet.current &&
+    !product &&
+    !categoryManuallySet &&
     productName.trim().length > 0 &&
     inferProductCategory(productName) === productCategory;
 
+  const handleOpenChange = (next: boolean) => {
+    if (!next) {
+      setCategoryManuallySet(false);
+    }
+    onOpenChange(next);
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>{product ? "Edit product" : "Add product"}</DialogTitle>
@@ -273,9 +284,9 @@ export default function ProductFormDialog({
                   <FormControl>
                     <ProductSizeSelector
                       productCategory={productCategory}
-                      sizingType={form.watch("sizingType")}
-                      sizes={form.watch("sizes")}
-                      customSizes={form.watch("customSizes") ?? ""}
+                      sizingType={sizingType}
+                      sizes={sizes}
+                      customSizes={customSizes}
                       onSizingTypeChange={handleSizingTypeChange}
                       onSizesChange={(sizes) =>
                         form.setValue("sizes", sizes, { shouldValidate: true })

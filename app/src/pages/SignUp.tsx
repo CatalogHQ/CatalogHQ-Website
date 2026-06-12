@@ -3,12 +3,10 @@ import { useNavigate } from "react-router";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Mail } from "lucide-react";
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -16,7 +14,14 @@ import {
 } from "@/components/ui/form";
 import AuthLayout from "@/components/auth/AuthLayout";
 import OtpCodeField from "@/components/auth/OtpCodeField";
-import PasswordInput from "@/components/auth/PasswordInput";
+import {
+  AuthGhostButton,
+  AuthMinimalInput,
+  AuthMinimalPasswordInput,
+  AuthPrimaryButton,
+  AuthSecondaryButton,
+} from "@/components/auth/auth-minimal";
+import { authMinimalMessageClass } from "@/components/auth/auth-minimal-styles";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   signUpSchema,
@@ -108,11 +113,11 @@ export default function SignUp() {
 
   return (
     <AuthLayout
-      title={step === "details" ? "Create a vendor account" : "Verify your email"}
+      title={step === "details" ? "Vendor sign up" : "Verify email"}
       subtitle={
-        step === "details"
-          ? ""
-          : `Enter the 6-digit code sent to ${pendingEmail || "your email"}.`
+        step === "verify"
+          ? `Enter the code sent to ${pendingEmail || "your email"}.`
+          : undefined
       }
       footerText="Already have an account?"
       footerLinkText="Sign in"
@@ -122,27 +127,27 @@ export default function SignUp() {
         <Form {...detailsForm}>
           <form
             onSubmit={detailsForm.handleSubmit(onSubmitDetails)}
-            className="space-y-4"
+            className="space-y-6"
           >
             <FormField
               control={detailsForm.control}
               name="email"
-              render={({ field }) => (
+              render={({ field, fieldState }) => (
                 <FormItem>
-                  <FormLabel>Email</FormLabel>
+                  <FormLabel className="sr-only">Email</FormLabel>
                   <FormControl>
-                    <Input
+                    <AuthMinimalInput
+                      icon={Mail}
                       type="email"
                       autoComplete="email"
-                      placeholder="you@example.com"
-                      className="h-11"
+                      placeholder="Email"
+                      invalid={!!fieldState.error}
                       {...field}
                     />
                   </FormControl>
-                  <FormDescription>
-                    Used to sign in and receive order alerts.
-                  </FormDescription>
-                  <FormMessage />
+                  <FormMessage
+                    className={authMinimalMessageClass(!!fieldState.error)}
+                  />
                 </FormItem>
               )}
             />
@@ -150,18 +155,20 @@ export default function SignUp() {
             <FormField
               control={detailsForm.control}
               name="password"
-              render={({ field }) => (
+              render={({ field, fieldState }) => (
                 <FormItem>
-                  <FormLabel>Password</FormLabel>
+                  <FormLabel className="sr-only">Password</FormLabel>
                   <FormControl>
-                    <PasswordInput
+                    <AuthMinimalPasswordInput
                       autoComplete="new-password"
-                      placeholder="At least 8 characters"
-                      className="h-11"
+                      placeholder="Password"
+                      invalid={!!fieldState.error}
                       {...field}
                     />
                   </FormControl>
-                  <FormMessage />
+                  <FormMessage
+                    className={authMinimalMessageClass(!!fieldState.error)}
+                  />
                 </FormItem>
               )}
             />
@@ -169,36 +176,34 @@ export default function SignUp() {
             <FormField
               control={detailsForm.control}
               name="confirmPassword"
-              render={({ field }) => (
+              render={({ field, fieldState }) => (
                 <FormItem>
-                  <FormLabel>Confirm password</FormLabel>
+                  <FormLabel className="sr-only">Confirm password</FormLabel>
                   <FormControl>
-                    <PasswordInput
+                    <AuthMinimalPasswordInput
                       autoComplete="off"
-                      placeholder="Re-enter your password"
-                      className="h-11"
+                      placeholder="Confirm password"
+                      invalid={!!fieldState.error}
                       {...field}
                     />
                   </FormControl>
-                  <FormMessage />
+                  <FormMessage
+                    className={authMinimalMessageClass(!!fieldState.error)}
+                  />
                 </FormItem>
               )}
             />
 
-            <Button
-              type="submit"
-              disabled={loading}
-              className="mt-2 h-11 w-full rounded-xl bg-whatsapp-green text-base font-semibold hover:bg-whatsapp-green/90"
-            >
+            <AuthPrimaryButton type="submit" disabled={loading}>
               {loading ? "Sending code..." : "Continue"}
-            </Button>
+            </AuthPrimaryButton>
           </form>
         </Form>
       ) : (
         <Form {...verifyForm}>
           <form
             onSubmit={verifyForm.handleSubmit(onSubmitVerify)}
-            className="space-y-4"
+            className="space-y-6"
           >
             <OtpCodeField
               control={verifyForm.control}
@@ -206,32 +211,21 @@ export default function SignUp() {
               autoFocus
             />
 
-            <Button
-              type="submit"
-              disabled={loading}
-              className="h-11 w-full rounded-xl bg-whatsapp-green text-base font-semibold hover:bg-whatsapp-green/90"
-            >
-              {loading ? "Verifying..." : "Verify and create account"}
-            </Button>
+            <AuthPrimaryButton type="submit" disabled={loading}>
+              {loading ? "Verifying..." : "Create account"}
+            </AuthPrimaryButton>
 
-            <Button
+            <AuthSecondaryButton
               type="button"
-              variant="outline"
               disabled={resending}
-              className="h-11 w-full"
               onClick={onResendCode}
             >
-              {resending ? "Sending..." : "Resend verification code"}
-            </Button>
+              {resending ? "Sending..." : "Resend code"}
+            </AuthSecondaryButton>
 
-            <Button
-              type="button"
-              variant="ghost"
-              className="w-full"
-              onClick={() => setStep("details")}
-            >
+            <AuthGhostButton type="button" onClick={() => setStep("details")}>
               Use a different email
-            </Button>
+            </AuthGhostButton>
           </form>
         </Form>
       )}

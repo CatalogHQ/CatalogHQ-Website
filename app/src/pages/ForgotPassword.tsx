@@ -3,8 +3,7 @@ import { useNavigate } from "react-router";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Mail } from "lucide-react";
 import {
   Form,
   FormControl,
@@ -15,7 +14,14 @@ import {
 } from "@/components/ui/form";
 import AuthLayout from "@/components/auth/AuthLayout";
 import OtpCodeField from "@/components/auth/OtpCodeField";
-import PasswordInput from "@/components/auth/PasswordInput";
+import {
+  AuthGhostButton,
+  AuthMinimalInput,
+  AuthMinimalPasswordInput,
+  AuthPrimaryButton,
+  AuthSecondaryButton,
+} from "@/components/auth/auth-minimal";
+import { authMinimalMessageClass } from "@/components/auth/auth-minimal-styles";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   forgotPasswordRequestSchema,
@@ -109,7 +115,7 @@ export default function ForgotPassword() {
 
   return (
     <AuthLayout
-      title={step === "request" ? "Forgot password" : "Enter reset code"}
+      title={step === "request" ? "Forgot password" : "Reset password"}
       subtitle={
         step === "request"
           ? "We will send a 6-digit code if an account exists."
@@ -123,60 +129,61 @@ export default function ForgotPassword() {
         <Form {...requestForm}>
           <form
             onSubmit={requestForm.handleSubmit(onRequestOtp)}
-            className="space-y-4"
+            className="space-y-6"
           >
             <FormField
               control={requestForm.control}
               name="email"
-              render={({ field }) => (
+              render={({ field, fieldState }) => (
                 <FormItem>
-                  <FormLabel>Email</FormLabel>
+                  <FormLabel className="sr-only">Email</FormLabel>
                   <FormControl>
-                    <Input
+                    <AuthMinimalInput
+                      icon={Mail}
                       type="email"
                       autoComplete="email"
-                      placeholder="you@example.com"
-                      className="h-11"
+                      placeholder="Email"
+                      invalid={!!fieldState.error}
                       {...field}
                     />
                   </FormControl>
-                  <FormMessage />
+                  <FormMessage
+                    className={authMinimalMessageClass(!!fieldState.error)}
+                  />
                 </FormItem>
               )}
             />
 
-            <Button
-              type="submit"
-              disabled={loading}
-              className="h-11 w-full rounded-xl bg-whatsapp-green text-base font-semibold hover:bg-whatsapp-green/90"
-            >
+            <AuthPrimaryButton type="submit" disabled={loading}>
               {loading ? "Sending..." : "Send reset code"}
-            </Button>
+            </AuthPrimaryButton>
           </form>
         </Form>
       ) : (
         <Form {...resetForm}>
           <form
             onSubmit={resetForm.handleSubmit(onResetPassword)}
-            className="space-y-4"
+            className="space-y-6"
           >
             <OtpCodeField control={resetForm.control} name="code" autoFocus />
 
             <FormField
               control={resetForm.control}
               name="newPassword"
-              render={({ field }) => (
+              render={({ field, fieldState }) => (
                 <FormItem>
-                  <FormLabel>New password</FormLabel>
+                  <FormLabel className="sr-only">New password</FormLabel>
                   <FormControl>
-                    <PasswordInput
+                    <AuthMinimalPasswordInput
                       autoComplete="new-password"
-                      placeholder="At least 8 characters"
-                      className="h-11"
+                      placeholder="New password"
+                      invalid={!!fieldState.error}
                       {...field}
                     />
                   </FormControl>
-                  <FormMessage />
+                  <FormMessage
+                    className={authMinimalMessageClass(!!fieldState.error)}
+                  />
                 </FormItem>
               )}
             />
@@ -184,48 +191,39 @@ export default function ForgotPassword() {
             <FormField
               control={resetForm.control}
               name="confirmPassword"
-              render={({ field }) => (
+              render={({ field, fieldState }) => (
                 <FormItem>
-                  <FormLabel>Confirm new password</FormLabel>
+                  <FormLabel className="sr-only">Confirm password</FormLabel>
                   <FormControl>
-                    <PasswordInput
+                    <AuthMinimalPasswordInput
                       autoComplete="new-password"
-                      placeholder="Re-enter your password"
-                      className="h-11"
+                      placeholder="Confirm password"
+                      invalid={!!fieldState.error}
                       {...field}
                     />
                   </FormControl>
-                  <FormMessage />
+                  <FormMessage
+                    className={authMinimalMessageClass(!!fieldState.error)}
+                  />
                 </FormItem>
               )}
             />
 
-            <Button
-              type="submit"
-              disabled={loading}
-              className="h-11 w-full rounded-xl bg-whatsapp-green text-base font-semibold hover:bg-whatsapp-green/90"
-            >
+            <AuthPrimaryButton type="submit" disabled={loading}>
               {loading ? "Updating..." : "Reset password"}
-            </Button>
+            </AuthPrimaryButton>
 
-            <Button
+            <AuthSecondaryButton
               type="button"
-              variant="outline"
               disabled={resending}
-              className="h-11 w-full"
               onClick={onResendCode}
             >
-              {resending ? "Sending..." : "Resend reset code"}
-            </Button>
+              {resending ? "Sending..." : "Resend code"}
+            </AuthSecondaryButton>
 
-            <Button
-              type="button"
-              variant="ghost"
-              className="w-full"
-              onClick={() => setStep("request")}
-            >
+            <AuthGhostButton type="button" onClick={() => setStep("request")}>
               Use a different email
-            </Button>
+            </AuthGhostButton>
           </form>
         </Form>
       )}
