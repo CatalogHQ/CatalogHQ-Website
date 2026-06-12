@@ -44,7 +44,6 @@ export default function ProductFeed({ products, store }: ProductFeedProps) {
 
   const updateSearchQuery = (value: string) => {
     setSearchQuery(value);
-    setActiveIndex(0);
     requestAnimationFrame(() => {
       feedRef.current?.scrollTo({ top: 0, behavior: "smooth" });
     });
