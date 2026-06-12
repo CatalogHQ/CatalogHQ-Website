@@ -55,6 +55,7 @@ export class OtpService {
 
     await this.emailService.sendEmail(email, subject, htmlBody, undefined, {
       required: true,
+      type: 'verification_code',
     });
   }
 

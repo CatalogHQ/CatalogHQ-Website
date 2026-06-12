@@ -11,17 +11,26 @@ export class PingramEmailService {
 
   constructor(private readonly configService: ConfigService) {
     const apiKey = this.configService.get<string>('PINGRAM_API_KEY');
+    const baseUrl = this.configService.get<string>(
+      'PINGRAM_BASE_URL',
+      'https://api.pingram.io',
+    );
 
     this.fromEmail = this.configService.get<string>(
       'PINGRAM_FROM_EMAIL',
-      'support@cataloghq.store',
+      'noreply@cataloghq.store',
     );
     this.fromName = this.configService.get<string>(
       'PINGRAM_FROM_NAME',
       'CatalogHQ',
     );
 
-    this.client = apiKey ? new Pingram({ apiKey }) : null;
+    this.client = apiKey
+      ? new Pingram({
+          apiKey,
+          baseUrl,
+        })
+      : null;
   }
 
   isConfigured(): boolean {
@@ -36,7 +45,7 @@ export class PingramEmailService {
     options?: { required?: boolean; type?: string },
   ): Promise<void> {
     const required = options?.required ?? false;
-    const type = options?.type ?? 'cataloghq_transactional';
+    const type = options?.type ?? 'verification_code';
 
     if (!this.client) {
       this.logger.warn('Pingram not configured; skipping email.');

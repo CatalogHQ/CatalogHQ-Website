@@ -64,22 +64,26 @@ describe('PingramEmailService', () => {
 
     const service = await createService({
       PINGRAM_API_KEY: 'pingram_sk_test',
-      PINGRAM_FROM_EMAIL: 'support@cataloghq.store',
+      PINGRAM_BASE_URL: 'https://api.pingram.io',
+      PINGRAM_FROM_EMAIL: 'noreply@cataloghq.store',
       PINGRAM_FROM_NAME: 'CatalogHQ',
     });
 
     expect(service.isConfigured()).toBe(true);
     await service.sendEmail('vendor@example.com', 'Verify', '<p>Code</p>');
 
-    expect(Pingram).toHaveBeenCalledWith({ apiKey: 'pingram_sk_test' });
+    expect(Pingram).toHaveBeenCalledWith({
+      apiKey: 'pingram_sk_test',
+      baseUrl: 'https://api.pingram.io',
+    });
     expect(sendMock).toHaveBeenCalledWith({
-      type: 'cataloghq_transactional',
+      type: 'verification_code',
       to: { email: 'vendor@example.com' },
       email: {
         subject: 'Verify',
         html: '<p>Code</p>',
         senderName: 'CatalogHQ',
-        senderEmail: 'support@cataloghq.store',
+        senderEmail: 'noreply@cataloghq.store',
       },
     });
   });

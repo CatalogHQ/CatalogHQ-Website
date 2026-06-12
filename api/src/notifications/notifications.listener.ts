@@ -137,6 +137,7 @@ export class NotificationsListener {
           'Your CatalogHQ store is verified',
           `<p>Hi,</p><p>Great news! <strong>${storeName}</strong> has been verified on CatalogHQ. Your verified badge is now visible on your storefront.</p><p>CatalogHQ Team</p>`,
           storeName,
+          { type: 'vendor_verification' },
         );
       } catch (error) {
         this.logger.error(
@@ -154,6 +155,7 @@ export class NotificationsListener {
         'CatalogHQ verification update',
         `<p>Hi,</p><p>We could not approve verification for <strong>${storeName}</strong>.</p><p><strong>Reason:</strong> ${reason}</p><p>You can resubmit updated documents from your dashboard settings.</p><p>CatalogHQ Team</p>`,
         storeName,
+        { type: 'vendor_verification' },
       );
     } catch (error) {
       this.logger.error(

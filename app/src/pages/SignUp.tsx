@@ -15,6 +15,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import AuthLayout from "@/components/auth/AuthLayout";
+import OtpCodeInput from "@/components/auth/OtpCodeInput";
 import PasswordInput from "@/components/auth/PasswordInput";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -196,16 +197,23 @@ export default function SignUp() {
           >
             <FormField
               control={verifyForm.control}
+              name="email"
+              render={({ field }) => <input type="hidden" {...field} />}
+            />
+
+            <FormField
+              control={verifyForm.control}
               name="code"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>6-digit code</FormLabel>
                   <FormControl>
-                    <Input
-                      inputMode="numeric"
-                      placeholder="123456"
-                      className="h-11"
-                      {...field}
+                    <OtpCodeInput
+                      name={field.name}
+                      value={field.value}
+                      onChange={field.onChange}
+                      onBlur={field.onBlur}
+                      ref={field.ref}
                     />
                   </FormControl>
                   <FormMessage />

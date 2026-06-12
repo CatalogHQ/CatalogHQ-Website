@@ -54,6 +54,10 @@ class EnvironmentVariables {
 
   @IsOptional()
   @IsString()
+  PINGRAM_BASE_URL?: string;
+
+  @IsOptional()
+  @IsString()
   PINGRAM_FROM_EMAIL?: string;
 
   @IsOptional()
