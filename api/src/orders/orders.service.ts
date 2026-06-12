@@ -14,6 +14,7 @@ import { DELIVERY_TYPE_IDS } from '../common/constants/delivery-types';
 import { deliveryRequiresAddress } from '../common/delivery.util';
 import { normalizePhone } from '../common/phone.util';
 import { FlutterwaveService } from '../payments/flutterwave.service';
+import { buildFlutterwaveReference } from '../payments/flutterwave-reference.util';
 import { PaymentsService } from '../payments/payments.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { OrderDeliveredEvent } from './events/order-delivered.event';
@@ -55,7 +56,8 @@ export class OrdersService {
 
   async checkout(dto: CheckoutPaymentDto, storeSlug: string) {
     const pricing = await this.resolvePricing(dto);
-    const gatewayReference = `flw_${generatePaymentRef()}`;
+    const paymentRef = generatePaymentRef();
+    const gatewayReference = buildFlutterwaveReference(paymentRef);
 
     const order = await this.prisma.$transaction(async (tx) => {
       if (pricing.discountRecordId) {
@@ -64,7 +66,7 @@ export class OrdersService {
 
       return tx.order.create({
         data: {
-          paymentRef: generatePaymentRef(),
+          paymentRef,
           storeId: dto.storeId,
           productId: dto.productId,
           productName: dto.productName,

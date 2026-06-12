@@ -45,7 +45,7 @@ describe('FlutterwaveService', () => {
         status: 'success',
         message: 'Charge created',
         data: {
-          reference: 'flw_ref_1',
+          reference: 'flw-ref-1',
           next_action: {
             type: 'redirect_url',
             redirect_url: { url: 'https://checkout.example/redirect' },
@@ -59,7 +59,7 @@ describe('FlutterwaveService', () => {
       phone: '08012345678',
       name: 'Ada Lovelace',
       amountNaira: 5000,
-      reference: 'flw_ref_1',
+      reference: 'flw-ref-1',
       callbackPath: '/callback',
       paymentMethod: 'opay',
     });
@@ -78,13 +78,13 @@ describe('FlutterwaveService', () => {
             status: 'succeeded',
             amount: 5000,
             currency: 'NGN',
-            reference: 'flw_ref_1',
+            reference: 'flw-ref-1',
           },
         ],
       }),
     });
 
-    const verified = await service.verifyTransaction('flw_ref_1', 5000);
+    const verified = await service.verifyTransaction('flw-ref-1', 5000);
     expect(verified).toBe(true);
   });
 
@@ -99,13 +99,13 @@ describe('FlutterwaveService', () => {
             status: 'succeeded',
             amount: 4000,
             currency: 'NGN',
-            reference: 'flw_ref_1',
+            reference: 'flw-ref-1',
           },
         ],
       }),
     });
 
-    const verified = await service.verifyTransaction('flw_ref_1', 5000);
+    const verified = await service.verifyTransaction('flw-ref-1', 5000);
     expect(verified).toBe(false);
   });
 

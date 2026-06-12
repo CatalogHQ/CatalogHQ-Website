@@ -6,6 +6,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { ORDER_CREATED_EVENT, LOW_STOCK_EVENT } from '../orders/events/order.events';
 import { OrderCreatedEvent } from '../orders/events/order-created.event';
 import { LowStockEvent } from '../orders/events/low-stock.event';
+import { buildFlutterwaveReference } from './flutterwave-reference.util';
 import { FlutterwaveService } from './flutterwave.service';
 
 @Injectable()
@@ -98,7 +99,8 @@ export class PaymentsService {
       throw new NotFoundException('Order not found.');
     }
 
-    const reference = order.gatewayReference ?? `flw_${order.paymentRef}`;
+    const reference =
+      order.gatewayReference ?? buildFlutterwaveReference(order.paymentRef);
     const init = await this.flutterwave.initializeTransaction({
       email: `${order.customerPhone}@cataloghq.ng`,
       phone: order.customerPhone,
@@ -137,7 +139,8 @@ export class PaymentsService {
 
     return {
       authorizationUrl,
-      reference: order.gatewayReference ?? `flw_${order.paymentRef}`,
+      reference:
+        order.gatewayReference ?? buildFlutterwaveReference(order.paymentRef),
     };
   }
 }

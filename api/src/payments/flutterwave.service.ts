@@ -19,8 +19,14 @@ import {
 
 type FlutterwaveApiResponse<T> = {
   status: string;
-  message: string;
+  message?: string;
   data?: T;
+  error?: {
+    type?: string;
+    code?: string;
+    message?: string;
+    validation_errors?: Array<{ field_name?: string; message?: string }>;
+  };
 };
 
 type NextAction = {
@@ -304,9 +310,21 @@ export class FlutterwaveService {
 
     const json = (await response.json()) as FlutterwaveApiResponse<T>;
     if (!response.ok || json.status !== 'success') {
+      const detail =
+        json.error?.message ??
+        json.message ??
+        json.error?.validation_errors
+          ?.map((e) => `${e.field_name}: ${e.message}`)
+          .join('; ') ??
+        `HTTP ${response.status}`;
       this.logger.error(
-        `Flutterwave API ${options.method} ${path} failed: ${json.message}`,
+        `Flutterwave API ${options.method} ${path} failed: ${detail}`,
       );
+      if (json.error?.code) {
+        this.logger.debug(
+          `Flutterwave error code=${json.error.code} type=${json.error.type}`,
+        );
+      }
       throw new InternalServerErrorException('Could not complete payment request.');
     }
 

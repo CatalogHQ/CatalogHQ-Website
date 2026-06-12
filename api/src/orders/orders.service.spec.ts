@@ -64,7 +64,7 @@ describe('OrdersService', () => {
     deliveryAddress: null,
     status: OrderStatus.paid,
     paymentStatus: PaymentStatus.paid,
-    gatewayReference: 'flw_SHP-TEST',
+    gatewayReference: 'flw-SHP-TEST',
     transferReference: null,
     reservedUntil: null,
     internalNotes: null,
