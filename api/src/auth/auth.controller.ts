@@ -1,6 +1,8 @@
-import { Body, Controller, Get, Post } from '@nestjs/common';
+import { Body, Controller, Get, Post, Req } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { User } from '@prisma/client';
+import type { Request } from 'express';
+import { getClientIp } from '../common/client-ip.util';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { Public } from '../common/decorators/public.decorator';
 import { AuthService } from './auth.service';
@@ -21,8 +23,12 @@ export class AuthController {
   @Public()
   @Throttle({ auth: { limit: 5, ttl: 60_000 } })
   @Post('signup')
-  async signUp(@Body() dto: SignUpDto) {
-    await this.otpService.initSignUp(dto.email, dto.password);
+  async signUp(@Body() dto: SignUpDto, @Req() req: Request) {
+    await this.otpService.initSignUp(
+      dto.email,
+      dto.password,
+      getClientIp(req),
+    );
     return { success: true };
   }
 
@@ -36,8 +42,12 @@ export class AuthController {
   @Public()
   @Throttle({ auth: { limit: 5, ttl: 60_000 } })
   @Post('signup/resend-otp')
-  async resendSignUpOtp(@Body() dto: SignInDto) {
-    await this.otpService.resendSignUpOtp(dto.email, dto.password);
+  async resendSignUpOtp(@Body() dto: SignInDto, @Req() req: Request) {
+    await this.otpService.resendSignUpOtp(
+      dto.email,
+      dto.password,
+      getClientIp(req),
+    );
     return { success: true };
   }
 
@@ -51,8 +61,8 @@ export class AuthController {
   @Public()
   @Throttle({ auth: { limit: 5, ttl: 60_000 } })
   @Post('forgot-password')
-  async forgotPassword(@Body() dto: ForgotPasswordDto) {
-    await this.otpService.sendPasswordResetOtp(dto.email);
+  async forgotPassword(@Body() dto: ForgotPasswordDto, @Req() req: Request) {
+    await this.otpService.sendPasswordResetOtp(dto.email, getClientIp(req));
     return { success: true };
   }
 

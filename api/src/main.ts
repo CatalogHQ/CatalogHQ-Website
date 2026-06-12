@@ -26,6 +26,7 @@ async function bootstrap() {
         ? ['error', 'warn', 'log']
         : ['error', 'warn', 'log', 'debug', 'verbose'],
   });
+  app.set('trust proxy', 1);
   const configService = app.get(ConfigService);
 
   app.useGlobalPipes(

@@ -37,6 +37,7 @@ describe('OtpService', () => {
 
   const otpRateLimitService = {
     assertCanSendOtp: jest.fn().mockResolvedValue(undefined),
+    recordOtpSend: jest.fn().mockResolvedValue(undefined),
   };
 
   let service: OtpService;
@@ -62,7 +63,7 @@ describe('OtpService', () => {
     prisma.signupPending.upsert.mockResolvedValue({ id: 'pending-1' });
     prisma.emailOtp.create.mockResolvedValue({ id: 'otp-1' });
 
-    await service.initSignUp('vendor@example.com', 'password123');
+    await service.initSignUp('vendor@example.com', 'password123', '203.0.113.1');
 
     expect(prisma.signupPending.upsert).toHaveBeenCalled();
     expect(prisma.emailOtp.create).toHaveBeenCalledWith(
@@ -88,7 +89,11 @@ describe('OtpService', () => {
     prisma.emailOtp.updateMany.mockResolvedValue({ count: 0 });
     emailService.sendEmail.mockResolvedValue(undefined);
 
-    await service.resendSignUpOtp('vendor@example.com', 'password123');
+    await service.resendSignUpOtp(
+      'vendor@example.com',
+      'password123',
+      '203.0.113.1',
+    );
 
     expect(prisma.signupPending.update).toHaveBeenCalled();
     expect(emailService.sendEmail).toHaveBeenCalled();
@@ -104,7 +109,7 @@ describe('OtpService', () => {
     );
 
     await expect(
-      service.initSignUp('vendor@example.com', 'password123'),
+      service.initSignUp('vendor@example.com', 'password123', '203.0.113.1'),
     ).rejects.toBeInstanceOf(ServiceUnavailableException);
 
     expect(prisma.emailOtp.updateMany).toHaveBeenCalled();

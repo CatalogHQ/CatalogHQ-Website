@@ -64,7 +64,10 @@ export class OtpService {
   private async createEmailOtp(
     email: string,
     purpose: EmailOtpPurpose,
+    ipAddress: string,
   ): Promise<string> {
+    await this.otpRateLimitService.recordOtpSend(email, ipAddress);
+
     await this.prisma.emailOtp.updateMany({
       where: { email, purpose, usedAt: null },
       data: { usedAt: new Date() },
@@ -116,11 +119,15 @@ export class OtpService {
     });
   }
 
-  async initSignUp(email: string, password: string): Promise<void> {
+  async initSignUp(
+    email: string,
+    password: string,
+    ipAddress: string,
+  ): Promise<void> {
     this.assertEmailConfigured();
 
     const normalized = normalizeEmail(email);
-    await this.otpRateLimitService.assertCanSendOtp(normalized);
+    await this.otpRateLimitService.assertCanSendOtp(normalized, ipAddress);
     const existing = await this.prisma.user.findUnique({
       where: { email: normalized },
     });
@@ -138,7 +145,11 @@ export class OtpService {
       update: { passwordHash, expiresAt },
     });
 
-    const code = await this.createEmailOtp(normalized, EmailOtpPurpose.signup);
+    const code = await this.createEmailOtp(
+      normalized,
+      EmailOtpPurpose.signup,
+      ipAddress,
+    );
 
     try {
       await this.sendOtpEmail(normalized, code, 'signup');
@@ -155,11 +166,15 @@ export class OtpService {
     }
   }
 
-  async resendSignUpOtp(email: string, password: string): Promise<void> {
+  async resendSignUpOtp(
+    email: string,
+    password: string,
+    ipAddress: string,
+  ): Promise<void> {
     this.assertEmailConfigured();
 
     const normalized = normalizeEmail(email);
-    await this.otpRateLimitService.assertCanSendOtp(normalized);
+    await this.otpRateLimitService.assertCanSendOtp(normalized, ipAddress);
 
     const existing = await this.prisma.user.findUnique({
       where: { email: normalized },
@@ -197,7 +212,11 @@ export class OtpService {
       data: { expiresAt },
     });
 
-    const code = await this.createEmailOtp(normalized, EmailOtpPurpose.signup);
+    const code = await this.createEmailOtp(
+      normalized,
+      EmailOtpPurpose.signup,
+      ipAddress,
+    );
 
     try {
       await this.sendOtpEmail(normalized, code, 'signup');
@@ -245,11 +264,11 @@ export class OtpService {
     return this.authService.createSession(user);
   }
 
-  async sendPasswordResetOtp(email: string): Promise<void> {
+  async sendPasswordResetOtp(email: string, ipAddress: string): Promise<void> {
     this.assertEmailConfigured();
 
     const normalized = normalizeEmail(email);
-    await this.otpRateLimitService.assertCanSendOtp(normalized);
+    await this.otpRateLimitService.assertCanSendOtp(normalized, ipAddress);
 
     const user = await this.prisma.user.findUnique({
       where: { email: normalized },
@@ -262,6 +281,7 @@ export class OtpService {
     const code = await this.createEmailOtp(
       normalized,
       EmailOtpPurpose.password_reset,
+      ipAddress,
     );
     await this.sendOtpEmail(normalized, code, 'password_reset');
   }
