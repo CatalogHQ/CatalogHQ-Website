@@ -115,6 +115,7 @@ model Store {
   whatsapp                String
   nin                     String
   category                String?
+  address                 String?
   city                    String?
   state                   String?
   setupComplete           Boolean                  @default(false)

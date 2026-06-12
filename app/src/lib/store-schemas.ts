@@ -57,9 +57,26 @@ export const storeSetupSchema = z.object({
   whatsapp: phoneSchema,
   nin: ninSchema,
   slug: slugSchema,
-  category: z.string().max(50).optional(),
-  city: z.string().max(50).optional(),
-  state: z.string().max(50).optional(),
+  category: z
+    .string()
+    .trim()
+    .min(1, "Category is required")
+    .max(50, "Category is too long"),
+  address: z
+    .string()
+    .trim()
+    .min(1, "Address is required")
+    .max(200, "Address is too long"),
+  city: z
+    .string()
+    .trim()
+    .min(1, "City is required")
+    .max(50, "City is too long"),
+  state: z
+    .string()
+    .trim()
+    .min(1, "State is required")
+    .max(50, "State is too long"),
 });
 
 export type StoreSetupFormValues = z.infer<typeof storeSetupSchema>;

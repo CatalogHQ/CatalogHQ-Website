@@ -35,6 +35,7 @@ export type Store = {
   whatsapp: string;
   nin: string;
   category?: string;
+  address?: string;
   city?: string;
   state?: string;
   setupComplete: boolean;

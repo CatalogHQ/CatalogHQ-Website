@@ -47,6 +47,7 @@ export default function Settings() {
       nin: "",
       slug: "",
       category: "",
+      address: "",
       city: "",
       state: "",
     },
@@ -61,6 +62,7 @@ export default function Settings() {
         nin: store.nin,
         slug: store.slug,
         category: store.category ?? "",
+        address: store.address ?? "",
         city: store.city ?? "",
         state: store.state ?? "",
       });
@@ -94,9 +96,10 @@ export default function Settings() {
         whatsapp: data.whatsapp,
         nin: data.nin,
         slug: data.slug,
-        category: data.category || undefined,
-        city: data.city || undefined,
-        state: data.state || undefined,
+        category: data.category,
+        address: data.address,
+        city: data.city,
+        state: data.state,
       });
       toast.success("Store settings updated.");
     } catch (error) {
@@ -219,6 +222,20 @@ export default function Settings() {
                         Preview: {getStoreUrl(slug)}
                       </FormDescription>
                     )}
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="address"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Address</FormLabel>
+                    <FormControl>
+                      <Textarea rows={2} {...field} />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}

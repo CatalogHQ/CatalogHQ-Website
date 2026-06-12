@@ -45,6 +45,7 @@ export default function StoreSetup() {
       nin: store?.nin ?? "",
       slug: store?.slug ?? "",
       category: store?.category ?? "",
+      address: store?.address ?? "",
       city: store?.city ?? "",
       state: store?.state ?? "",
     },
@@ -59,6 +60,7 @@ export default function StoreSetup() {
         nin: store.nin,
         slug: store.slug,
         category: store.category ?? "",
+        address: store.address ?? "",
         city: store.city ?? "",
         state: store.state ?? "",
       });
@@ -93,9 +95,10 @@ export default function StoreSetup() {
         whatsapp: data.whatsapp,
         nin: data.nin,
         slug: data.slug,
-        category: data.category || undefined,
-        city: data.city || undefined,
-        state: data.state || undefined,
+        category: data.category,
+        address: data.address,
+        city: data.city,
+        state: data.state,
       });
 
       toast.success("Store setup complete!");
@@ -233,13 +236,31 @@ export default function StoreSetup() {
                 )}
               />
 
+              <FormField
+                control={form.control}
+                name="address"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Address</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="12 Admiralty Way, Lekki Phase 1"
+                        rows={2}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
               <div className="grid gap-4 sm:grid-cols-3">
                 <FormField
                   control={form.control}
                   name="category"
                   render={({ field }) => (
                     <FormItem className="sm:col-span-1">
-                      <FormLabel>Category (optional)</FormLabel>
+                      <FormLabel>Category</FormLabel>
                       <FormControl>
                         <Input placeholder="Fashion" {...field} />
                       </FormControl>
@@ -253,7 +274,7 @@ export default function StoreSetup() {
                   name="city"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>City (optional)</FormLabel>
+                      <FormLabel>City</FormLabel>
                       <FormControl>
                         <Input placeholder="Lagos" {...field} />
                       </FormControl>
@@ -267,7 +288,7 @@ export default function StoreSetup() {
                   name="state"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>State (optional)</FormLabel>
+                      <FormLabel>State</FormLabel>
                       <FormControl>
                         <Input placeholder="Lagos" {...field} />
                       </FormControl>

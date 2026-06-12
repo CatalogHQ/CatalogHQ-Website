@@ -8,6 +8,7 @@ export type StoreDto = {
   whatsapp: string;
   nin: string;
   category?: string;
+  address?: string;
   city?: string;
   state?: string;
   setupComplete: boolean;
@@ -31,6 +32,7 @@ export function toStoreDto(store: Store): StoreDto {
     whatsapp: store.whatsapp,
     nin: store.nin,
     category: store.category ?? undefined,
+    address: store.address ?? undefined,
     city: store.city ?? undefined,
     state: store.state ?? undefined,
     setupComplete: store.setupComplete,

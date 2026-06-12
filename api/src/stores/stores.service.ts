@@ -58,9 +58,10 @@ export class StoresService {
       bio: dto.bio.trim(),
       whatsapp: normalizePhone(dto.whatsapp),
       nin,
-      category: dto.category?.trim() || null,
-      city: dto.city?.trim() || null,
-      state: dto.state?.trim() || null,
+      category: dto.category.trim(),
+      address: dto.address.trim(),
+      city: dto.city.trim(),
+      state: dto.state.trim(),
       setupComplete: existing?.setupComplete ?? false,
       ...verification,
     };

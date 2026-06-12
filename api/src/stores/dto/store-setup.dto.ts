@@ -1,5 +1,4 @@
 import {
-  IsOptional,
   IsString,
   Matches,
   MaxLength,
@@ -35,18 +34,23 @@ export class StoreSetupDto {
   })
   slug!: string;
 
-  @IsOptional()
   @IsString()
-  @MaxLength(50)
-  category?: string;
+  @MinLength(1, { message: 'Category is required' })
+  @MaxLength(50, { message: 'Category is too long' })
+  category!: string;
 
-  @IsOptional()
   @IsString()
-  @MaxLength(80)
-  city?: string;
+  @MinLength(1, { message: 'Address is required' })
+  @MaxLength(200, { message: 'Address is too long' })
+  address!: string;
 
-  @IsOptional()
   @IsString()
-  @MaxLength(80)
-  state?: string;
+  @MinLength(1, { message: 'City is required' })
+  @MaxLength(50, { message: 'City is too long' })
+  city!: string;
+
+  @IsString()
+  @MinLength(1, { message: 'State is required' })
+  @MaxLength(50, { message: 'State is too long' })
+  state!: string;
 }
