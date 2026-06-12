@@ -112,7 +112,7 @@ export default function ForgotPassword() {
       title={step === "request" ? "Forgot password" : "Enter reset code"}
       subtitle={
         step === "request"
-          ? "Enter your vendor email. We will send a 6-digit code if an account exists."
+          ? "We will send a 6-digit code if an account exists."
           : `Enter the code sent to ${email || "your email"}.`
       }
       footerText="Remember your password?"
