@@ -63,9 +63,8 @@ export const forgotPasswordRequestSchema = z.object({
   email: emailSchema,
 });
 
-export const resetPasswordSchema = z
+export const resetPasswordCodeSchema = z
   .object({
-    email: emailSchema,
     code: z.string().length(6, "Enter the 6-digit code"),
     newPassword: passwordSchema,
     confirmPassword: z.string().min(1, "Please confirm your password"),
@@ -75,6 +74,11 @@ export const resetPasswordSchema = z
     path: ["confirmPassword"],
   });
 
+/** @deprecated Use resetPasswordCodeSchema; email is held in page state during reset. */
+export const resetPasswordSchema = resetPasswordCodeSchema.extend({
+  email: emailSchema,
+});
+
 export type SignUpFormValues = z.infer<typeof signUpSchema>;
 export type VerifySignUpCodeFormValues = z.infer<typeof verifySignUpCodeSchema>;
 export type VerifySignUpFormValues = VerifySignUpCodeFormValues;
@@ -82,4 +86,5 @@ export type SignInFormValues = z.infer<typeof signInSchema>;
 export type ForgotPasswordRequestValues = z.infer<
   typeof forgotPasswordRequestSchema
 >;
-export type ResetPasswordFormValues = z.infer<typeof resetPasswordSchema>;
+export type ResetPasswordCodeFormValues = z.infer<typeof resetPasswordCodeSchema>;
+export type ResetPasswordFormValues = ResetPasswordCodeFormValues;

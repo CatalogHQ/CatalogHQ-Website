@@ -16,18 +16,20 @@ import {
 import AuthLayout from "@/components/auth/AuthLayout";
 import OtpCodeField from "@/components/auth/OtpCodeField";
 import PasswordInput from "@/components/auth/PasswordInput";
-import { authRepository } from "@/lib/repositories";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   forgotPasswordRequestSchema,
-  resetPasswordSchema,
+  resetPasswordCodeSchema,
   type ForgotPasswordRequestValues,
-  type ResetPasswordFormValues,
+  type ResetPasswordCodeFormValues,
 } from "@/lib/auth-schemas";
 
 export default function ForgotPassword() {
   const navigate = useNavigate();
+  const { forgotPassword, resetPassword } = useAuth();
   const [step, setStep] = useState<"request" | "reset">("request");
   const [loading, setLoading] = useState(false);
+  const [resending, setResending] = useState(false);
   const [email, setEmail] = useState("");
 
   const requestForm = useForm<ForgotPasswordRequestValues>({
@@ -35,10 +37,9 @@ export default function ForgotPassword() {
     defaultValues: { email: "" },
   });
 
-  const resetForm = useForm<ResetPasswordFormValues>({
-    resolver: zodResolver(resetPasswordSchema),
+  const resetForm = useForm<ResetPasswordCodeFormValues>({
+    resolver: zodResolver(resetPasswordCodeSchema),
     defaultValues: {
-      email: "",
       code: "",
       newPassword: "",
       confirmPassword: "",
@@ -49,16 +50,17 @@ export default function ForgotPassword() {
     setLoading(true);
     try {
       const normalized = values.email.trim().toLowerCase();
-      await authRepository.forgotPassword(normalized);
+      await forgotPassword(normalized);
       setEmail(normalized);
       resetForm.reset({
-        email: normalized,
         code: "",
         newPassword: "",
         confirmPassword: "",
       });
       setStep("reset");
-      toast.success("We sent a reset code to your email.");
+      toast.success(
+        "If an account exists for this email, we sent a reset code.",
+      );
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Could not send reset code.",
@@ -68,7 +70,23 @@ export default function ForgotPassword() {
     }
   };
 
-  const onResetPassword = async (values: ResetPasswordFormValues) => {
+  const onResendCode = async () => {
+    if (!email) return;
+
+    setResending(true);
+    try {
+      await forgotPassword(email);
+      toast.success("If an account exists for this email, we sent a new code.");
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Could not resend reset code.",
+      );
+    } finally {
+      setResending(false);
+    }
+  };
+
+  const onResetPassword = async (values: ResetPasswordCodeFormValues) => {
     if (!email) {
       toast.error("Reset session expired. Request a new code.");
       setStep("request");
@@ -77,11 +95,7 @@ export default function ForgotPassword() {
 
     setLoading(true);
     try {
-      await authRepository.resetPassword(
-        email,
-        values.code,
-        values.newPassword,
-      );
+      await resetPassword(email, values.code, values.newPassword);
       toast.success("Password updated. You can sign in now.");
       navigate("/sign-in");
     } catch (error) {
@@ -98,7 +112,7 @@ export default function ForgotPassword() {
       title={step === "request" ? "Forgot password" : "Enter reset code"}
       subtitle={
         step === "request"
-          ? "We'll send a 6-digit code to your email address."
+          ? "Enter your vendor email. We will send a 6-digit code if an account exists."
           : `Enter the code sent to ${email || "your email"}.`
       }
       footerText="Remember your password?"
@@ -156,6 +170,7 @@ export default function ForgotPassword() {
                   <FormLabel>New password</FormLabel>
                   <FormControl>
                     <PasswordInput
+                      autoComplete="new-password"
                       placeholder="At least 8 characters"
                       className="h-11"
                       {...field}
@@ -174,6 +189,7 @@ export default function ForgotPassword() {
                   <FormLabel>Confirm new password</FormLabel>
                   <FormControl>
                     <PasswordInput
+                      autoComplete="new-password"
                       placeholder="Re-enter your password"
                       className="h-11"
                       {...field}
@@ -194,6 +210,16 @@ export default function ForgotPassword() {
 
             <Button
               type="button"
+              variant="outline"
+              disabled={resending}
+              className="h-11 w-full"
+              onClick={onResendCode}
+            >
+              {resending ? "Sending..." : "Resend reset code"}
+            </Button>
+
+            <Button
+              type="button"
               variant="ghost"
               className="w-full"
               onClick={() => setStep("request")}
@@ -205,7 +231,10 @@ export default function ForgotPassword() {
       )}
 
       <p className="mt-4 text-center text-sm text-gray-500">
-        <Link to="/sign-in" className="text-whatsapp-dark hover:text-whatsapp-green">
+        <Link
+          to="/sign-in"
+          className="text-whatsapp-dark hover:text-whatsapp-green"
+        >
           Back to sign in
         </Link>
       </p>

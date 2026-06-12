@@ -2,6 +2,7 @@ import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { AppModule } from '../src/app.module';
+import { PingramEmailService } from '../src/notifications/pingram-email.service';
 import { PrismaService } from '../src/prisma/prisma.service';
 
 describe('AppController (e2e)', () => {
@@ -11,7 +12,12 @@ describe('AppController (e2e)', () => {
     $connect: jest.fn(),
     $disconnect: jest.fn(),
     $queryRaw: jest.fn().mockResolvedValue([{ '?column?': 1 }]),
-    user: { findUnique: jest.fn(), create: jest.fn(), count: jest.fn() },
+    user: {
+      findUnique: jest.fn(),
+      create: jest.fn(),
+      update: jest.fn(),
+      count: jest.fn(),
+    },
     store: { findUnique: jest.fn(), count: jest.fn(), findMany: jest.fn() },
     product: { findFirst: jest.fn() },
     order: {
@@ -21,6 +27,20 @@ describe('AppController (e2e)', () => {
       findMany: jest.fn(),
     },
     supportTicket: { count: jest.fn(), findMany: jest.fn() },
+    emailOtp: {
+      create: jest.fn(),
+      findFirst: jest.fn(),
+      update: jest.fn(),
+      updateMany: jest.fn(),
+    },
+    otpSendLog: { count: jest.fn(), create: jest.fn() },
+    otpSendLock: { findUnique: jest.fn(), upsert: jest.fn() },
+    otpIpSendLock: { findUnique: jest.fn(), upsert: jest.fn() },
+  };
+
+  const emailService = {
+    isConfigured: jest.fn().mockReturnValue(true),
+    sendEmail: jest.fn().mockResolvedValue(undefined),
   };
 
   beforeAll(async () => {
@@ -29,6 +49,8 @@ describe('AppController (e2e)', () => {
     })
       .overrideProvider(PrismaService)
       .useValue(prisma)
+      .overrideProvider(PingramEmailService)
+      .useValue(emailService)
       .compile();
 
     app = moduleRef.createNestApplication();
@@ -49,6 +71,11 @@ describe('AppController (e2e)', () => {
     await app.close();
   });
 
+  beforeEach(() => {
+    jest.clearAllMocks();
+    emailService.isConfigured.mockReturnValue(true);
+  });
+
   it('GET /health is public', async () => {
     await request(app.getHttpServer()).get('/health').expect(200);
   });
@@ -64,6 +91,41 @@ describe('AppController (e2e)', () => {
 
   it('GET /admin/stats requires admin role', async () => {
     await request(app.getHttpServer()).get('/admin/stats').expect(401);
+  });
+
+  it('POST /auth/forgot-password returns success for known vendors', async () => {
+    prisma.otpIpSendLock.findUnique.mockResolvedValue(null);
+    prisma.otpSendLock.findUnique.mockResolvedValue(null);
+    prisma.otpSendLog.count.mockResolvedValue(0);
+    prisma.otpSendLog.create.mockResolvedValue({ id: 'log-1' });
+    prisma.user.findUnique.mockResolvedValue({
+      id: 'user-1',
+      email: 'vendor@example.com',
+    });
+    prisma.emailOtp.updateMany.mockResolvedValue({ count: 0 });
+    prisma.emailOtp.create.mockResolvedValue({ id: 'otp-1' });
+
+    await request(app.getHttpServer())
+      .post('/auth/forgot-password')
+      .send({ email: 'vendor@example.com' })
+      .expect(201);
+
+    expect(emailService.sendEmail).toHaveBeenCalled();
+  });
+
+  it('POST /auth/forgot-password returns success for unknown emails', async () => {
+    prisma.otpIpSendLock.findUnique.mockResolvedValue(null);
+    prisma.otpSendLock.findUnique.mockResolvedValue(null);
+    prisma.otpSendLog.count.mockResolvedValue(0);
+    prisma.otpSendLog.create.mockResolvedValue({ id: 'log-2' });
+    prisma.user.findUnique.mockResolvedValue(null);
+
+    await request(app.getHttpServer())
+      .post('/auth/forgot-password')
+      .send({ email: 'missing@example.com' })
+      .expect(201);
+
+    expect(emailService.sendEmail).not.toHaveBeenCalled();
   });
 
   it('POST /orders rejects extra pricing fields', async () => {

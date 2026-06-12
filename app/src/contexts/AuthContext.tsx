@@ -19,6 +19,12 @@ type AuthContextValue = {
   resendSignUpOtp: (email: string, password: string) => Promise<void>;
   verifySignUp: (email: string, code: string) => Promise<StoredUser>;
   signIn: (email: string, password: string) => Promise<StoredUser>;
+  forgotPassword: (email: string) => Promise<void>;
+  resetPassword: (
+    email: string,
+    code: string,
+    newPassword: string,
+  ) => Promise<void>;
   signOut: () => Promise<void>;
   refreshUser: () => Promise<void>;
 };
@@ -77,6 +83,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return current;
   }, []);
 
+  const forgotPassword = useCallback(async (email: string) => {
+    await authRepository.forgotPassword(email);
+  }, []);
+
+  const resetPassword = useCallback(
+    async (email: string, code: string, newPassword: string) => {
+      await authRepository.resetPassword(email, code, newPassword);
+    },
+    [],
+  );
+
   const signOut = useCallback(async () => {
     await authRepository.signOut();
     setUser(null);
@@ -92,6 +109,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       resendSignUpOtp,
       verifySignUp,
       signIn,
+      forgotPassword,
+      resetPassword,
       signOut,
       refreshUser,
     }),
@@ -102,6 +121,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       resendSignUpOtp,
       verifySignUp,
       signIn,
+      forgotPassword,
+      resetPassword,
       signOut,
       refreshUser,
     ],

@@ -115,6 +115,36 @@ describe('OtpService', () => {
     expect(prisma.emailOtp.updateMany).toHaveBeenCalled();
   });
 
+  it('sends password reset OTP for existing vendors', async () => {
+    prisma.user.findUnique.mockResolvedValue({
+      id: 'user-1',
+      email: 'vendor@example.com',
+    });
+    prisma.emailOtp.create.mockResolvedValue({ id: 'otp-1' });
+    prisma.emailOtp.updateMany.mockResolvedValue({ count: 0 });
+    emailService.sendEmail.mockResolvedValue(undefined);
+
+    await service.sendPasswordResetOtp('vendor@example.com', '203.0.113.1');
+
+    expect(emailService.sendEmail).toHaveBeenCalled();
+    expect(otpRateLimitService.recordOtpSend).toHaveBeenCalledWith(
+      'vendor@example.com',
+      '203.0.113.1',
+    );
+  });
+
+  it('does not send password reset OTP for unknown emails', async () => {
+    prisma.user.findUnique.mockResolvedValue(null);
+
+    await service.sendPasswordResetOtp('unknown@example.com', '203.0.113.1');
+
+    expect(emailService.sendEmail).not.toHaveBeenCalled();
+    expect(otpRateLimitService.recordOtpSend).toHaveBeenCalledWith(
+      'unknown@example.com',
+      '203.0.113.1',
+    );
+  });
+
   it('rejects invalid reset code', async () => {
     prisma.user.findUnique.mockResolvedValue({
       id: 'user-1',

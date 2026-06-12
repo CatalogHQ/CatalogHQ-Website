@@ -275,7 +275,8 @@ export class OtpService {
     });
 
     if (!user) {
-      throw new NotFoundException('No account found for this email.');
+      await this.otpRateLimitService.recordOtpSend(normalized, ipAddress);
+      return;
     }
 
     const code = await this.createEmailOtp(
