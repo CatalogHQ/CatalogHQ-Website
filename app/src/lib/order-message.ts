@@ -56,16 +56,16 @@ export function buildOrderWhatsAppMessage(
     (order.paymentStatus !== "pending" && order.status !== "reserved");
 
   const lines = [
-    `Hi ${storeName}, this is ${order.customerName}.`,
+    `Hi ${storeName}.`,
     "",
     isPaid
       ? "I have placed and paid for an order on CatalogHQ."
       : "I placed an order on CatalogHQ (payment is still pending).",
     "",
-    "Please verify on your CatalogHQ dashboard:",
+
     `Order ref: ${order.paymentRef}`,
-    `Customer name: ${order.customerName}`,
-    `Customer phone: ${order.customerPhone}`,
+    `Name: ${order.customerName}`,
+    `Mobile Number: ${order.customerPhone}`,
     `Payment: ${paymentLabel}`,
     `Order status: ${statusLabel}`,
     "",
