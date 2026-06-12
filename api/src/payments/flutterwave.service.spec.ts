@@ -41,6 +41,7 @@ describe('FlutterwaveService', () => {
   it('parses redirect_url next_action', async () => {
     (global.fetch as jest.Mock).mockResolvedValue({
       ok: true,
+      headers: { get: () => null },
       json: async () => ({
         status: 'success',
         message: 'Charge created',
@@ -65,11 +66,67 @@ describe('FlutterwaveService', () => {
     });
 
     expect(result.authorizationUrl).toBe('https://checkout.example/redirect');
+
+    const [, init] = (global.fetch as jest.Mock).mock.calls[0] as [
+      string,
+      { headers: Record<string, string> },
+    ];
+    expect(init.headers['X-Idempotency-Key']).toBeDefined();
+    expect(init.headers['X-Idempotency-Key']).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-8[0-9a-f]{3}-[0-9a-f]{12}$/,
+    );
+  });
+
+  it('reuses the same idempotency key when retrying after a 5xx', async () => {
+    (global.fetch as jest.Mock)
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 502,
+        headers: { get: () => null },
+        json: async () => ({
+          status: 'failed',
+          error: { message: 'Bad gateway' },
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        headers: { get: () => 'true' },
+        json: async () => ({
+          status: 'success',
+          data: {
+            reference: 'flw-ref-1',
+            next_action: {
+              type: 'redirect_url',
+              redirect_url: { url: 'https://checkout.example/redirect' },
+            },
+          },
+        }),
+      });
+
+    await service.initializeTransaction({
+      email: 'buyer@example.com',
+      phone: '08012345678',
+      name: 'Ada Lovelace',
+      amountNaira: 5000,
+      reference: 'flw-ref-1',
+      callbackPath: '/callback',
+      paymentMethod: 'opay',
+    });
+
+    expect(global.fetch).toHaveBeenCalledTimes(2);
+    const firstKey = (global.fetch as jest.Mock).mock.calls[0][1].headers[
+      'X-Idempotency-Key'
+    ];
+    const secondKey = (global.fetch as jest.Mock).mock.calls[1][1].headers[
+      'X-Idempotency-Key'
+    ];
+    expect(firstKey).toBe(secondKey);
   });
 
   it('verifies succeeded charge with matching amount', async () => {
     (global.fetch as jest.Mock).mockResolvedValue({
       ok: true,
+      headers: { get: () => null },
       json: async () => ({
         status: 'success',
         message: 'Charges fetched',
@@ -91,6 +148,7 @@ describe('FlutterwaveService', () => {
   it('rejects verify when amount mismatches', async () => {
     (global.fetch as jest.Mock).mockResolvedValue({
       ok: true,
+      headers: { get: () => null },
       json: async () => ({
         status: 'success',
         message: 'Charges fetched',

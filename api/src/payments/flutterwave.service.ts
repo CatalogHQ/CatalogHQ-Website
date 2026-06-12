@@ -10,12 +10,16 @@ import {
   newFlutterwaveTraceId,
   resolveFlutterwaveBaseUrl,
 } from './flutterwave.config';
+import { flutterwaveIdempotencyKey } from './flutterwave-idempotency.util';
 import {
   buildFlutterwavePaymentMethod,
   FlutterwavePaymentMethod,
   normalizeNigerianPhoneForFlutterwave,
   splitCustomerName,
 } from './flutterwave-payment-methods';
+
+const FLUTTERWAVE_POST_MAX_ATTEMPTS = 3;
+const FLUTTERWAVE_RETRY_BASE_MS = 300;
 
 type FlutterwaveApiResponse<T> = {
   status: string;
@@ -65,6 +69,17 @@ export type FlutterwaveInitResult = {
     expiresAt?: string;
   };
 };
+
+class FlutterwaveRetryableError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'FlutterwaveRetryableError';
+  }
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 @Injectable()
 export class FlutterwaveService {
@@ -122,6 +137,7 @@ export class FlutterwaveService {
       '/orchestration/direct-charges',
       {
         method: 'POST',
+        idempotencyKey: flutterwaveIdempotencyKey('charge', params.reference),
         body: {
           amount: params.amountNaira,
           currency: 'NGN',
@@ -161,6 +177,7 @@ export class FlutterwaveService {
 
     const customer = await this.request<CustomerData>('/customers', {
       method: 'POST',
+      idempotencyKey: flutterwaveIdempotencyKey('customer', params.reference),
       body: {
         email: params.email,
         name: nameParts,
@@ -179,6 +196,10 @@ export class FlutterwaveService {
       '/virtual-accounts',
       {
         method: 'POST',
+        idempotencyKey: flutterwaveIdempotencyKey(
+          'virtual-account',
+          params.reference,
+        ),
         body: {
           reference: params.reference,
           customer_id: customer.id,
@@ -258,6 +279,13 @@ export class FlutterwaveService {
       return false;
     }
 
+    if (charge.reference && charge.reference !== reference) {
+      this.logger.warn(
+        `Flutterwave charge reference mismatch: expected ${reference}, got ${charge.reference}`,
+      );
+      return false;
+    }
+
     if (expectedAmount !== undefined) {
       if (charge.amount !== expectedAmount) {
         return false;
@@ -280,7 +308,60 @@ export class FlutterwaveService {
 
   private async request<T>(
     path: string,
-    options: { method: string; body?: Record<string, unknown> },
+    options: {
+      method: string;
+      body?: Record<string, unknown>;
+      idempotencyKey?: string;
+    },
+  ): Promise<T> {
+    const isWrite =
+      options.method === 'POST' ||
+      options.method === 'PUT' ||
+      options.method === 'PATCH';
+    const idempotencyKey = isWrite
+      ? (options.idempotencyKey ?? newFlutterwaveTraceId())
+      : undefined;
+
+    const maxAttempts = isWrite ? FLUTTERWAVE_POST_MAX_ATTEMPTS : 1;
+
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        return await this.executeRequest<T>(path, options.method, options.body, {
+          idempotencyKey,
+          attempt,
+          maxAttempts,
+        });
+      } catch (error) {
+        const retryable = error instanceof FlutterwaveRetryableError;
+        if (!retryable || attempt === maxAttempts) {
+          if (retryable) {
+            throw new InternalServerErrorException(
+              'Could not complete payment request.',
+            );
+          }
+          throw error;
+        }
+
+        const delayMs = FLUTTERWAVE_RETRY_BASE_MS * attempt;
+        this.logger.warn(
+          `Flutterwave ${options.method} ${path} retry ${attempt}/${maxAttempts} in ${delayMs}ms`,
+        );
+        await sleep(delayMs);
+      }
+    }
+
+    throw new InternalServerErrorException('Could not complete payment request.');
+  }
+
+  private async executeRequest<T>(
+    path: string,
+    method: string,
+    body: Record<string, unknown> | undefined,
+    context: {
+      idempotencyKey?: string;
+      attempt: number;
+      maxAttempts: number;
+    },
   ): Promise<T> {
     const token = await this.auth.getAccessToken();
     if (!token) {
@@ -294,21 +375,54 @@ export class FlutterwaveService {
       'X-Trace-Id': newFlutterwaveTraceId(),
     };
 
-    if (options.method !== 'GET') {
-      headers['X-Idempotency-Key'] = newFlutterwaveTraceId();
+    if (context.idempotencyKey) {
+      headers['X-Idempotency-Key'] = context.idempotencyKey;
     }
 
     if (this.env !== 'production' && this.scenarioKey) {
       headers['X-Scenario-Key'] = this.scenarioKey;
     }
 
-    const response = await fetch(`${this.baseUrl}${path}`, {
-      method: options.method,
-      headers,
-      body: options.body ? JSON.stringify(options.body) : undefined,
-    });
+    let response: Response;
+    try {
+      response = await fetch(`${this.baseUrl}${path}`, {
+        method,
+        headers,
+        body: body ? JSON.stringify(body) : undefined,
+      });
+    } catch (error) {
+      this.logger.error(
+        `Flutterwave network error ${method} ${path}: ${error instanceof Error ? error.message : 'unknown'}`,
+      );
+      throw new FlutterwaveRetryableError('network');
+    }
 
-    const json = (await response.json()) as FlutterwaveApiResponse<T>;
+    const cacheHit = response.headers.get('x-idempotency-cache-hit');
+    if (cacheHit === 'true') {
+      this.logger.log(
+        `Flutterwave idempotency cache hit for ${method} ${path}`,
+      );
+    }
+
+    let json: FlutterwaveApiResponse<T>;
+    try {
+      json = (await response.json()) as FlutterwaveApiResponse<T>;
+    } catch {
+      if (response.status >= 500) {
+        throw new FlutterwaveRetryableError(`HTTP ${response.status}`);
+      }
+      throw new InternalServerErrorException('Could not complete payment request.');
+    }
+
+    if (response.status >= 500) {
+      const detail =
+        json.error?.message ?? json.message ?? `HTTP ${response.status}`;
+      this.logger.error(
+        `Flutterwave API ${method} ${path} server error: ${detail}`,
+      );
+      throw new FlutterwaveRetryableError(detail);
+    }
+
     if (!response.ok || json.status !== 'success') {
       const detail =
         json.error?.message ??
@@ -318,7 +432,7 @@ export class FlutterwaveService {
           .join('; ') ??
         `HTTP ${response.status}`;
       this.logger.error(
-        `Flutterwave API ${options.method} ${path} failed: ${detail}`,
+        `Flutterwave API ${method} ${path} failed: ${detail}`,
       );
       if (json.error?.code) {
         this.logger.debug(

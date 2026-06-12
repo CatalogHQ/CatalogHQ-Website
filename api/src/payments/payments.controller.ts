@@ -47,7 +47,10 @@ export class PaymentsController {
       body.data?.status === 'succeeded' &&
       body.data?.reference
     ) {
-      await this.paymentsService.confirmPayment(body.data.reference);
+      await this.paymentsService.confirmPayment(body.data.reference, {
+        amount: body.data.amount,
+        currency: body.data.currency,
+      });
     }
 
     return { received: true };

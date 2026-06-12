@@ -18,13 +18,30 @@ export class PaymentsService {
     private readonly configService: ConfigService,
   ) {}
 
-  async confirmPayment(gatewayReference: string): Promise<void> {
+  async confirmPayment(
+    gatewayReference: string,
+    webhookHint?: { amount?: number; currency?: string },
+  ): Promise<void> {
     const order = await this.prisma.order.findUnique({
       where: { gatewayReference },
       include: { store: { include: { vendor: true } } },
     });
 
     if (!order || order.paymentStatus === PaymentStatus.paid) {
+      return;
+    }
+
+    if (
+      webhookHint?.amount !== undefined &&
+      webhookHint.amount !== order.totalPaid
+    ) {
+      return;
+    }
+
+    if (
+      webhookHint?.currency !== undefined &&
+      webhookHint.currency !== 'NGN'
+    ) {
       return;
     }
 
