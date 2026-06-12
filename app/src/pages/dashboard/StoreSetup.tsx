@@ -7,7 +7,6 @@ import { ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Progress } from "@/components/ui/progress";
 import {
   Form,
   FormControl,
@@ -82,7 +81,6 @@ export default function StoreSetup() {
   const businessName = form.watch("businessName");
   const slug = form.watch("slug");
   const currentStep = STORE_SETUP_STEPS[step];
-  const progress = ((step + 1) / TOTAL_STEPS) * 100;
 
   useEffect(() => {
     if (!slugEdited && businessName) {
@@ -175,8 +173,6 @@ export default function StoreSetup() {
           A few quick steps and your storefront link is ready to share.
         </p>
       </div>
-
-      <Progress value={progress} className="h-1.5 bg-gray-100 [&>div]:bg-whatsapp-green" />
 
       <ol className="flex gap-2">
         {STORE_SETUP_STEPS.map((setupStep, index) => (
