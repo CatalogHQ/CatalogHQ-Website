@@ -96,7 +96,7 @@ export default function VendorSupportCard({
 
         <p className="text-sm text-gray-600">
           Available {VENDOR_SUPPORT.hours}. We typically reply within a few
-          hours on WhatsApp.
+          minutes on WhatsApp.
         </p>
 
         <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">

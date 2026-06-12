@@ -4,7 +4,7 @@ import { normalizePhoneForWhatsApp } from "@/lib/format";
 export const SUPPORT_CONTACT = {
   whatsapp: "07019062597",
   email: "support@cataloghq.ng",
-  hours: "Mon–Sat, 9am–6pm WAT",
+  hours: "Mon–Sun, 9am–11pm WAT",
 } as const;
 
 /** @deprecated Use SUPPORT_CONTACT */
