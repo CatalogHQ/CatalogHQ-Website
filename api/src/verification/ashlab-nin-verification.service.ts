@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { parseAshlabNinVerificationData } from './ashlab-nin-response.parser';
 import {
   describeAshlabAuthMode,
   isNinVerifyDebugEnabled,
@@ -25,11 +26,6 @@ export type NinVerificationResult =
   | { status: 'payment_required'; message: string }
   | { status: 'unavailable'; message: string };
 
-type AshlabSuccessResponse = {
-  success: true;
-  data: NinVerificationData & { photo?: string };
-};
-
 type AshlabErrorResponse = {
   success?: false;
   message?: string;
@@ -37,7 +33,7 @@ type AshlabErrorResponse = {
 };
 
 export const ASHLAB_VERIFY_DEFAULT_BASE_URL =
-  'https://api.verify.ashlabtech.ng/api/v1';
+  'https://verify.ashlabtech.ng/api/v1';
 export const ASHLAB_VERIFY_DEFAULT_PATH = '/verify/nin';
 
 const ASHLAB_ROUTE_NOT_FOUND_MESSAGE =
@@ -129,7 +125,7 @@ export class AshlabNinVerificationService {
       });
 
       const body = (await response.json().catch(() => ({}))) as
-        | AshlabSuccessResponse
+        | Record<string, unknown>
         | AshlabErrorResponse;
 
       if (isNinVerifyDebugEnabled(this.configService)) {
@@ -138,19 +134,43 @@ export class AshlabNinVerificationService {
         );
       }
 
-      if (response.ok && 'success' in body && body.success === true) {
-        const { photo: _photo, ...data } = body.data;
+      const verifiedData = parseAshlabNinVerificationData(body, normalized);
+
+      if (response.ok && verifiedData) {
         if (isNinVerifyDebugEnabled(this.configService)) {
           this.logger.log(
-            `[NIN debug] Ashlab success | first_name="${data.first_name}" last_name="${data.last_name}"`,
+            `[NIN debug] Ashlab success | first_name="${verifiedData.first_name}" last_name="${verifiedData.last_name}"`,
           );
         }
-        return { status: 'verified', data };
+        return { status: 'verified', data: verifiedData };
+      }
+
+      if (
+        response.ok &&
+        typeof body === 'object' &&
+        body !== null &&
+        body.success === true
+      ) {
+        this.logger.error(
+          'Ashlab returned success but the NIN identity payload could not be parsed.',
+        );
+        return {
+          status: 'unavailable',
+          message: 'NIN verification is temporarily unavailable.',
+        };
       }
 
       const message =
-        ('message' in body && body.message) ||
-        ('error' in body && body.error) ||
+        (typeof body === 'object' &&
+          body !== null &&
+          'message' in body &&
+          typeof body.message === 'string' &&
+          body.message) ||
+        (typeof body === 'object' &&
+          body !== null &&
+          'error' in body &&
+          typeof body.error === 'string' &&
+          body.error) ||
         'NIN could not be verified.';
 
       if (isNinVerifyDebugEnabled(this.configService)) {

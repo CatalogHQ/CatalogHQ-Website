@@ -36,7 +36,7 @@ describe('AshlabNinVerificationService', () => {
     expect(service.isConfigured()).toBe(true);
   });
 
-  it('verifies a valid NIN', async () => {
+  it('verifies a valid NIN from flat responses', async () => {
     const fetchMock = jest.spyOn(global, 'fetch').mockResolvedValue({
       ok: true,
       status: 200,
@@ -70,6 +70,36 @@ describe('AshlabNinVerificationService', () => {
         body: JSON.stringify({ nin: '11111111111', consent: true }),
       }),
     );
+  });
+
+  it('verifies a valid NIN from nested live responses', async () => {
+    jest.spyOn(global, 'fetch').mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        success: true,
+        data: {
+          _raw: {
+            data: {
+              firstName: 'GODWIN',
+              lastName: 'ADIGUN',
+              idNumber: '44370358877',
+            },
+          },
+        },
+      }),
+    } as Response);
+
+    const result = await service.verify('44370358877');
+
+    expect(result).toEqual({
+      status: 'verified',
+      data: {
+        nin: '44370358877',
+        first_name: 'GODWIN',
+        last_name: 'ADIGUN',
+      },
+    });
   });
 
   it('returns not_found for 404 NIN responses', async () => {

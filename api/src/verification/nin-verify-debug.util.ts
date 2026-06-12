@@ -52,6 +52,20 @@ export function sanitizeAshlabResponseBody(body: unknown): unknown {
     if ('photo' in data) {
       data.photo = '[redacted]';
     }
+    if ('image' in data) {
+      data.image = '[redacted]';
+    }
+    if (data._raw && typeof data._raw === 'object') {
+      const raw = { ...(data._raw as Record<string, unknown>) };
+      if (raw.data && typeof raw.data === 'object') {
+        const inner = { ...(raw.data as Record<string, unknown>) };
+        if ('image' in inner) inner.image = '[redacted]';
+        if ('photo' in inner) inner.photo = '[redacted]';
+        if ('signature' in inner) inner.signature = '[redacted]';
+        raw.data = inner;
+      }
+      data._raw = raw;
+    }
     copy.data = data;
   }
 
