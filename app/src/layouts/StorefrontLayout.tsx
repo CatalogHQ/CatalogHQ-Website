@@ -42,7 +42,6 @@ export default function StorefrontLayout({
     return (
       <div className="fixed inset-0 z-0 h-dvh max-h-dvh w-full overflow-hidden bg-black">
         <main className="h-dvh w-full">{children}</main>
-        {supportFab}
       </div>
     );
   }
