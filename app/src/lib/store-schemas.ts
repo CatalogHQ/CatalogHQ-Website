@@ -93,6 +93,49 @@ export const storeSetupSchema = z.object({
 
 export type StoreSetupFormValues = z.infer<typeof storeSetupSchema>;
 
+export const storeSetupStep1Schema = storeSetupSchema.pick({
+  businessName: true,
+  category: true,
+  bio: true,
+  slug: true,
+});
+
+export const storeSetupStep2Schema = storeSetupSchema.pick({
+  address: true,
+  city: true,
+  state: true,
+  whatsapp: true,
+});
+
+export const storeSetupStep3Schema = storeSetupSchema.pick({
+  legalFirstName: true,
+  legalLastName: true,
+  nin: true,
+});
+
+export const STORE_SETUP_STEPS = [
+  {
+    id: "business",
+    title: "Your business",
+    description: "Name your store and choose your public link.",
+    fields: ["businessName", "category", "bio", "slug"] as const,
+  },
+  {
+    id: "location",
+    title: "Location & contact",
+    description: "Where you operate and how customers reach you.",
+    fields: ["address", "city", "state", "whatsapp"] as const,
+  },
+  {
+    id: "identity",
+    title: "Verify identity",
+    description: "Confirm you own this NIN so we can trust your account.",
+    fields: ["legalFirstName", "legalLastName", "nin"] as const,
+  },
+] as const;
+
+export type StoreSetupStepId = (typeof STORE_SETUP_STEPS)[number]["id"];
+
 export function createSlugFromName(name: string): string {
   return slugify(name);
 }
