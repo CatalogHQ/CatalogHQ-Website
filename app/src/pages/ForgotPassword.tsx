@@ -229,15 +229,6 @@ export default function ForgotPassword() {
           </form>
         </Form>
       )}
-
-      <p className="mt-4 text-center text-sm text-gray-500">
-        <Link
-          to="/sign-in"
-          className="text-whatsapp-dark hover:text-whatsapp-green"
-        >
-          Back to sign in
-        </Link>
-      </p>
     </AuthLayout>
   );
 }
