@@ -7,6 +7,7 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { JwtStrategy } from './jwt.strategy';
+import { OtpRateLimitService } from './otp-rate-limit.service';
 import { OtpService } from './otp.service';
 
 @Module({
@@ -25,7 +26,7 @@ import { OtpService } from './otp.service';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, OtpService, JwtStrategy, JwtAuthGuard],
+  providers: [AuthService, OtpRateLimitService, OtpService, JwtStrategy, JwtAuthGuard],
   exports: [AuthService, JwtAuthGuard, PassportModule, JwtModule],
 })
 export class AuthModule {}

@@ -14,6 +14,7 @@ import { PingramEmailService } from '../notifications/pingram-email.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuthResponse } from './auth.types';
 import { AuthService } from './auth.service';
+import { OtpRateLimitService } from './otp-rate-limit.service';
 
 const OTP_TTL_MS = 10 * 60 * 1000;
 const SIGNUP_PENDING_TTL_MS = 30 * 60 * 1000;
@@ -24,6 +25,7 @@ export class OtpService {
     private readonly prisma: PrismaService,
     private readonly emailService: PingramEmailService,
     private readonly authService: AuthService,
+    private readonly otpRateLimitService: OtpRateLimitService,
   ) {}
 
   private generateCode(): string {
@@ -118,6 +120,7 @@ export class OtpService {
     this.assertEmailConfigured();
 
     const normalized = normalizeEmail(email);
+    await this.otpRateLimitService.assertCanSendOtp(normalized);
     const existing = await this.prisma.user.findUnique({
       where: { email: normalized },
     });
@@ -156,6 +159,8 @@ export class OtpService {
     this.assertEmailConfigured();
 
     const normalized = normalizeEmail(email);
+    await this.otpRateLimitService.assertCanSendOtp(normalized);
+
     const existing = await this.prisma.user.findUnique({
       where: { email: normalized },
     });
@@ -244,6 +249,8 @@ export class OtpService {
     this.assertEmailConfigured();
 
     const normalized = normalizeEmail(email);
+    await this.otpRateLimitService.assertCanSendOtp(normalized);
+
     const user = await this.prisma.user.findUnique({
       where: { email: normalized },
     });

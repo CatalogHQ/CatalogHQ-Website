@@ -5,6 +5,7 @@ import { EmailOtpPurpose } from '@prisma/client';
 import { PingramEmailService } from '../notifications/pingram-email.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuthService } from './auth.service';
+import { OtpRateLimitService } from './otp-rate-limit.service';
 import { OtpService } from './otp.service';
 
 describe('OtpService', () => {
@@ -34,6 +35,10 @@ describe('OtpService', () => {
     createSession: jest.fn(),
   };
 
+  const otpRateLimitService = {
+    assertCanSendOtp: jest.fn().mockResolvedValue(undefined),
+  };
+
   let service: OtpService;
 
   beforeEach(async () => {
@@ -45,6 +50,7 @@ describe('OtpService', () => {
         { provide: PrismaService, useValue: prisma },
         { provide: PingramEmailService, useValue: emailService },
         { provide: AuthService, useValue: authService },
+        { provide: OtpRateLimitService, useValue: otpRateLimitService },
       ],
     }).compile();
 

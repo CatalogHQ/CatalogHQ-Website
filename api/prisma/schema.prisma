@@ -61,6 +61,14 @@ model EmailOtp {
   createdAt DateTime        @default(now())
 
   @@index([email, purpose])
+  @@index([email, createdAt])
+}
+
+model OtpSendLock {
+  email       String   @id
+  lockedUntil DateTime
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 enum OrderStatus {
