@@ -2,7 +2,7 @@ import { BadRequestException, ServiceUnavailableException } from '@nestjs/common
 import { Test, TestingModule } from '@nestjs/testing';
 import * as bcrypt from 'bcrypt';
 import { EmailOtpPurpose } from '@prisma/client';
-import { SendChampService } from '../notifications/sendchamp.service';
+import { PingramEmailService } from '../notifications/pingram-email.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuthService } from './auth.service';
 import { OtpService } from './otp.service';
@@ -25,7 +25,7 @@ describe('OtpService', () => {
     $transaction: jest.fn(),
   };
 
-  const sendChamp = {
+  const emailService = {
     isConfigured: jest.fn().mockReturnValue(true),
     sendEmail: jest.fn(),
   };
@@ -43,7 +43,7 @@ describe('OtpService', () => {
       providers: [
         OtpService,
         { provide: PrismaService, useValue: prisma },
-        { provide: SendChampService, useValue: sendChamp },
+        { provide: PingramEmailService, useValue: emailService },
         { provide: AuthService, useValue: authService },
       ],
     }).compile();
@@ -67,7 +67,7 @@ describe('OtpService', () => {
         }),
       }),
     );
-    expect(sendChamp.sendEmail).toHaveBeenCalled();
+    expect(emailService.sendEmail).toHaveBeenCalled();
   });
 
   it('resends signup OTP for pending accounts', async () => {
@@ -80,12 +80,12 @@ describe('OtpService', () => {
     prisma.signupPending.update.mockResolvedValue({ id: 'pending-1' });
     prisma.emailOtp.create.mockResolvedValue({ id: 'otp-1' });
     prisma.emailOtp.updateMany.mockResolvedValue({ count: 0 });
-    sendChamp.sendEmail.mockResolvedValue(undefined);
+    emailService.sendEmail.mockResolvedValue(undefined);
 
     await service.resendSignUpOtp('vendor@example.com', 'password123');
 
     expect(prisma.signupPending.update).toHaveBeenCalled();
-    expect(sendChamp.sendEmail).toHaveBeenCalled();
+    expect(emailService.sendEmail).toHaveBeenCalled();
   });
 
   it('surfaces email delivery failures during signup', async () => {
@@ -93,7 +93,7 @@ describe('OtpService', () => {
     prisma.signupPending.upsert.mockResolvedValue({ id: 'pending-1' });
     prisma.emailOtp.create.mockResolvedValue({ id: 'otp-1' });
     prisma.emailOtp.updateMany.mockResolvedValue({ count: 1 });
-    sendChamp.sendEmail.mockRejectedValue(
+    emailService.sendEmail.mockRejectedValue(
       new ServiceUnavailableException('Could not send verification email.'),
     );
 

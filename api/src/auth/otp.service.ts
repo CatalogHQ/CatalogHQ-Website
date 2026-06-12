@@ -10,7 +10,7 @@ import * as bcrypt from 'bcrypt';
 import { randomInt } from 'crypto';
 import { EmailOtpPurpose } from '@prisma/client';
 import { normalizeEmail } from '../common/email.util';
-import { SendChampService } from '../notifications/sendchamp.service';
+import { PingramEmailService } from '../notifications/pingram-email.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuthResponse } from './auth.types';
 import { AuthService } from './auth.service';
@@ -22,7 +22,7 @@ const SIGNUP_PENDING_TTL_MS = 30 * 60 * 1000;
 export class OtpService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly sendChamp: SendChampService,
+    private readonly emailService: PingramEmailService,
     private readonly authService: AuthService,
   ) {}
 
@@ -30,8 +30,8 @@ export class OtpService {
     return String(randomInt(100_000, 1_000_000));
   }
 
-  private assertSendChampConfigured(): void {
-    if (!this.sendChamp.isConfigured()) {
+  private assertEmailConfigured(): void {
+    if (!this.emailService.isConfigured()) {
       throw new ServiceUnavailableException(
         'Email delivery is not configured. Contact support.',
       );
@@ -53,7 +53,7 @@ export class OtpService {
         : 'Use this code to reset your CatalogHQ password:';
     const htmlBody = `<p>Hi,</p><p>${intro}</p><p style="font-size:24px;font-weight:bold;letter-spacing:4px">${code}</p><p>This code expires in 10 minutes. Do not share it with anyone.</p><p>CatalogHQ Team</p>`;
 
-    await this.sendChamp.sendEmail(email, subject, htmlBody, undefined, {
+    await this.emailService.sendEmail(email, subject, htmlBody, undefined, {
       required: true,
     });
   }
@@ -114,7 +114,7 @@ export class OtpService {
   }
 
   async initSignUp(email: string, password: string): Promise<void> {
-    this.assertSendChampConfigured();
+    this.assertEmailConfigured();
 
     const normalized = normalizeEmail(email);
     const existing = await this.prisma.user.findUnique({
@@ -152,7 +152,7 @@ export class OtpService {
   }
 
   async resendSignUpOtp(email: string, password: string): Promise<void> {
-    this.assertSendChampConfigured();
+    this.assertEmailConfigured();
 
     const normalized = normalizeEmail(email);
     const existing = await this.prisma.user.findUnique({
@@ -240,7 +240,7 @@ export class OtpService {
   }
 
   async sendPasswordResetOtp(email: string): Promise<void> {
-    this.assertSendChampConfigured();
+    this.assertEmailConfigured();
 
     const normalized = normalizeEmail(email);
     const user = await this.prisma.user.findUnique({

@@ -18,8 +18,6 @@ import { ReviewsModule } from './reviews/reviews.module';
 import { StoresModule } from './stores/stores.module';
 import { TicketsModule } from './tickets/tickets.module';
 import { UploadsModule } from './uploads/uploads.module';
-import { WebhooksModule } from './webhooks/webhooks.module';
-
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -57,7 +55,6 @@ import { WebhooksModule } from './webhooks/webhooks.module';
     TicketsModule,
     AdminModule,
     HealthModule,
-    WebhooksModule,
   ],
   providers: [
     {

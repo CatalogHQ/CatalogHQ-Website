@@ -1,10 +1,11 @@
 import { Global, Module } from '@nestjs/common';
 import { NotificationsListener } from './notifications.listener';
-import { SendChampService } from './sendchamp.service';
+import { PingramEmailService } from './pingram-email.service';
+import { SmsService } from './sms.service';
 
 @Global()
 @Module({
-  providers: [SendChampService, NotificationsListener],
-  exports: [SendChampService],
+  providers: [PingramEmailService, SmsService, NotificationsListener],
+  exports: [PingramEmailService, SmsService],
 })
 export class NotificationsModule {}

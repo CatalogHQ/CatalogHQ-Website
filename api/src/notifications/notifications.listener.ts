@@ -17,7 +17,8 @@ import { LowStockEvent } from '../orders/events/low-stock.event';
 import { PrismaService } from '../prisma/prisma.service';
 import { TICKET_RESOLVED_EVENT } from '../tickets/events/ticket.events';
 import { TicketResolvedEvent } from '../tickets/events/ticket-resolved.event';
-import { SendChampService } from './sendchamp.service';
+import { PingramEmailService } from './pingram-email.service';
+import { SmsService } from './sms.service';
 
 const STATUS_LABELS: Record<string, string> = {
   reserved: 'Reserved',
@@ -33,7 +34,8 @@ export class NotificationsListener {
   private readonly logger = new Logger(NotificationsListener.name);
 
   constructor(
-    private readonly sendChamp: SendChampService,
+    private readonly smsService: SmsService,
+    private readonly emailService: PingramEmailService,
     private readonly prisma: PrismaService,
     private readonly configService: ConfigService,
   ) {}
@@ -55,7 +57,7 @@ export class NotificationsListener {
     if (!order?.store.whatsapp) return;
 
     const message = `New CatalogHQ order ${order.paymentRef}: ${order.productName} x${order.quantity} (${order.totalPaid} NGN) from ${order.customerName}. Check your dashboard.`;
-    await this.sendChamp.sendSms(order.store.whatsapp, message);
+    await this.smsService.sendSms(order.store.whatsapp, message);
   }
 
   @OnEvent(ORDER_STATUS_UPDATED_EVENT)
@@ -68,19 +70,19 @@ export class NotificationsListener {
 
     const label = STATUS_LABELS[event.status] ?? event.status;
     const message = `Your CatalogHQ order ${event.paymentRef} from ${event.storeName} is now ${label}. Track your order on CatalogHQ.`;
-    await this.sendChamp.sendSms(event.customerPhone, message);
+    await this.smsService.sendSms(event.customerPhone, message);
   }
 
   @OnEvent(REVIEW_INVITE_EVENT)
   async handleReviewInvite(event: ReviewInviteEvent): Promise<void> {
     const message = `How was your order ${event.paymentRef} from ${event.storeName}? Leave a review: ${this.appOrigin}/s/order/${event.paymentRef}/review`;
-    await this.sendChamp.sendSms(event.customerPhone, message);
+    await this.smsService.sendSms(event.customerPhone, message);
   }
 
   @OnEvent(LOW_STOCK_EVENT)
   async handleLowStock(event: LowStockEvent): Promise<void> {
     const message = `CatalogHQ alert: "${event.productName}" has only ${event.stock} left in stock. Restock soon.`;
-    await this.sendChamp.sendSms(event.vendorPhone, message);
+    await this.smsService.sendSms(event.vendorPhone, message);
   }
 
   @OnEvent(ABANDONED_CART_EVENT)
@@ -96,7 +98,7 @@ export class NotificationsListener {
     if (cart?.notifiedAt) return;
 
     const message = `You left items in your cart at ${store.businessName}. Complete your order: ${this.appOrigin}/s/${store.slug}`;
-    await this.sendChamp.sendSms(event.customerPhone, message);
+    await this.smsService.sendSms(event.customerPhone, message);
 
     await this.prisma.abandonedCart.update({
       where: { id: event.cartId },
@@ -107,7 +109,7 @@ export class NotificationsListener {
   @OnEvent(TICKET_RESOLVED_EVENT)
   async handleTicketResolved(event: TicketResolvedEvent): Promise<void> {
     const message = `Your CatalogHQ support ticket "${event.subject}" has been resolved. Reply on WhatsApp if you need more help.`;
-    await this.sendChamp.sendSms(event.contactPhone, message);
+    await this.smsService.sendSms(event.contactPhone, message);
   }
 
   @OnEvent(VENDOR_VERIFICATION_DECIDED_EVENT)
@@ -130,10 +132,10 @@ export class NotificationsListener {
 
     if (event.approved) {
       try {
-        await this.sendChamp.sendEmail(
+        await this.emailService.sendEmail(
           user.email,
           'Your CatalogHQ store is verified',
-          `<p>Hi,</p><p>Great news! <strong>${storeName}</strong> has been verified on CatalogHQ. Your verified badge is now visible on your storefront.</p><p>— CatalogHQ Team</p>`,
+          `<p>Hi,</p><p>Great news! <strong>${storeName}</strong> has been verified on CatalogHQ. Your verified badge is now visible on your storefront.</p><p>CatalogHQ Team</p>`,
           storeName,
         );
       } catch (error) {
@@ -147,10 +149,10 @@ export class NotificationsListener {
 
     const reason = event.reason ?? 'Verification requirements were not met.';
     try {
-      await this.sendChamp.sendEmail(
+      await this.emailService.sendEmail(
         user.email,
         'CatalogHQ verification update',
-        `<p>Hi,</p><p>We could not approve verification for <strong>${storeName}</strong>.</p><p><strong>Reason:</strong> ${reason}</p><p>You can resubmit updated documents from your dashboard settings.</p><p>— CatalogHQ Team</p>`,
+        `<p>Hi,</p><p>We could not approve verification for <strong>${storeName}</strong>.</p><p><strong>Reason:</strong> ${reason}</p><p>You can resubmit updated documents from your dashboard settings.</p><p>CatalogHQ Team</p>`,
         storeName,
       );
     } catch (error) {

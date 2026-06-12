@@ -50,23 +50,15 @@ class EnvironmentVariables {
 
   @IsOptional()
   @IsString()
-  SENDCHAMP_API_KEY?: string;
+  PINGRAM_API_KEY?: string;
 
   @IsOptional()
   @IsString()
-  SENDCHAMP_MODE?: string;
+  PINGRAM_FROM_EMAIL?: string;
 
   @IsOptional()
   @IsString()
-  SENDCHAMP_SMS_SENDER?: string;
-
-  @IsOptional()
-  @IsString()
-  SENDCHAMP_FROM_EMAIL?: string;
-
-  @IsOptional()
-  @IsString()
-  SENDCHAMP_FROM_NAME?: string;
+  PINGRAM_FROM_NAME?: string;
 
   @IsOptional()
   @IsString()
