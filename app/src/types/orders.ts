@@ -68,17 +68,30 @@ export const ORDER_STATUS_FLOW: OrderStatus[] = [
   "delivered",
 ];
 
+export type FlutterwavePaymentMethod =
+  | "opay"
+  | "mobile_money"
+  | "ussd"
+  | "bank_transfer";
+
 export type CheckoutInput = CustomerOrderInput & {
   storeSlug: string;
   deliveryZoneId?: string;
   discountCode?: string;
+  paymentMethod: FlutterwavePaymentMethod;
+  ussdBankCode?: string;
 };
 
 export type CheckoutPayment = {
   mock: boolean;
   authorizationUrl: string | null;
   reference: string;
-  publicKey?: string;
+  paymentInstruction?: string;
+  virtualAccount?: {
+    accountNumber: string;
+    bankName: string;
+    expiresAt?: string;
+  };
 };
 
 export type CheckoutResult = {

@@ -21,9 +21,24 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { phoneSchema } from "@/lib/auth-schemas";
 import { deliveryRequiresAddress } from "@/lib/delivery-types";
+import {
+  FLUTTERWAVE_PAYMENT_METHODS,
+  savePendingPaymentDetails,
+  USSD_BANK_OPTIONS,
+  type FlutterwavePaymentMethodId,
+} from "@/lib/flutterwave-payment-methods";
 import { formatNaira } from "@/lib/format";
 import { orderRepository } from "@/lib/repositories";
 import { isApiMode } from "@/lib/use-api";
@@ -57,19 +72,36 @@ type FlutterwaveCheckoutProps = {
 function createCheckoutSchema(deliveryType: DeliveryTypeId) {
   const needsAddress = deliveryRequiresAddress(deliveryType);
 
-  return z.object({
-    customerName: z
-      .string()
-      .min(2, "Enter your full name")
-      .max(80, "Name is too long"),
-    customerPhone: phoneSchema,
-    deliveryAddress: needsAddress
-      ? z
-          .string()
-          .min(10, "Enter the full address where the product should be delivered")
-          .max(300)
-      : z.string().max(300).optional().or(z.literal("")),
-  });
+  return z
+    .object({
+      customerName: z
+        .string()
+        .min(2, "Enter your full name")
+        .max(80, "Name is too long"),
+      customerPhone: phoneSchema,
+      deliveryAddress: needsAddress
+        ? z
+            .string()
+            .min(10, "Enter the full address where the product should be delivered")
+            .max(300)
+        : z.string().max(300).optional().or(z.literal("")),
+      paymentMethod: z.enum([
+        "opay",
+        "mobile_money",
+        "ussd",
+        "bank_transfer",
+      ]),
+      ussdBankCode: z.string().optional(),
+    })
+    .superRefine((values, ctx) => {
+      if (values.paymentMethod === "ussd" && !values.ussdBankCode) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Select your bank for USSD",
+          path: ["ussdBankCode"],
+        });
+      }
+    });
 }
 
 export default function FlutterwaveCheckout({
@@ -99,8 +131,12 @@ export default function FlutterwaveCheckout({
       customerName: "",
       customerPhone: "",
       deliveryAddress: "",
+      paymentMethod: "opay",
+      ussdBankCode: "",
     },
   });
+
+  const paymentMethod = form.watch("paymentMethod");
 
   useEffect(() => {
     if (!open || !isApiMode()) return;
@@ -158,10 +194,27 @@ export default function FlutterwaveCheckout({
         deliveryAddress: values.deliveryAddress?.trim() || undefined,
         deliveryZoneId: selection.deliveryZoneId,
         discountCode: selection.discountCode,
+        paymentMethod: values.paymentMethod,
+        ussdBankCode:
+          values.paymentMethod === "ussd" ? values.ussdBankCode : undefined,
       });
 
       if (result.payment.authorizationUrl) {
         window.location.href = result.payment.authorizationUrl;
+        return;
+      }
+
+      if (
+        result.payment.paymentInstruction ||
+        result.payment.virtualAccount
+      ) {
+        savePendingPaymentDetails(result.order.paymentRef, {
+          paymentInstruction: result.payment.paymentInstruction,
+          virtualAccount: result.payment.virtualAccount,
+        });
+        form.reset();
+        onOpenChange(false);
+        window.location.href = `/s/${storeSlug}/order/${result.order.paymentRef}`;
         return;
       }
 
@@ -216,6 +269,80 @@ export default function FlutterwaveCheckout({
             onSubmit={form.handleSubmit(handleSubmit)}
             className="space-y-4"
           >
+            <FormField
+              control={form.control}
+              name="paymentMethod"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Payment method</FormLabel>
+                  <FormControl>
+                    <RadioGroup
+                      value={field.value}
+                      onValueChange={(value) =>
+                        field.onChange(value as FlutterwavePaymentMethodId)
+                      }
+                      className="space-y-2"
+                    >
+                      {FLUTTERWAVE_PAYMENT_METHODS.map((method) => (
+                        <div
+                          key={method.id}
+                          className="flex items-start gap-3 rounded-lg border p-3"
+                        >
+                          <RadioGroupItem
+                            value={method.id}
+                            id={`pay-${method.id}`}
+                            className="mt-0.5"
+                          />
+                          <Label
+                            htmlFor={`pay-${method.id}`}
+                            className="cursor-pointer space-y-0.5 font-normal"
+                          >
+                            <span className="block text-sm font-medium text-gray-900">
+                              {method.label}
+                            </span>
+                            <span className="block text-xs text-gray-500">
+                              {method.description}
+                            </span>
+                          </Label>
+                        </div>
+                      ))}
+                    </RadioGroup>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {paymentMethod === "ussd" && (
+              <FormField
+                control={form.control}
+                name="ussdBankCode"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Your bank</FormLabel>
+                    <Select
+                      value={field.value}
+                      onValueChange={field.onChange}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select bank" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {USSD_BANK_OPTIONS.map((bank) => (
+                          <SelectItem key={bank.code} value={bank.code}>
+                            {bank.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+
             <FormField
               control={form.control}
               name="customerName"

@@ -71,6 +71,8 @@ export class LocalOrderRepository implements OrderRepository {
 
   async checkout(input: CheckoutInput): Promise<CheckoutResult> {
     void input.storeSlug;
+    void input.paymentMethod;
+    void input.ussdBankCode;
     const order = buildOrder(input, {
       status: "paid",
       paymentStatus: "paid",
@@ -83,13 +85,16 @@ export class LocalOrderRepository implements OrderRepository {
       payment: {
         mock: true,
         authorizationUrl: null,
-        reference: `ps_${order.paymentRef}`,
+        reference: `flw_${order.paymentRef}`,
       },
     };
   }
 
   async reserve(
-    input: Omit<CheckoutInput, "storeSlug">,
+    input: CustomerOrderInput & {
+      deliveryZoneId?: string;
+      discountCode?: string;
+    },
   ): Promise<CustomerOrder> {
     const order = buildOrder(input, {
       status: "reserved",

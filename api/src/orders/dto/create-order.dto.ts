@@ -1,3 +1,3 @@
-import { OrderCheckoutBaseDto } from './order-checkout-base.dto';
+import { CheckoutPaymentDto } from './checkout-payment.dto';
 
-export class CreateOrderDto extends OrderCheckoutBaseDto {}
+export class CreateOrderDto extends CheckoutPaymentDto {}

@@ -27,7 +27,10 @@ export class PaymentsService {
       return;
     }
 
-    const verified = await this.flutterwave.verifyTransaction(gatewayReference);
+    const verified = await this.flutterwave.verifyTransaction(
+      gatewayReference,
+      order.totalPaid,
+    );
     if (!verified) {
       await this.prisma.order.update({
         where: { id: order.id },
@@ -103,6 +106,7 @@ export class PaymentsService {
       amountNaira: order.totalPaid,
       reference,
       callbackPath: `/s/${order.store.slug}/order/${order.paymentRef}?paid=1`,
+      paymentMethod: 'opay',
       metadata: { paymentRef: order.paymentRef, orderId: order.id },
     });
 

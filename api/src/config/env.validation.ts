@@ -66,11 +66,15 @@ class EnvironmentVariables {
 
   @IsOptional()
   @IsString()
-  FLUTTERWAVE_SECRET_KEY?: string;
+  FLUTTERWAVE_ENV?: string;
 
   @IsOptional()
   @IsString()
-  FLUTTERWAVE_PUBLIC_KEY?: string;
+  FLUTTERWAVE_CLIENT_ID?: string;
+
+  @IsOptional()
+  @IsString()
+  FLUTTERWAVE_CLIENT_SECRET?: string;
 
   @IsOptional()
   @IsString()
@@ -79,6 +83,10 @@ class EnvironmentVariables {
   @IsOptional()
   @IsString()
   FLUTTERWAVE_CALLBACK_BASE_URL?: string;
+
+  @IsOptional()
+  @IsString()
+  FLUTTERWAVE_SCENARIO_KEY?: string;
 
   @IsOptional()
   @IsString()

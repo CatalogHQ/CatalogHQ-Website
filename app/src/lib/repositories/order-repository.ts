@@ -10,7 +10,12 @@ import type {
 export interface OrderRepository {
   create(input: CustomerOrderInput): Promise<CustomerOrder>;
   checkout(input: CheckoutInput): Promise<CheckoutResult>;
-  reserve(input: Omit<CheckoutInput, "storeSlug">): Promise<CustomerOrder>;
+  reserve(
+    input: CustomerOrderInput & {
+      deliveryZoneId?: string;
+      discountCode?: string;
+    },
+  ): Promise<CustomerOrder>;
   verifyPayment(paymentRef: string): Promise<CustomerOrder>;
   getReceipt(paymentRef: string): Promise<OrderReceipt>;
   markTransferReference(

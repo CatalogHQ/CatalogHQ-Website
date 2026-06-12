@@ -3,6 +3,8 @@ import {
   Controller,
   Headers,
   Post,
+  RawBodyRequest,
+  Req,
   UnauthorizedException,
 } from '@nestjs/common';
 import { SkipThrottle } from '@nestjs/throttler';
@@ -22,21 +24,30 @@ export class PaymentsController {
   @SkipThrottle()
   @Post('flutterwave/webhook')
   async flutterwaveWebhook(
-    @Headers('verif-hash') verifHash: string,
+    @Req() req: RawBodyRequest<Request>,
+    @Headers('flutterwave-signature') signature: string,
     @Body() body: FlutterwaveWebhookDto,
   ) {
+    const rawBody =
+      typeof req.rawBody === 'string'
+        ? req.rawBody
+        : JSON.stringify(body);
+
     if (this.flutterwaveService.isConfigured()) {
-      if (!verifHash || !this.flutterwaveService.verifyWebhookHash(verifHash)) {
-        throw new UnauthorizedException('Invalid Flutterwave webhook hash.');
+      if (
+        !signature ||
+        !this.flutterwaveService.verifyWebhookSignature(rawBody, signature)
+      ) {
+        throw new UnauthorizedException('Invalid Flutterwave webhook signature.');
       }
     }
 
     if (
-      body.event === 'charge.completed' &&
-      body.data?.status === 'successful' &&
-      body.data?.tx_ref
+      body.type === 'charge.completed' &&
+      body.data?.status === 'succeeded' &&
+      body.data?.reference
     ) {
-      await this.paymentsService.confirmPayment(body.data.tx_ref);
+      await this.paymentsService.confirmPayment(body.data.reference);
     }
 
     return { received: true };

@@ -36,7 +36,6 @@ describe('OrdersService', () => {
   const flutterwave = {
     isConfigured: jest.fn().mockReturnValue(false),
     initializeTransaction: jest.fn(),
-    getPublicKey: jest.fn().mockReturnValue('FLWPUBK_TEST'),
   };
 
   const paymentsService = {
@@ -128,6 +127,7 @@ describe('OrdersService', () => {
       deliveryType: 'pickup',
       customerName: 'Ada',
       customerPhone: '08012345678',
+      paymentMethod: 'opay',
     });
 
     expect(result.totalPaid).toBe(5000);
@@ -161,6 +161,7 @@ describe('OrdersService', () => {
         customerName: 'Ada',
         customerPhone: '08012345678',
         deliveryAddress: 'Lagos',
+        paymentMethod: 'opay',
       }),
     ).rejects.toBeInstanceOf(BadRequestException);
   });

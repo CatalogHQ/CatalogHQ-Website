@@ -27,6 +27,7 @@ import {
 import { OrderStatusUpdatedEvent } from './events/order-status-updated.event';
 import { ReviewInviteEvent } from './events/review-invite.event';
 import { OrderCheckoutBaseDto } from './dto/order-checkout-base.dto';
+import { CheckoutPaymentDto } from './dto/checkout-payment.dto';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { OrderDto, toOrderDto } from './orders.mapper';
 
@@ -52,7 +53,7 @@ export class OrdersService {
     private readonly paymentsService: PaymentsService,
   ) {}
 
-  async checkout(dto: OrderCheckoutBaseDto, storeSlug: string) {
+  async checkout(dto: CheckoutPaymentDto, storeSlug: string) {
     const pricing = await this.resolvePricing(dto);
     const gatewayReference = `flw_${generatePaymentRef()}`;
 
@@ -94,6 +95,8 @@ export class OrdersService {
         amountNaira: order.totalPaid,
         reference: gatewayReference,
         callbackPath: `/s/${storeSlug}/order/${order.paymentRef}?paid=1`,
+        paymentMethod: dto.paymentMethod,
+        ussdBankCode: dto.ussdBankCode,
         metadata: { paymentRef: order.paymentRef, orderId: order.id },
       });
 
@@ -103,7 +106,8 @@ export class OrdersService {
           mock: false,
           authorizationUrl: init.authorizationUrl,
           reference: init.reference,
-          publicKey: this.flutterwave.getPublicKey(),
+          paymentInstruction: init.paymentInstruction,
+          virtualAccount: init.virtualAccount,
         },
       };
     }

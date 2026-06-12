@@ -34,7 +34,10 @@ export class ApiOrderRepository implements OrderRepository {
   }
 
   async reserve(
-    input: Omit<CheckoutInput, "storeSlug">,
+    input: CustomerOrderInput & {
+      deliveryZoneId?: string;
+      discountCode?: string;
+    },
   ): Promise<CustomerOrder> {
     return apiClient<CustomerOrder>("/orders/reserve", {
       method: "POST",

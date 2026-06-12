@@ -17,6 +17,7 @@ import { usePublicStore } from "@/hooks/use-public-store";
 import { getDeliveryLabel } from "@/lib/delivery-types";
 import { formatNaira, normalizePhoneForWhatsApp } from "@/lib/format";
 import { buildWhatsAppUrl } from "@/lib/order-message";
+import { loadPendingPaymentDetails } from "@/lib/flutterwave-payment-methods";
 import { orderRepository } from "@/lib/repositories";
 import { hasFeature } from "@/data/plans";
 import {
@@ -138,6 +139,11 @@ export default function OrderStatusPage() {
     order.status === "delivered" &&
     hasFeature(store.planTier, "verified-reviews");
 
+  const pendingPayment =
+    order.paymentStatus !== "paid"
+      ? loadPendingPaymentDetails(order.paymentRef)
+      : null;
+
   return (
     <StorefrontLayout store={store} supportOrderRef={order.paymentRef}>
       <div className="mx-auto max-w-lg space-y-6">
@@ -157,6 +163,50 @@ export default function OrderStatusPage() {
             </p>
           )}
         </div>
+
+        {pendingPayment?.virtualAccount && (
+          <Card className="border-[#F5A623]/40 bg-orange-50">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">Complete your bank transfer</CardTitle>
+              <CardDescription>
+                Transfer exactly {formatNaira(order.totalPaid)} to the account below.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-2 text-sm">
+              <p>
+                <span className="text-gray-500">Bank: </span>
+                <span className="font-medium">{pendingPayment.virtualAccount.bankName}</span>
+              </p>
+              <p>
+                <span className="text-gray-500">Account number: </span>
+                <span className="font-mono font-semibold">
+                  {pendingPayment.virtualAccount.accountNumber}
+                </span>
+              </p>
+              {pendingPayment.virtualAccount.expiresAt && (
+                <p className="text-xs text-gray-600">
+                  Account expires{" "}
+                  {new Date(pendingPayment.virtualAccount.expiresAt).toLocaleString("en-NG")}
+                </p>
+              )}
+              {pendingPayment.paymentInstruction && (
+                <p className="text-gray-700">{pendingPayment.paymentInstruction}</p>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {pendingPayment?.paymentInstruction &&
+          !pendingPayment.virtualAccount && (
+            <Card className="border-[#F5A623]/40 bg-orange-50">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">Payment instructions</CardTitle>
+              </CardHeader>
+              <CardContent className="text-sm text-gray-800">
+                {pendingPayment.paymentInstruction}
+              </CardContent>
+            </Card>
+          )}
 
         {order.status === "reserved" && order.reservedUntil && (
           <Card className="border-amber-200 bg-amber-50">

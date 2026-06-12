@@ -1,7 +1,7 @@
 import { IsString, MinLength } from 'class-validator';
-import { OrderCheckoutBaseDto } from './order-checkout-base.dto';
+import { CheckoutPaymentDto } from './checkout-payment.dto';
 
-export class CheckoutOrderDto extends OrderCheckoutBaseDto {
+export class CheckoutOrderDto extends CheckoutPaymentDto {
   @IsString()
   @MinLength(1)
   storeSlug!: string;
