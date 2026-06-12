@@ -31,7 +31,7 @@ import type { DeliveryTypeId } from "@/lib/delivery-types";
 import type { ProductOrderSelection } from "@/lib/product-order-selection";
 import type { CustomerOrder } from "@/types/orders";
 
-type PaystackCheckoutProps = {
+type FlutterwaveCheckoutProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   storeSlug: string;
@@ -72,7 +72,7 @@ function createCheckoutSchema(deliveryType: DeliveryTypeId) {
   });
 }
 
-export default function PaystackCheckout({
+export default function FlutterwaveCheckout({
   open,
   onOpenChange,
   storeSlug,
@@ -86,7 +86,7 @@ export default function PaystackCheckout({
   selection,
   onSuccess,
   onReserve,
-}: PaystackCheckoutProps) {
+}: FlutterwaveCheckoutProps) {
   const [processing, setProcessing] = useState(false);
   const subtotal = unitPrice * selection.quantity;
   const total = subtotal + deliveryFee - discountAmount;
@@ -182,8 +182,8 @@ export default function PaystackCheckout({
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <span className="rounded bg-[#011B33] px-2 py-0.5 text-xs font-bold uppercase tracking-wide text-white">
-              Paystack
+            <span className="rounded bg-[#F5A623] px-2 py-0.5 text-xs font-bold uppercase tracking-wide text-white">
+              Flutterwave
             </span>
             Secure checkout
           </DialogTitle>
@@ -194,7 +194,7 @@ export default function PaystackCheckout({
 
         <div className="rounded-xl border bg-gray-50 p-4">
           <p className="text-sm text-gray-600">Amount to pay</p>
-          <p className="text-2xl font-bold text-[#011B33]">
+          <p className="text-2xl font-bold text-gray-900">
             {formatNaira(total)}
           </p>
           <div className="mt-1 space-y-0.5 text-xs text-gray-500">
@@ -276,7 +276,7 @@ export default function PaystackCheckout({
             <Button
               type="submit"
               disabled={processing}
-              className="h-11 w-full bg-[#011B33] hover:bg-[#011B33]/90"
+              className="h-11 w-full bg-[#F5A623] text-white hover:bg-[#F5A623]/90"
             >
               {processing ? (
                 <>
@@ -310,7 +310,7 @@ export default function PaystackCheckout({
 
             <p className="flex items-center justify-center gap-1 text-xs text-gray-500">
               <Lock className="h-3 w-3" />
-              Secured by Paystack
+              Secured by Flutterwave
             </p>
           </form>
         </Form>

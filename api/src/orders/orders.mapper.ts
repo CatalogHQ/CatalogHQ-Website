@@ -20,7 +20,7 @@ export type OrderDto = {
   deliveryAddress?: string;
   status: OrderStatus;
   paymentStatus: PaymentStatus;
-  paystackReference?: string;
+  gatewayReference?: string;
   transferReference?: string;
   reservedUntil?: string;
   internalNotes?: string;
@@ -52,7 +52,7 @@ export function toOrderDto(order: Order): OrderDto {
     deliveryAddress: order.deliveryAddress ?? undefined,
     status: order.status,
     paymentStatus: order.paymentStatus,
-    paystackReference: order.paystackReference ?? undefined,
+    gatewayReference: order.gatewayReference ?? undefined,
     transferReference: order.transferReference ?? undefined,
     reservedUntil: order.reservedUntil?.toISOString(),
     internalNotes: order.internalNotes ?? undefined,

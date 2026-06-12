@@ -6,7 +6,7 @@ import {
   PaymentStatus,
   PlanTier,
 } from '@prisma/client';
-import { PaystackService } from '../payments/paystack.service';
+import { FlutterwaveService } from '../payments/flutterwave.service';
 import { PaymentsService } from '../payments/payments.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { OrdersService } from './orders.service';
@@ -33,10 +33,10 @@ describe('OrdersService', () => {
     emit: jest.fn(),
   };
 
-  const paystack = {
+  const flutterwave = {
     isConfigured: jest.fn().mockReturnValue(false),
     initializeTransaction: jest.fn(),
-    getPublicKey: jest.fn().mockReturnValue('pk_test'),
+    getPublicKey: jest.fn().mockReturnValue('FLWPUBK_TEST'),
   };
 
   const paymentsService = {
@@ -65,7 +65,7 @@ describe('OrdersService', () => {
     deliveryAddress: null,
     status: OrderStatus.paid,
     paymentStatus: PaymentStatus.paid,
-    paystackReference: 'ps_SHP-TEST',
+    gatewayReference: 'flw_SHP-TEST',
     transferReference: null,
     reservedUntil: null,
     internalNotes: null,
@@ -78,7 +78,7 @@ describe('OrdersService', () => {
 
   beforeEach(async () => {
     jest.clearAllMocks();
-    paystack.isConfigured.mockReturnValue(false);
+    flutterwave.isConfigured.mockReturnValue(false);
     prisma.$transaction.mockImplementation(
       async (callback: (tx: typeof prisma) => Promise<unknown>) =>
         callback(prisma),
@@ -89,7 +89,7 @@ describe('OrdersService', () => {
         OrdersService,
         { provide: PrismaService, useValue: prisma },
         { provide: EventEmitter2, useValue: eventEmitter },
-        { provide: PaystackService, useValue: paystack },
+        { provide: FlutterwaveService, useValue: flutterwave },
         { provide: PaymentsService, useValue: paymentsService },
       ],
     }).compile();

@@ -19,7 +19,7 @@ import {
 import { getLandingFeatures } from "@/data/plans";
 
 const ICON_MAP: Record<string, LucideIcon> = {
-  "paystack-checkout": ShoppingCart,
+  "flutterwave-checkout": ShoppingCart,
   "sell-offline": Moon,
   "inventory-tracking": Package,
   "customer-export": Megaphone,

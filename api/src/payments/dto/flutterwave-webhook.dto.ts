@@ -1,19 +1,23 @@
 import { IsObject, IsOptional, IsString, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 
-class PaystackWebhookDataDto {
+class FlutterwaveWebhookDataDto {
   @IsOptional()
   @IsString()
-  reference?: string;
+  tx_ref?: string;
+
+  @IsOptional()
+  @IsString()
+  status?: string;
 }
 
-export class PaystackWebhookDto {
+export class FlutterwaveWebhookDto {
   @IsOptional()
   @IsString()
   event?: string;
 
   @IsOptional()
   @ValidateNested()
-  @Type(() => PaystackWebhookDataDto)
-  data?: PaystackWebhookDataDto;
+  @Type(() => FlutterwaveWebhookDataDto)
+  data?: FlutterwaveWebhookDataDto;
 }

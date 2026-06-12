@@ -134,7 +134,7 @@ export default function ProductFeed({ products, store }: ProductFeedProps) {
                 value={searchQuery}
                 onChange={(event) => updateSearchQuery(event.target.value)}
                 placeholder="Search products, colors, sizes..."
-                className="h-10 border-white/20 bg-black/40 pl-9 pr-10 text-sm text-white placeholder:text-white/50 backdrop-blur focus-visible:border-whatsapp-green focus-visible:ring-whatsapp-green/30"
+                className="h-10 border-white/20 bg-black/40 pl-9 pr-10 text-base text-white placeholder:text-white/50 backdrop-blur focus-visible:border-whatsapp-green focus-visible:ring-whatsapp-green/30"
               />
               <button
                 type="button"

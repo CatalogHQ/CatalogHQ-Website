@@ -13,7 +13,7 @@ import {
 import { DELIVERY_TYPE_IDS } from '../common/constants/delivery-types';
 import { deliveryRequiresAddress } from '../common/delivery.util';
 import { normalizePhone } from '../common/phone.util';
-import { PaystackService } from '../payments/paystack.service';
+import { FlutterwaveService } from '../payments/flutterwave.service';
 import { PaymentsService } from '../payments/payments.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { OrderDeliveredEvent } from './events/order-delivered.event';
@@ -48,13 +48,13 @@ export class OrdersService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly eventEmitter: EventEmitter2,
-    private readonly paystack: PaystackService,
+    private readonly flutterwave: FlutterwaveService,
     private readonly paymentsService: PaymentsService,
   ) {}
 
   async checkout(dto: OrderCheckoutBaseDto, storeSlug: string) {
     const pricing = await this.resolvePricing(dto);
-    const paystackReference = `ps_${generatePaymentRef()}`;
+    const gatewayReference = `flw_${generatePaymentRef()}`;
 
     const order = await this.prisma.$transaction(async (tx) => {
       if (pricing.discountRecordId) {
@@ -81,16 +81,18 @@ export class OrdersService {
           deliveryAddress: dto.deliveryAddress?.trim() || null,
           status: OrderStatus.reserved,
           paymentStatus: PaymentStatus.pending,
-          paystackReference,
+          gatewayReference,
         },
       });
     });
 
-    if (this.paystack.isConfigured()) {
-      const init = await this.paystack.initializeTransaction({
+    if (this.flutterwave.isConfigured()) {
+      const init = await this.flutterwave.initializeTransaction({
         email: `${order.customerPhone}@cataloghq.ng`,
-        amountKobo: order.totalPaid * 100,
-        reference: paystackReference,
+        phone: order.customerPhone,
+        name: order.customerName,
+        amountNaira: order.totalPaid,
+        reference: gatewayReference,
         callbackPath: `/s/${storeSlug}/order/${order.paymentRef}?paid=1`,
         metadata: { paymentRef: order.paymentRef, orderId: order.id },
       });
@@ -101,17 +103,17 @@ export class OrdersService {
           mock: false,
           authorizationUrl: init.authorizationUrl,
           reference: init.reference,
-          publicKey: this.paystack.getPublicKey(),
+          publicKey: this.flutterwave.getPublicKey(),
         },
       };
     }
 
-    await this.paymentsService.confirmPayment(paystackReference);
+    await this.paymentsService.confirmPayment(gatewayReference);
     const paid = await this.prisma.order.findUnique({ where: { id: order.id } });
 
     return {
       order: toOrderDto(paid!),
-      payment: { mock: true, authorizationUrl: null, reference: paystackReference },
+      payment: { mock: true, authorizationUrl: null, reference: gatewayReference },
     };
   }
 
@@ -168,12 +170,12 @@ export class OrdersService {
       where: { paymentRef: { equals: paymentRef, mode: 'insensitive' } },
     });
 
-    if (!order?.paystackReference) {
+    if (!order?.gatewayReference) {
       throw new NotFoundException('Order not found.');
     }
 
     if (order.paymentStatus !== PaymentStatus.paid) {
-      await this.paymentsService.confirmPayment(order.paystackReference);
+      await this.paymentsService.confirmPayment(order.gatewayReference);
     }
 
     const updated = await this.prisma.order.findUnique({

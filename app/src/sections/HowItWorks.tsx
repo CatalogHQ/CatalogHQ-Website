@@ -22,7 +22,7 @@ const steps = [
     icon: BadgeCheck,
     title: "Customers order and pay automatically",
     description:
-      "Paystack handles checkout. You get notified. You just fulfil the order.",
+      "Flutterwave handles checkout. You get notified. You just fulfil the order.",
   },
 ];
 

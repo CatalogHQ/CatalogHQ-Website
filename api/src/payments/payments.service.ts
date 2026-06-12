@@ -6,20 +6,20 @@ import { PrismaService } from '../prisma/prisma.service';
 import { ORDER_CREATED_EVENT, LOW_STOCK_EVENT } from '../orders/events/order.events';
 import { OrderCreatedEvent } from '../orders/events/order-created.event';
 import { LowStockEvent } from '../orders/events/low-stock.event';
-import { PaystackService } from './paystack.service';
+import { FlutterwaveService } from './flutterwave.service';
 
 @Injectable()
 export class PaymentsService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly paystack: PaystackService,
+    private readonly flutterwave: FlutterwaveService,
     private readonly eventEmitter: EventEmitter2,
     private readonly configService: ConfigService,
   ) {}
 
-  async confirmPayment(paystackReference: string): Promise<void> {
+  async confirmPayment(gatewayReference: string): Promise<void> {
     const order = await this.prisma.order.findUnique({
-      where: { paystackReference },
+      where: { gatewayReference },
       include: { store: { include: { vendor: true } } },
     });
 
@@ -27,7 +27,7 @@ export class PaymentsService {
       return;
     }
 
-    const verified = await this.paystack.verifyTransaction(paystackReference);
+    const verified = await this.flutterwave.verifyTransaction(gatewayReference);
     if (!verified) {
       await this.prisma.order.update({
         where: { id: order.id },
@@ -95,10 +95,12 @@ export class PaymentsService {
       throw new NotFoundException('Order not found.');
     }
 
-    const reference = order.paystackReference ?? `ps_${order.paymentRef}`;
-    const init = await this.paystack.initializeTransaction({
+    const reference = order.gatewayReference ?? `flw_${order.paymentRef}`;
+    const init = await this.flutterwave.initializeTransaction({
       email: `${order.customerPhone}@cataloghq.ng`,
-      amountKobo: order.totalPaid * 100,
+      phone: order.customerPhone,
+      name: order.customerName,
+      amountNaira: order.totalPaid,
       reference,
       callbackPath: `/s/${order.store.slug}/order/${order.paymentRef}?paid=1`,
       metadata: { paymentRef: order.paymentRef, orderId: order.id },
@@ -107,13 +109,13 @@ export class PaymentsService {
     if (init.authorizationUrl) {
       await this.prisma.order.update({
         where: { id: order.id },
-        data: { paystackReference: init.reference },
+        data: { gatewayReference: init.reference },
       });
       return init.authorizationUrl;
     }
 
     const callbackBase = this.configService.get<string>(
-      'PAYSTACK_CALLBACK_BASE_URL',
+      'FLUTTERWAVE_CALLBACK_BASE_URL',
       'http://localhost:3000',
     );
     return `${callbackBase.replace(/\/$/, '')}/s/${order.store.slug}/order/${order.paymentRef}`;
@@ -131,7 +133,7 @@ export class PaymentsService {
 
     return {
       authorizationUrl,
-      reference: order.paystackReference ?? `ps_${order.paymentRef}`,
+      reference: order.gatewayReference ?? `flw_${order.paymentRef}`,
     };
   }
 }

@@ -100,7 +100,7 @@ export default function ProblemSection() {
           </p>
           <p className="text-gray-400 text-sm sm:text-base leading-relaxed">
             CatalogHQ gives you one link with your catalog, prices, stock, and
-            Paystack checkout, whether you sell on WhatsApp, social media, or you
+            Flutterwave checkout, whether you sell on WhatsApp, social media, or you
             are going online for the first time.
           </p>
         </motion.div>

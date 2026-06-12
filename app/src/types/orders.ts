@@ -30,7 +30,7 @@ export type CustomerOrder = {
   deliveryAddress?: string;
   status: OrderStatus;
   paymentStatus?: PaymentStatus;
-  paystackReference?: string;
+  gatewayReference?: string;
   transferReference?: string;
   reservedUntil?: string;
   internalNotes?: string;

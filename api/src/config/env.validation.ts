@@ -66,15 +66,19 @@ class EnvironmentVariables {
 
   @IsOptional()
   @IsString()
-  PAYSTACK_SECRET_KEY?: string;
+  FLUTTERWAVE_SECRET_KEY?: string;
 
   @IsOptional()
   @IsString()
-  PAYSTACK_PUBLIC_KEY?: string;
+  FLUTTERWAVE_PUBLIC_KEY?: string;
 
   @IsOptional()
   @IsString()
-  PAYSTACK_CALLBACK_BASE_URL?: string;
+  FLUTTERWAVE_WEBHOOK_SECRET?: string;
+
+  @IsOptional()
+  @IsString()
+  FLUTTERWAVE_CALLBACK_BASE_URL?: string;
 
   @IsOptional()
   @IsString()

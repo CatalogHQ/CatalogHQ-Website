@@ -70,7 +70,7 @@ export default function FeatureGuide() {
             Selling through DMs on social media means endless back-and-forth:
             price questions, transfer screenshots, stock checks, and missed sales
             while you sleep. CatalogHQ replaces that friction with one store
-            link. Buyers see prices, pay via Paystack, and you fulfil the order.
+            link. Buyers see prices, pay via Flutterwave, and you fulfil the order.
           </p>
         </section>
 
@@ -146,7 +146,7 @@ export default function FeatureGuide() {
           <h2 className="text-xl font-bold text-gray-900 mb-3">Roadmap</h2>
           <ul className="space-y-2 text-sm text-gray-600">
             <li>
-              <strong>Phase 1:</strong> Storefront, Paystack checkout, orders,
+              <strong>Phase 1:</strong> Storefront, Flutterwave checkout, orders,
               vendor notifications
             </li>
             <li>

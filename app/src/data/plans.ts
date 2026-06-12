@@ -97,8 +97,8 @@ export const FEATURES: Feature[] = [
     showOnLanding: true,
   },
   {
-    id: "paystack-checkout",
-    title: "Automatic Paystack checkout",
+    id: "flutterwave-checkout",
+    title: "Automatic Flutterwave checkout",
     description:
       "Customers pay directly on your store. No transfer screenshots, no disputes.",
     category: "core",
@@ -255,7 +255,7 @@ export const FEATURES: Feature[] = [
   },
   {
     id: "payment-links",
-    title: "Paystack payment links",
+    title: "Flutterwave payment links",
     description: "Send a payment link in chat instead of account numbers.",
     category: "sales",
     tier: "starter",
@@ -368,7 +368,7 @@ export function getPricingFeaturesForTier(tier: PlanTier): string[] {
   const tierSpecific: Record<PlanTier, string[]> = {
     starter: [
       "Shareable storefront link",
-      "Paystack checkout",
+      "Flutterwave checkout",
       "Sell 24/7 while offline",
       "Order notifications",
       "Basic order management",

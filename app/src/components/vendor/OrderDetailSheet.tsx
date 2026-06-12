@@ -158,7 +158,7 @@ export default function OrderDetailSheet({
                 onClick={() => void handlePaymentLink()}
               >
                 <LinkIcon className="mr-2 h-4 w-4" />
-                Copy Paystack payment link
+                Copy Flutterwave payment link
               </Button>
             )}
 

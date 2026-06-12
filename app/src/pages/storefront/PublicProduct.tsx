@@ -4,7 +4,7 @@ import { ArrowLeft, Share2, ShoppingBag } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import PaystackCheckout from "@/components/storefront/PaystackCheckout";
+import FlutterwaveCheckout from "@/components/storefront/FlutterwaveCheckout";
 import ProductOrderOptions from "@/components/storefront/ProductOrderOptions";
 import {
   getDeliveryFee,
@@ -332,7 +332,7 @@ export default function PublicProduct() {
       </div>
 
       {resolvedSelection && (
-        <PaystackCheckout
+        <FlutterwaveCheckout
           open={checkoutOpen}
           onOpenChange={setCheckoutOpen}
           storeSlug={store.slug}

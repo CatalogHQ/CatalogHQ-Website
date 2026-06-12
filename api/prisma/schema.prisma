@@ -293,7 +293,7 @@ model Order {
   deliveryAddress     String?
   status              OrderStatus   @default(reserved)
   paymentStatus       PaymentStatus @default(pending)
-  paystackReference   String?       @unique
+  gatewayReference    String?       @unique @map("paystackReference")
   transferReference   String?
   reservedUntil       DateTime?
   internalNotes       String?
