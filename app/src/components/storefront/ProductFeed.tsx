@@ -31,7 +31,6 @@ type ProductFeedProps = {
 export default function ProductFeed({ products, store }: ProductFeedProps) {
   const feedRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
-  const [activeIndex, setActiveIndex] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
   const { summary } = usePublicReviews(store);
@@ -68,16 +67,6 @@ export default function ProductFeed({ products, store }: ProductFeedProps) {
       </div>
     );
   }
-
-  const handleScroll = () => {
-    const container = feedRef.current;
-    if (!container || filteredProducts.length === 0) return;
-
-    const index = Math.round(container.scrollTop / container.clientHeight);
-    setActiveIndex(
-      Math.min(Math.max(index, 0), filteredProducts.length - 1),
-    );
-  };
 
   const clearSearch = () => {
     updateSearchQuery("");
@@ -181,7 +170,6 @@ export default function ProductFeed({ products, store }: ProductFeedProps) {
         <>
           <div
             ref={feedRef}
-            onScroll={handleScroll}
             className="h-dvh snap-y snap-mandatory overflow-y-auto overscroll-y-contain scroll-smooth [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           >
             {filteredProducts.map((product, index) => {
@@ -299,21 +287,6 @@ export default function ProductFeed({ products, store }: ProductFeedProps) {
               );
             })}
           </div>
-
-          {filteredProducts.length > 1 && (
-            <div className="pointer-events-none absolute bottom-[max(0.75rem,env(safe-area-inset-bottom,0px))] left-1/2 z-20 flex -translate-x-1/2 gap-1.5">
-              {filteredProducts.map((product, index) => (
-                <span
-                  key={product.id}
-                  className={`h-1.5 rounded-full transition-all ${
-                    index === activeIndex
-                      ? "w-5 bg-white"
-                      : "w-1.5 bg-white/40"
-                  }`}
-                />
-              ))}
-            </div>
-          )}
         </>
       )}
     </div>

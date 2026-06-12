@@ -31,7 +31,6 @@ import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useVendor } from "@/contexts/VendorContext";
-import VendorSupportFab from "@/components/vendor/VendorSupportFab";
 import { getStoreUrl } from "@/lib/slug";
 
 const navItems = [
@@ -165,7 +164,6 @@ export default function DashboardLayout() {
         </header>
         <div className="relative flex-1 bg-gray-50 p-4 sm:p-6">
           <Outlet />
-          <VendorSupportFab storeName={store?.businessName} />
         </div>
       </SidebarInset>
     </SidebarProvider>
