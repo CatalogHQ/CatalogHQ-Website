@@ -108,10 +108,10 @@ export default function SignUp() {
 
   return (
     <AuthLayout
-      title={step === "details" ? "Create your store" : "Verify your email"}
+      title={step === "details" ? "Create a vendor account" : "Verify your email"}
       subtitle={
         step === "details"
-          ? "Sign up with your email. You'll add your WhatsApp number when you set up your store."
+          ? ""
           : `Enter the 6-digit code sent to ${pendingEmail || "your email"}.`
       }
       footerText="Already have an account?"
