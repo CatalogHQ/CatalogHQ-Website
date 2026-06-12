@@ -1,6 +1,10 @@
 import { ConfigService } from '@nestjs/config';
 import { Test } from '@nestjs/testing';
-import { AshlabNinVerificationService } from './ashlab-nin-verification.service';
+import {
+  ASHLAB_VERIFY_DEFAULT_BASE_URL,
+  ASHLAB_VERIFY_DEFAULT_PATH,
+  AshlabNinVerificationService,
+} from './ashlab-nin-verification.service';
 
 describe('AshlabNinVerificationService', () => {
   let service: AshlabNinVerificationService;
@@ -9,8 +13,8 @@ describe('AshlabNinVerificationService', () => {
     get: jest.fn((key: string, defaultValue?: string) => {
       const values: Record<string, string> = {
         ASHLAB_VERIFY_API_KEY: 'test-api-key',
-        ASHLAB_VERIFY_BASE_URL: 'https://verify.ashlabtech.ng/v1',
-        ASHLAB_VERIFY_PATH: '/nin/verify',
+        ASHLAB_VERIFY_BASE_URL: ASHLAB_VERIFY_DEFAULT_BASE_URL,
+        ASHLAB_VERIFY_PATH: ASHLAB_VERIFY_DEFAULT_PATH,
       };
       return values[key] ?? defaultValue;
     }),
@@ -57,7 +61,7 @@ describe('AshlabNinVerificationService', () => {
       },
     });
     expect(fetchMock).toHaveBeenCalledWith(
-      'https://verify.ashlabtech.ng/v1/nin/verify',
+      `${ASHLAB_VERIFY_DEFAULT_BASE_URL}${ASHLAB_VERIFY_DEFAULT_PATH}`,
       expect.objectContaining({
         method: 'POST',
         headers: expect.objectContaining({
@@ -68,7 +72,7 @@ describe('AshlabNinVerificationService', () => {
     );
   });
 
-  it('returns not_found for 404 responses', async () => {
+  it('returns not_found for 404 NIN responses', async () => {
     jest.spyOn(global, 'fetch').mockResolvedValue({
       ok: false,
       status: 404,
@@ -80,13 +84,30 @@ describe('AshlabNinVerificationService', () => {
     expect(result.status).toBe('not_found');
   });
 
+  it('returns unavailable when Ashlab route is wrong', async () => {
+    jest.spyOn(global, 'fetch').mockResolvedValue({
+      ok: false,
+      status: 404,
+      json: async () => ({
+        message: 'The route v1/nin/verify could not be found.',
+      }),
+    } as Response);
+
+    const result = await service.verify('12345678901');
+
+    expect(result).toMatchObject({
+      status: 'unavailable',
+      message: expect.stringContaining('misconfigured'),
+    });
+  });
+
   it('uses api_key:api_secret when bearer token is not set', async () => {
     const combined = new AshlabNinVerificationService({
       get: jest.fn((key: string) => {
         if (key === 'ASHLAB_VERIFY_API_KEY') return 'key-123';
         if (key === 'ASHLAB_VERIFY_API_SECRET') return 'secret-456';
-        if (key === 'ASHLAB_VERIFY_BASE_URL') return 'https://verify.ashlabtech.ng/v1';
-        if (key === 'ASHLAB_VERIFY_PATH') return '/nin/verify';
+        if (key === 'ASHLAB_VERIFY_BASE_URL') return ASHLAB_VERIFY_DEFAULT_BASE_URL;
+        if (key === 'ASHLAB_VERIFY_PATH') return ASHLAB_VERIFY_DEFAULT_PATH;
         return undefined;
       }),
     } as unknown as ConfigService);

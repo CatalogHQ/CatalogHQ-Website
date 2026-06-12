@@ -36,6 +36,17 @@ type AshlabErrorResponse = {
   error?: string;
 };
 
+export const ASHLAB_VERIFY_DEFAULT_BASE_URL =
+  'https://api.verify.ashlabtech.ng/api/v1';
+export const ASHLAB_VERIFY_DEFAULT_PATH = '/verify/nin';
+
+const ASHLAB_ROUTE_NOT_FOUND_MESSAGE =
+  'NIN verification endpoint is misconfigured. Check ASHLAB_VERIFY_BASE_URL and ASHLAB_VERIFY_PATH.';
+
+function isAshlabRouteNotFoundMessage(message: string): boolean {
+  return /route .+ could not be found/i.test(message);
+}
+
 @Injectable()
 export class AshlabNinVerificationService {
   private readonly logger = new Logger(AshlabNinVerificationService.name);
@@ -47,10 +58,11 @@ export class AshlabNinVerificationService {
 
     const baseUrl = (
       this.configService.get<string>('ASHLAB_VERIFY_BASE_URL') ??
-      'https://verify.ashlabtech.ng/v1'
+      ASHLAB_VERIFY_DEFAULT_BASE_URL
     ).replace(/\/$/, '');
     const path =
-      this.configService.get<string>('ASHLAB_VERIFY_PATH') ?? '/nin/verify';
+      this.configService.get<string>('ASHLAB_VERIFY_PATH') ??
+      ASHLAB_VERIFY_DEFAULT_PATH;
     this.verifyUrl = `${baseUrl}${path.startsWith('/') ? path : `/${path}`}`;
   }
 
@@ -151,6 +163,16 @@ export class AshlabNinVerificationService {
         case 400:
           return { status: 'invalid', message };
         case 404:
+          if (isAshlabRouteNotFoundMessage(message)) {
+            this.logger.error(
+              `Ashlab NIN route not found at ${this.verifyUrl}: ${message}`,
+            );
+            return {
+              status: 'unavailable',
+              message: ASHLAB_ROUTE_NOT_FOUND_MESSAGE,
+            };
+          }
+
           return {
             status: 'not_found',
             message:
