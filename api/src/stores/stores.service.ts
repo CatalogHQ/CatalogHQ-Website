@@ -1,18 +1,29 @@
 import {
   ConflictException,
+  HttpException,
+  HttpStatus,
   Injectable,
   NotFoundException,
+  ServiceUnavailableException,
 } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Store, VendorVerificationStatus } from '@prisma/client';
+import { VENDOR_VERIFICATION_DECIDED_EVENT } from '../admin/events/admin.events';
+import { VendorVerificationDecidedEvent } from '../admin/events/vendor-verification-decided.event';
 import { normalizePhone } from '../common/phone.util';
 import { slugify } from '../common/slug.util';
 import { PrismaService } from '../prisma/prisma.service';
+import { AshlabNinVerificationService } from '../verification/ashlab-nin-verification.service';
 import { StoreSetupDto } from './dto/store-setup.dto';
 import { PublicStoreDto, StoreDto, toPublicStoreDto, toStoreDto } from './stores.mapper';
 
 @Injectable()
 export class StoresService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly ninVerification: AshlabNinVerificationService,
+    private readonly eventEmitter: EventEmitter2,
+  ) {}
 
   private applyVerificationOnNinChange(
     existing: Store | null,
@@ -113,6 +124,103 @@ export class StoresService {
     return toStoreDto(store);
   }
 
+  private async assertNinNotLinkedToAnotherVendor(
+    nin: string,
+    vendorId: string,
+  ): Promise<void> {
+    const duplicate = await this.prisma.store.findFirst({
+      where: {
+        nin,
+        NOT: { vendorId },
+      },
+      select: { vendorId: true },
+    });
+
+    if (duplicate) {
+      throw new ConflictException(
+        'This NIN is already linked to another vendor account.',
+      );
+    }
+  }
+
+  private async resolveVerificationAfterNinCheck(
+    vendorId: string,
+    nin: string,
+    existing: Store | null,
+    currentStatus: VendorVerificationStatus,
+  ): Promise<
+    Pick<
+      Store,
+      'verificationStatus' | 'verificationSubmittedAt' | 'verifiedAt' | 'rejectionReason'
+    >
+  > {
+    const ninChanged = !existing || existing.nin !== nin;
+    const shouldVerify =
+      this.ninVerification.isConfigured() &&
+      (ninChanged || currentStatus !== VendorVerificationStatus.verified);
+
+    if (!shouldVerify) {
+      if (currentStatus === VendorVerificationStatus.verified) {
+        return {
+          verificationStatus: VendorVerificationStatus.verified,
+          verificationSubmittedAt: existing?.verificationSubmittedAt ?? null,
+          verifiedAt: existing?.verifiedAt ?? null,
+          rejectionReason: null,
+        };
+      }
+
+      return {
+        verificationStatus: VendorVerificationStatus.pending,
+        verificationSubmittedAt: new Date(),
+        verifiedAt: null,
+        rejectionReason: null,
+      };
+    }
+
+    const result = await this.ninVerification.verify(nin);
+
+    if (result.status === 'verified') {
+      this.eventEmitter.emit(
+        VENDOR_VERIFICATION_DECIDED_EVENT,
+        new VendorVerificationDecidedEvent(vendorId, true),
+      );
+      return {
+        verificationStatus: VendorVerificationStatus.verified,
+        verificationSubmittedAt: new Date(),
+        verifiedAt: new Date(),
+        rejectionReason: null,
+      };
+    }
+
+    if (result.status === 'not_found' || result.status === 'invalid') {
+      this.eventEmitter.emit(
+        VENDOR_VERIFICATION_DECIDED_EVENT,
+        new VendorVerificationDecidedEvent(vendorId, false, result.message),
+      );
+      return {
+        verificationStatus: VendorVerificationStatus.rejected,
+        verificationSubmittedAt: new Date(),
+        verifiedAt: null,
+        rejectionReason: result.message,
+      };
+    }
+
+    if (result.status === 'rate_limited') {
+      throw new HttpException(result.message, HttpStatus.TOO_MANY_REQUESTS);
+    }
+
+    if (result.status === 'payment_required') {
+      throw new ServiceUnavailableException(result.message);
+    }
+
+    return {
+      verificationStatus: VendorVerificationStatus.pending,
+      verificationSubmittedAt: new Date(),
+      verifiedAt: null,
+      rejectionReason: null,
+    };
+  }
+
   async completeSetup(vendorId: string, dto: StoreSetupDto): Promise<StoreDto> {
     const existing = await this.prisma.store.findUnique({ where: { vendorId } });
     const data = this.buildStoreData(vendorId, dto, existing);
@@ -121,16 +229,21 @@ export class StoresService {
       throw new ConflictException('This store link is already taken.');
     }
 
-    let verificationStatus: VendorVerificationStatus =
-      data.verificationStatus ?? 'unsubmitted';
-    let verificationSubmittedAt = data.verificationSubmittedAt;
-    let rejectionReason = data.rejectionReason;
+    await this.assertNinNotLinkedToAnotherVendor(data.nin, vendorId);
 
-    if (verificationStatus !== 'verified') {
-      verificationStatus = 'pending';
-      verificationSubmittedAt = verificationSubmittedAt ?? new Date();
-      rejectionReason = null;
-    }
+    const verification = await this.resolveVerificationAfterNinCheck(
+      vendorId,
+      data.nin,
+      existing,
+      data.verificationStatus ?? VendorVerificationStatus.unsubmitted,
+    );
+
+    const {
+      verificationStatus,
+      verificationSubmittedAt,
+      verifiedAt,
+      rejectionReason,
+    } = verification;
 
     const store = await this.prisma.store.upsert({
       where: { vendorId },
@@ -139,6 +252,7 @@ export class StoresService {
         setupComplete: true,
         verificationStatus,
         verificationSubmittedAt,
+        verifiedAt,
         rejectionReason,
       },
       update: {
@@ -146,6 +260,7 @@ export class StoresService {
         setupComplete: true,
         verificationStatus,
         verificationSubmittedAt,
+        verifiedAt,
         rejectionReason,
       },
     });

@@ -75,6 +75,22 @@ class EnvironmentVariables {
   @IsOptional()
   @IsString()
   PAYSTACK_CALLBACK_BASE_URL?: string;
+
+  @IsOptional()
+  @IsString()
+  ASHLAB_VERIFY_API_KEY?: string;
+
+  @IsOptional()
+  @IsString()
+  ASHLAB_VERIFY_BEARER_TOKEN?: string;
+
+  @IsOptional()
+  @IsString()
+  ASHLAB_VERIFY_BASE_URL?: string;
+
+  @IsOptional()
+  @IsString()
+  ASHLAB_VERIFY_PATH?: string;
 }
 
 export function validateEnv(config: Record<string, unknown>) {

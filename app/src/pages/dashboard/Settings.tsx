@@ -90,7 +90,7 @@ export default function Settings() {
 
     setLoading(true);
     try {
-      await completeSetup({
+      const saved = await completeSetup({
         businessName: data.businessName,
         bio: data.bio,
         whatsapp: data.whatsapp,
@@ -101,7 +101,20 @@ export default function Settings() {
         city: data.city,
         state: data.state,
       });
-      toast.success("Store settings updated.");
+
+      if (saved.verificationStatus === "rejected") {
+        toast.error(
+          saved.rejectionReason ??
+            "We could not verify your NIN. Check the number and try again.",
+        );
+        return;
+      }
+
+      if (saved.verificationStatus === "verified") {
+        toast.success("Store settings updated. Your vendor account is verified.");
+      } else {
+        toast.success("Store settings updated.");
+      }
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Could not save settings.",

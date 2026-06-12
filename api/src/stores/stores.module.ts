@@ -1,13 +1,15 @@
 import { Module } from '@nestjs/common';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 import { AuthModule } from '../auth/auth.module';
 import { PaymentsModule } from '../payments/payments.module';
+import { VerificationModule } from '../verification/verification.module';
 import { StoreStaffService } from './store-staff.service';
 import { StoresController } from './stores.controller';
 import { StoresService } from './stores.service';
 import { VendorToolsService } from './vendor-tools.service';
 
 @Module({
-  imports: [AuthModule, PaymentsModule],
+  imports: [AuthModule, PaymentsModule, VerificationModule, EventEmitterModule],
   controllers: [StoresController],
   providers: [StoresService, VendorToolsService, StoreStaffService],
   exports: [StoresService],

@@ -89,7 +89,7 @@ export default function StoreSetup() {
 
     setLoading(true);
     try {
-      await completeSetup({
+      const saved = await completeSetup({
         businessName: data.businessName,
         bio: data.bio,
         whatsapp: data.whatsapp,
@@ -101,7 +101,20 @@ export default function StoreSetup() {
         state: data.state,
       });
 
-      toast.success("Store setup complete!");
+      if (saved.verificationStatus === "rejected") {
+        toast.error(
+          saved.rejectionReason ??
+            "We could not verify your NIN. Check the number and try again.",
+        );
+        return;
+      }
+
+      if (saved.verificationStatus === "verified") {
+        toast.success("Store setup complete. Your vendor account is verified.");
+      } else {
+        toast.success("Store setup complete. NIN verification is in progress.");
+      }
+
       navigate("/dashboard");
     } catch (error) {
       toast.error(
@@ -196,8 +209,8 @@ export default function StoreSetup() {
                       />
                     </FormControl>
                     <FormDescription>
-                      Required for vendor verification. Stored securely when the
-                      backend is connected.
+                      Required for vendor verification. We verify your NIN
+                      automatically when you complete setup.
                     </FormDescription>
                     <FormMessage />
                   </FormItem>

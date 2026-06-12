@@ -37,7 +37,7 @@ export function getVerificationStatusDescription(
     case "unsubmitted":
       return "Submit your NIN during store setup to start vendor verification.";
     case "pending":
-      return "We're reviewing your details. This usually takes less than 24 hours.";
+      return "Your NIN is being verified. This usually completes within a few minutes.";
     case "verified":
       return "Your store is verified. Customers will see a verified badge on your storefront.";
     case "rejected":

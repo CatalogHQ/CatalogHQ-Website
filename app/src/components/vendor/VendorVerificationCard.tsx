@@ -144,8 +144,8 @@ export default function VendorVerificationCard({
           </p>
         ) : status === "pending" ? (
           <p className="text-sm text-gray-600">
-            No action needed right now. We'll notify you when verification is
-            complete.
+            Your NIN is being verified. You will be notified when verification
+            completes.
           </p>
         ) : (
           <p className="text-sm text-gray-600">
