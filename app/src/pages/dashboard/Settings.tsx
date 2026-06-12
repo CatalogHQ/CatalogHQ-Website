@@ -42,6 +42,8 @@ export default function Settings() {
     resolver: zodResolver(storeSetupSchema),
     defaultValues: {
       businessName: "",
+      legalFirstName: "",
+      legalLastName: "",
       bio: "",
       whatsapp: "",
       nin: "",
@@ -57,6 +59,8 @@ export default function Settings() {
     if (store) {
       form.reset({
         businessName: store.businessName,
+        legalFirstName: store.legalFirstName ?? "",
+        legalLastName: store.legalLastName ?? "",
         bio: store.bio,
         whatsapp: store.whatsapp,
         nin: store.nin,
@@ -92,6 +96,8 @@ export default function Settings() {
     try {
       const saved = await completeSetup({
         businessName: data.businessName,
+        legalFirstName: data.legalFirstName,
+        legalLastName: data.legalLastName,
         bio: data.bio,
         whatsapp: data.whatsapp,
         nin: data.nin,
@@ -191,6 +197,42 @@ export default function Settings() {
                 )}
               />
 
+              <div className="grid gap-4 sm:grid-cols-2">
+                <FormField
+                  control={form.control}
+                  name="legalFirstName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Legal first name</FormLabel>
+                      <FormControl>
+                        <Input autoComplete="given-name" {...field} />
+                      </FormControl>
+                      <FormDescription>
+                        Must match the first name on your NIN.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="legalLastName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Legal last name</FormLabel>
+                      <FormControl>
+                        <Input autoComplete="family-name" {...field} />
+                      </FormControl>
+                      <FormDescription>
+                        Must match the last name on your NIN.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
               <FormField
                 control={form.control}
                 name="nin"
@@ -201,8 +243,8 @@ export default function Settings() {
                       <Input inputMode="numeric" maxLength={11} {...field} />
                     </FormControl>
                     <FormDescription>
-                      Used for vendor verification. Changing it may trigger a
-                      new review.
+                      Used for vendor verification. Changing your legal name or
+                      NIN triggers a new review.
                     </FormDescription>
                     <FormMessage />
                   </FormItem>

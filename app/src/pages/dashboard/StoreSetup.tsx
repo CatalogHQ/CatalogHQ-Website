@@ -40,6 +40,8 @@ export default function StoreSetup() {
     resolver: zodResolver(storeSetupSchema),
     defaultValues: {
       businessName: store?.businessName ?? "",
+      legalFirstName: store?.legalFirstName ?? "",
+      legalLastName: store?.legalLastName ?? "",
       bio: store?.bio ?? "",
       whatsapp: store?.whatsapp ?? "",
       nin: store?.nin ?? "",
@@ -55,6 +57,8 @@ export default function StoreSetup() {
     if (store) {
       form.reset({
         businessName: store.businessName,
+        legalFirstName: store.legalFirstName ?? "",
+        legalLastName: store.legalLastName ?? "",
         bio: store.bio,
         whatsapp: store.whatsapp,
         nin: store.nin,
@@ -91,6 +95,8 @@ export default function StoreSetup() {
     try {
       const saved = await completeSetup({
         businessName: data.businessName,
+        legalFirstName: data.legalFirstName,
+        legalLastName: data.legalLastName,
         bio: data.bio,
         whatsapp: data.whatsapp,
         nin: data.nin,
@@ -194,6 +200,42 @@ export default function StoreSetup() {
                 )}
               />
 
+              <div className="grid gap-4 sm:grid-cols-2">
+                <FormField
+                  control={form.control}
+                  name="legalFirstName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Legal first name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Amaka" autoComplete="given-name" {...field} />
+                      </FormControl>
+                      <FormDescription>
+                        Must match the first name on your NIN.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="legalLastName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Legal last name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Okafor" autoComplete="family-name" {...field} />
+                      </FormControl>
+                      <FormDescription>
+                        Must match the last name on your NIN.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
               <FormField
                 control={form.control}
                 name="nin"
@@ -209,8 +251,8 @@ export default function StoreSetup() {
                       />
                     </FormControl>
                     <FormDescription>
-                      Required for vendor verification. We verify your NIN
-                      automatically when you complete setup.
+                      We verify your NIN against your legal name when you
+                      complete setup.
                     </FormDescription>
                     <FormMessage />
                   </FormItem>

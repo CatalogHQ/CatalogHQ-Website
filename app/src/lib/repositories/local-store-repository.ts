@@ -61,19 +61,25 @@ export class LocalStoreRepository implements StoreRepository {
     const existing =
       existingIndex >= 0 ? stores[existingIndex] : undefined;
     const nin = input.nin.replace(/\D/g, "");
-    const ninChanged = existing ? existing.nin !== nin : false;
+    const legalFirstName = input.legalFirstName?.trim() ?? "";
+    const legalLastName = input.legalLastName?.trim() ?? "";
+    const identityChanged = existing
+      ? existing.nin !== nin ||
+        (existing.legalFirstName ?? "") !== legalFirstName ||
+        (existing.legalLastName ?? "") !== legalLastName
+      : false;
 
     let verificationStatus = existing?.verificationStatus;
     let verificationSubmittedAt = existing?.verificationSubmittedAt;
     let verifiedAt = existing?.verifiedAt;
     let rejectionReason = existing?.rejectionReason;
 
-    if (ninChanged && verificationStatus === "verified") {
+    if (identityChanged && verificationStatus === "verified") {
       verificationStatus = "pending";
       verifiedAt = undefined;
       verificationSubmittedAt = new Date().toISOString();
       rejectionReason = undefined;
-    } else if (ninChanged && verificationStatus === "rejected") {
+    } else if (identityChanged && verificationStatus === "rejected") {
       verificationStatus = "pending";
       verificationSubmittedAt = new Date().toISOString();
       rejectionReason = undefined;
@@ -83,6 +89,8 @@ export class LocalStoreRepository implements StoreRepository {
       vendorId,
       slug: slugify(input.slug),
       businessName: input.businessName.trim(),
+      legalFirstName,
+      legalLastName,
       bio: input.bio.trim(),
       whatsapp: input.whatsapp.replace(/\D/g, ""),
       nin,

@@ -62,6 +62,8 @@ export type AdminVerificationRequestDto = {
   businessName: string;
   slug: string;
   ninMasked: string;
+  legalFirstName?: string;
+  legalLastName?: string;
   submittedAt: string;
   city?: string;
   state?: string;
@@ -148,6 +150,8 @@ export function toAdminVerificationDto(store: Store): AdminVerificationRequestDt
     businessName: store.businessName,
     slug: store.slug,
     ninMasked: maskNin(store.nin),
+    legalFirstName: store.legalFirstName ?? undefined,
+    legalLastName: store.legalLastName ?? undefined,
     submittedAt: store.verificationSubmittedAt?.toISOString() ?? new Date().toISOString(),
     city: store.city ?? undefined,
     state: store.state ?? undefined,

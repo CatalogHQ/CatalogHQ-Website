@@ -113,6 +113,14 @@ export default function VendorVerificationCard({
       <CardContent className="space-y-4">
         <div className="grid gap-3 text-sm">
           <div className="rounded-lg border bg-gray-50 px-3 py-2.5">
+            <p className="text-gray-500">Legal name on file</p>
+            <p className="mt-0.5 font-medium text-gray-900">
+              {store.legalFirstName && store.legalLastName
+                ? `${store.legalFirstName} ${store.legalLastName}`
+                : "Not submitted"}
+            </p>
+          </div>
+          <div className="rounded-lg border bg-gray-50 px-3 py-2.5">
             <p className="text-gray-500">NIN on file</p>
             <p className="mt-0.5 font-medium text-gray-900">
               {store.nin ? maskNin(store.nin) : "Not submitted"}

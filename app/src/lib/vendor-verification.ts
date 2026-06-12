@@ -35,12 +35,12 @@ export function getVerificationStatusDescription(
 ): string {
   switch (status) {
     case "unsubmitted":
-      return "Submit your NIN during store setup to start vendor verification.";
+      return "Submit your NIN and legal name during store setup to start vendor verification.";
     case "pending":
       return "Your NIN is being verified. This usually completes within a few minutes.";
     case "verified":
       return "Your store is verified. Customers will see a verified badge on your storefront.";
     case "rejected":
-      return "We couldn't verify your details. Update your NIN in settings and save to resubmit.";
+      return "We couldn't verify your details. Your legal name must match your NIN. Update settings and save to resubmit.";
   }
 }

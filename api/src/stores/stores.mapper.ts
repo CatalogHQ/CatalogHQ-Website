@@ -4,6 +4,8 @@ export type StoreDto = {
   vendorId: string;
   slug: string;
   businessName: string;
+  legalFirstName?: string;
+  legalLastName?: string;
   bio: string;
   whatsapp: string;
   nin: string;
@@ -18,7 +20,10 @@ export type StoreDto = {
   rejectionReason?: string;
 };
 
-export type PublicStoreDto = Omit<StoreDto, 'nin'> & {
+export type PublicStoreDto = Omit<
+  StoreDto,
+  'nin' | 'legalFirstName' | 'legalLastName'
+> & {
   planTier: 'starter' | 'pro' | 'growth' | 'business';
   deliveryZones: unknown;
 };
@@ -28,6 +33,8 @@ export function toStoreDto(store: Store): StoreDto {
     vendorId: store.vendorId,
     slug: store.slug,
     businessName: store.businessName,
+    legalFirstName: store.legalFirstName ?? undefined,
+    legalLastName: store.legalLastName ?? undefined,
     bio: store.bio,
     whatsapp: store.whatsapp,
     nin: store.nin,
@@ -48,7 +55,12 @@ export function toPublicStoreDto(
   planTier: 'starter' | 'pro' | 'growth' | 'business',
 ): PublicStoreDto {
   const dto = toStoreDto(store);
-  const { nin: _nin, ...publicFields } = dto;
+  const {
+    nin: _nin,
+    legalFirstName: _legalFirstName,
+    legalLastName: _legalLastName,
+    ...publicFields
+  } = dto;
   return {
     ...publicFields,
     planTier,

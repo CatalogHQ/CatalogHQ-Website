@@ -31,6 +31,8 @@ export type Store = {
   vendorId: string;
   slug: string;
   businessName: string;
+  legalFirstName?: string;
+  legalLastName?: string;
   bio: string;
   whatsapp: string;
   nin: string;

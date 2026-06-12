@@ -36,6 +36,16 @@ export const ninSchema = z
   .min(1, "NIN is required")
   .regex(/^\d{11}$/, "NIN must be exactly 11 digits");
 
+const legalNameSchema = z
+  .string()
+  .trim()
+  .min(2, "Name must be at least 2 characters")
+  .max(50, "Name is too long")
+  .regex(
+    /^[A-Za-zÀ-ÖØ-öø-ÿ' -]+$/,
+    "Use letters, spaces, hyphens, and apostrophes only",
+  );
+
 export const slugSchema = z
   .string()
   .min(3, "Store link must be at least 3 characters")
@@ -50,6 +60,8 @@ export const storeSetupSchema = z.object({
     .string()
     .min(2, "Business name must be at least 2 characters")
     .max(80, "Business name is too long"),
+  legalFirstName: legalNameSchema,
+  legalLastName: legalNameSchema,
   bio: z
     .string()
     .min(10, "Tell customers a bit more about your business")

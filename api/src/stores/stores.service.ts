@@ -14,6 +14,10 @@ import { normalizePhone } from '../common/phone.util';
 import { slugify } from '../common/slug.util';
 import { PrismaService } from '../prisma/prisma.service';
 import { AshlabNinVerificationService } from '../verification/ashlab-nin-verification.service';
+import {
+  NIN_NAME_MISMATCH_MESSAGE,
+  ninIdentityMatchesVendor,
+} from '../verification/nin-identity.util';
 import { StoreSetupDto } from './dto/store-setup.dto';
 import { PublicStoreDto, StoreDto, toPublicStoreDto, toStoreDto } from './stores.mapper';
 
@@ -25,26 +29,49 @@ export class StoresService {
     private readonly eventEmitter: EventEmitter2,
   ) {}
 
-  private applyVerificationOnNinChange(
+  private hasIdentityChanged(
     existing: Store | null,
-    nin: string,
+    identity: {
+      nin: string;
+      legalFirstName: string;
+      legalLastName: string;
+    },
+  ): boolean {
+    if (!existing) {
+      return true;
+    }
+
+    return (
+      existing.nin !== identity.nin ||
+      (existing.legalFirstName ?? '') !== identity.legalFirstName ||
+      (existing.legalLastName ?? '') !== identity.legalLastName
+    );
+  }
+
+  private applyVerificationOnIdentityChange(
+    existing: Store | null,
+    identity: {
+      nin: string;
+      legalFirstName: string;
+      legalLastName: string;
+    },
   ): Pick<
     Store,
     'verificationStatus' | 'verificationSubmittedAt' | 'verifiedAt' | 'rejectionReason'
   > {
-    const ninChanged = existing ? existing.nin !== nin : false;
+    const identityChanged = this.hasIdentityChanged(existing, identity);
 
     let verificationStatus = existing?.verificationStatus ?? 'unsubmitted';
     let verificationSubmittedAt = existing?.verificationSubmittedAt ?? null;
     let verifiedAt = existing?.verifiedAt ?? null;
     let rejectionReason = existing?.rejectionReason ?? null;
 
-    if (ninChanged && verificationStatus === 'verified') {
+    if (identityChanged && verificationStatus === 'verified') {
       verificationStatus = 'pending';
       verifiedAt = null;
       verificationSubmittedAt = new Date();
       rejectionReason = null;
-    } else if (ninChanged && verificationStatus === 'rejected') {
+    } else if (identityChanged && verificationStatus === 'rejected') {
       verificationStatus = 'pending';
       verificationSubmittedAt = new Date();
       rejectionReason = null;
@@ -60,12 +87,20 @@ export class StoresService {
 
   private buildStoreData(vendorId: string, dto: StoreSetupDto, existing: Store | null) {
     const nin = dto.nin.replace(/\D/g, '');
-    const verification = this.applyVerificationOnNinChange(existing, nin);
+    const legalFirstName = dto.legalFirstName.trim();
+    const legalLastName = dto.legalLastName.trim();
+    const verification = this.applyVerificationOnIdentityChange(existing, {
+      nin,
+      legalFirstName,
+      legalLastName,
+    });
 
     return {
       vendorId,
       slug: slugify(dto.slug),
       businessName: dto.businessName.trim(),
+      legalFirstName,
+      legalLastName,
       bio: dto.bio.trim(),
       whatsapp: normalizePhone(dto.whatsapp),
       nin,
@@ -145,7 +180,11 @@ export class StoresService {
 
   private async resolveVerificationAfterNinCheck(
     vendorId: string,
-    nin: string,
+    identity: {
+      nin: string;
+      legalFirstName: string;
+      legalLastName: string;
+    },
     existing: Store | null,
     currentStatus: VendorVerificationStatus,
   ): Promise<
@@ -154,10 +193,10 @@ export class StoresService {
       'verificationStatus' | 'verificationSubmittedAt' | 'verifiedAt' | 'rejectionReason'
     >
   > {
-    const ninChanged = !existing || existing.nin !== nin;
+    const identityChanged = this.hasIdentityChanged(existing, identity);
     const shouldVerify =
       this.ninVerification.isConfigured() &&
-      (ninChanged || currentStatus !== VendorVerificationStatus.verified);
+      (identityChanged || currentStatus !== VendorVerificationStatus.verified);
 
     if (!shouldVerify) {
       if (currentStatus === VendorVerificationStatus.verified) {
@@ -177,9 +216,34 @@ export class StoresService {
       };
     }
 
-    const result = await this.ninVerification.verify(nin);
+    const result = await this.ninVerification.verify(identity.nin);
 
     if (result.status === 'verified') {
+      if (
+        !ninIdentityMatchesVendor(
+          {
+            legalFirstName: identity.legalFirstName,
+            legalLastName: identity.legalLastName,
+          },
+          result.data,
+        )
+      ) {
+        this.eventEmitter.emit(
+          VENDOR_VERIFICATION_DECIDED_EVENT,
+          new VendorVerificationDecidedEvent(
+            vendorId,
+            false,
+            NIN_NAME_MISMATCH_MESSAGE,
+          ),
+        );
+        return {
+          verificationStatus: VendorVerificationStatus.rejected,
+          verificationSubmittedAt: new Date(),
+          verifiedAt: null,
+          rejectionReason: NIN_NAME_MISMATCH_MESSAGE,
+        };
+      }
+
       this.eventEmitter.emit(
         VENDOR_VERIFICATION_DECIDED_EVENT,
         new VendorVerificationDecidedEvent(vendorId, true),
@@ -233,7 +297,11 @@ export class StoresService {
 
     const verification = await this.resolveVerificationAfterNinCheck(
       vendorId,
-      data.nin,
+      {
+        nin: data.nin,
+        legalFirstName: data.legalFirstName,
+        legalLastName: data.legalLastName,
+      },
       existing,
       data.verificationStatus ?? VendorVerificationStatus.unsubmitted,
     );

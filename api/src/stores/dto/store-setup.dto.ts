@@ -14,6 +14,22 @@ export class StoreSetupDto {
   businessName!: string;
 
   @IsString()
+  @MinLength(2, { message: 'Legal first name must be at least 2 characters' })
+  @MaxLength(50, { message: 'Legal first name is too long' })
+  @Matches(/^[A-Za-zÀ-ÖØ-öø-ÿ' -]+$/, {
+    message: 'Legal first name can only contain letters, spaces, hyphens, and apostrophes',
+  })
+  legalFirstName!: string;
+
+  @IsString()
+  @MinLength(2, { message: 'Legal last name must be at least 2 characters' })
+  @MaxLength(50, { message: 'Legal last name is too long' })
+  @Matches(/^[A-Za-zÀ-ÖØ-öø-ÿ' -]+$/, {
+    message: 'Legal last name can only contain letters, spaces, hyphens, and apostrophes',
+  })
+  legalLastName!: string;
+
+  @IsString()
   @MinLength(10, { message: 'Tell customers a bit more about your business' })
   @MaxLength(300, { message: 'Bio must be at most 300 characters' })
   bio!: string;
