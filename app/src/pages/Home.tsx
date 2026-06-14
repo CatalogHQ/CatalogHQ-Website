@@ -16,7 +16,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-white overflow-x-hidden">
       <Navbar />
-      <main>
+      <main className="pt-16">
         <Hero />
         <SocialProofBar />
         <ProblemSection />

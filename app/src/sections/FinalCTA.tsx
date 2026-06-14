@@ -16,7 +16,6 @@ export default function FinalCTA() {
           viewport={{ once: true, amount: 0.2 }}
           transition={{ duration: 0.5 }}
         >
-          <CatalogHqLogo variant="wordmark" onDark className="mx-auto h-10 w-[180px] sm:h-11 sm:w-[198px]" />
         </motion.div>
 
         <motion.h2

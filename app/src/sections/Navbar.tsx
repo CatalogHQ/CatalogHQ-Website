@@ -51,11 +51,12 @@ export default function Navbar() {
 
   return (
     <nav
-      className={`sticky top-0 z-50 transition-all duration-300 ${
+      className={cn(
+        "fixed inset-x-0 top-0 z-50 w-full transition-all duration-300",
         scrolled
           ? "bg-white/80 backdrop-blur-xl border-b border-gray-200 shadow-sm"
-          : "bg-transparent"
-      }`}
+          : "bg-transparent",
+      )}
     >
       <div className="max-w-7xl mx-auto px-5 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
