@@ -13,6 +13,7 @@ import { Store, VendorVerificationStatus } from '@prisma/client';
 import { VENDOR_VERIFICATION_DECIDED_EVENT } from '../admin/events/admin.events';
 import { VendorVerificationDecidedEvent } from '../admin/events/vendor-verification-decided.event';
 import { normalizePhone } from '../common/phone.util';
+import { normalizeSocialHandle } from '../common/social-handle.util';
 import { slugify } from '../common/slug.util';
 import { PrismaService } from '../prisma/prisma.service';
 import { AshlabNinVerificationService } from '../verification/ashlab-nin-verification.service';
@@ -113,6 +114,10 @@ export class StoresService {
       legalLastName,
       bio: dto.bio.trim(),
       whatsapp: normalizePhone(dto.whatsapp),
+      instagramHandle: normalizeSocialHandle(dto.instagramHandle),
+      tiktokHandle: normalizeSocialHandle(dto.tiktokHandle),
+      facebookHandle: normalizeSocialHandle(dto.facebookHandle),
+      xHandle: normalizeSocialHandle(dto.xHandle),
       nin,
       category: dto.category.trim(),
       address: dto.address.trim(),

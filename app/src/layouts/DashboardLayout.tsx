@@ -31,6 +31,7 @@ import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useVendor } from "@/contexts/VendorContext";
+import VendorOrderNotifications from "@/components/vendor/VendorOrderNotifications";
 import { getStoreUrl } from "@/lib/slug";
 
 const navItems = [
@@ -142,6 +143,7 @@ export default function DashboardLayout() {
               {pageTitle}
             </p>
           </div>
+          <VendorOrderNotifications />
           {isAdmin && (
             <Button variant="outline" size="sm" className="hidden gap-2 sm:inline-flex" asChild>
               <Link to="/admin">

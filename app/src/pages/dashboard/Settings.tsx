@@ -33,6 +33,7 @@ import {
 } from "@/lib/store-schemas";
 import { STORE_CATEGORY_SUGGESTIONS } from "@/lib/store-category-suggestions";
 import { getStoreUrl } from "@/lib/slug";
+import SocialHandleFields from "@/components/vendor/SocialHandleFields";
 
 export default function Settings() {
   const { store, completeSetup, isSlugAvailable } = useVendor();
@@ -47,6 +48,10 @@ export default function Settings() {
       legalLastName: "",
       bio: "",
       whatsapp: "",
+      instagramHandle: "",
+      tiktokHandle: "",
+      facebookHandle: "",
+      xHandle: "",
       nin: "",
       slug: "",
       category: "",
@@ -64,6 +69,10 @@ export default function Settings() {
         legalLastName: store.legalLastName ?? "",
         bio: store.bio,
         whatsapp: store.whatsapp,
+        instagramHandle: store.instagramHandle ?? "",
+        tiktokHandle: store.tiktokHandle ?? "",
+        facebookHandle: store.facebookHandle ?? "",
+        xHandle: store.xHandle ?? "",
         nin: store.nin,
         slug: store.slug,
         category: store.category ?? "",
@@ -101,6 +110,10 @@ export default function Settings() {
         legalLastName: data.legalLastName,
         bio: data.bio,
         whatsapp: data.whatsapp,
+        instagramHandle: data.instagramHandle,
+        tiktokHandle: data.tiktokHandle,
+        facebookHandle: data.facebookHandle,
+        xHandle: data.xHandle,
         nin: data.nin,
         slug: data.slug,
         category: data.category,
@@ -189,14 +202,20 @@ export default function Settings() {
                 name="whatsapp"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Contact number</FormLabel>
+                    <FormLabel>Primary contact (WhatsApp)</FormLabel>
                     <FormControl>
                       <Input type="tel" {...field} />
                     </FormControl>
+                    <FormDescription>
+                      Your main contact number. Customers reach you here first
+                      after ordering.
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
               />
+
+              <SocialHandleFields control={form.control} />
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <FormField

@@ -35,6 +35,10 @@ export type Store = {
   legalLastName?: string;
   bio: string;
   whatsapp: string;
+  instagramHandle?: string;
+  tiktokHandle?: string;
+  facebookHandle?: string;
+  xHandle?: string;
   nin: string;
   category?: string;
   address?: string;

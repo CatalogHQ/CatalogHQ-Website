@@ -1,11 +1,15 @@
 import {
+  IsOptional,
   IsString,
   Matches,
   MaxLength,
   MinLength,
   Validate,
+  ValidateIf,
 } from 'class-validator';
 import { IsNigerianPhoneConstraint } from '../../common/validators/nigerian-phone.validator';
+
+const SOCIAL_HANDLE_PATTERN = /^@?[a-zA-Z0-9._]{1,30}$/;
 
 export class StoreSetupDto {
   @IsString()
@@ -37,6 +41,42 @@ export class StoreSetupDto {
   @IsString()
   @Validate(IsNigerianPhoneConstraint)
   whatsapp!: string;
+
+  @IsOptional()
+  @ValidateIf((_object, value) => value !== undefined && value !== '')
+  @IsString()
+  @MaxLength(30, { message: 'Handle is too long' })
+  @Matches(SOCIAL_HANDLE_PATTERN, {
+    message: 'Use letters, numbers, dots, and underscores only',
+  })
+  instagramHandle?: string;
+
+  @IsOptional()
+  @ValidateIf((_object, value) => value !== undefined && value !== '')
+  @IsString()
+  @MaxLength(30, { message: 'Handle is too long' })
+  @Matches(SOCIAL_HANDLE_PATTERN, {
+    message: 'Use letters, numbers, dots, and underscores only',
+  })
+  tiktokHandle?: string;
+
+  @IsOptional()
+  @ValidateIf((_object, value) => value !== undefined && value !== '')
+  @IsString()
+  @MaxLength(30, { message: 'Handle is too long' })
+  @Matches(SOCIAL_HANDLE_PATTERN, {
+    message: 'Use letters, numbers, dots, and underscores only',
+  })
+  facebookHandle?: string;
+
+  @IsOptional()
+  @ValidateIf((_object, value) => value !== undefined && value !== '')
+  @IsString()
+  @MaxLength(30, { message: 'Handle is too long' })
+  @Matches(SOCIAL_HANDLE_PATTERN, {
+    message: 'Use letters, numbers, dots, and underscores only',
+  })
+  xHandle?: string;
 
   @IsString()
   @Matches(/^\d{11}$/, { message: 'NIN must be exactly 11 digits' })

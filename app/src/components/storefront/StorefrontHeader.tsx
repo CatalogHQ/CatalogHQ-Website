@@ -8,6 +8,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import StarRating from "@/components/storefront/StarRating";
+import StoreContactLinks from "@/components/storefront/StoreContactLinks";
 import { usePublicReviews } from "@/hooks/use-public-reviews";
 import { hasFeature } from "@/data/plans";
 import { buildStoreShareMessage, shareToWhatsAppStatus } from "@/lib/whatsapp-share";
@@ -81,6 +82,15 @@ export default function StorefrontHeader({ store }: StorefrontHeaderProps) {
                 <p className="mt-2 text-sm leading-relaxed text-gray-600">
                   {store.bio}
                 </p>
+
+                <StoreContactLinks
+                  whatsapp={store.whatsapp}
+                  businessName={store.businessName}
+                  instagramHandle={store.instagramHandle}
+                  tiktokHandle={store.tiktokHandle}
+                  facebookHandle={store.facebookHandle}
+                  xHandle={store.xHandle}
+                />
 
                 {/* <div className="mt-3 flex flex-wrap gap-1.5">
                   <span className="inline-flex items-center gap-1 rounded-full bg-gray-50 px-2 py-1 text-[10px] text-gray-500 sm:text-[11px]">

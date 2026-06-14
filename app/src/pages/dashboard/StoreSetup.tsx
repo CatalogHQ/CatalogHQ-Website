@@ -33,6 +33,7 @@ import {
 import { getStoreUrl } from "@/lib/slug";
 import { STORE_CATEGORY_SUGGESTIONS } from "@/lib/store-category-suggestions";
 import { cn } from "@/lib/utils";
+import SocialHandleFields from "@/components/vendor/SocialHandleFields";
 
 const TOTAL_STEPS = STORE_SETUP_STEPS.length;
 
@@ -51,6 +52,10 @@ export default function StoreSetup() {
       legalLastName: store?.legalLastName ?? "",
       bio: store?.bio ?? "",
       whatsapp: store?.whatsapp ?? "",
+      instagramHandle: store?.instagramHandle ?? "",
+      tiktokHandle: store?.tiktokHandle ?? "",
+      facebookHandle: store?.facebookHandle ?? "",
+      xHandle: store?.xHandle ?? "",
       nin: store?.nin ?? "",
       slug: store?.slug ?? "",
       category: store?.category ?? "",
@@ -68,6 +73,10 @@ export default function StoreSetup() {
         legalLastName: store.legalLastName ?? "",
         bio: store.bio,
         whatsapp: store.whatsapp,
+        instagramHandle: store.instagramHandle ?? "",
+        tiktokHandle: store.tiktokHandle ?? "",
+        facebookHandle: store.facebookHandle ?? "",
+        xHandle: store.xHandle ?? "",
         nin: store.nin,
         slug: store.slug,
         category: store.category ?? "",
@@ -130,6 +139,10 @@ export default function StoreSetup() {
         legalLastName: data.legalLastName,
         bio: data.bio,
         whatsapp: data.whatsapp,
+        instagramHandle: data.instagramHandle,
+        tiktokHandle: data.tiktokHandle,
+        facebookHandle: data.facebookHandle,
+        xHandle: data.xHandle,
         nin: data.nin,
         slug: data.slug,
         category: data.category,
@@ -353,18 +366,20 @@ export default function StoreSetup() {
                     name="whatsapp"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Contact number</FormLabel>
+                        <FormLabel>Primary contact (WhatsApp)</FormLabel>
                         <FormControl>
                           <Input type="tel" placeholder="08012345678" {...field} />
                         </FormControl>
                         <FormDescription>
-                          Customers can reach you here after ordering (WhatsApp,
-                          calls, etc.).
+                          Your main contact number. Customers reach you here first
+                          after ordering.
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
+
+                  <SocialHandleFields control={form.control} />
                 </>
               )}
 

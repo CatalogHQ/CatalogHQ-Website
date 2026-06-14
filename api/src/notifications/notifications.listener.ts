@@ -41,23 +41,63 @@ export class NotificationsListener {
   ) {}
 
   private get appOrigin(): string {
-    return this.configService.get<string>(
-      'PAYSTACK_CALLBACK_BASE_URL',
-      this.configService.get<string>('CORS_ORIGIN', 'http://localhost:3000'),
+    const callbackBase = this.configService.get<string>(
+      'FLUTTERWAVE_CALLBACK_BASE_URL',
     );
+    if (callbackBase) {
+      return callbackBase.replace(/\/$/, '');
+    }
+
+    const corsOrigin = this.configService.get<string>(
+      'CORS_ORIGIN',
+      'http://localhost:3000',
+    );
+    return corsOrigin.split(',')[0]?.trim() || 'http://localhost:3000';
   }
 
   @OnEvent(ORDER_CREATED_EVENT)
   async handleOrderCreated(event: OrderCreatedEvent): Promise<void> {
     const order = await this.prisma.order.findUnique({
       where: { id: event.orderId },
-      include: { store: true },
+      include: { store: { include: { vendor: true } } },
     });
 
-    if (!order?.store.whatsapp) return;
+    if (!order?.store) return;
 
-    const message = `New CatalogHQ order ${order.paymentRef}: ${order.productName} x${order.quantity} (${order.totalPaid} NGN) from ${order.customerName}. Check your dashboard.`;
-    await this.smsService.sendSms(order.store.whatsapp, message);
+    const { store } = order;
+    const dashboardUrl = `${this.appOrigin}/dashboard/orders`;
+
+    if (store.whatsapp) {
+      const message = `New CatalogHQ order ${order.paymentRef}: ${order.productName} x${order.quantity} (${order.totalPaid} NGN) from ${order.customerName}. Check your dashboard.`;
+      await this.smsService.sendSms(store.whatsapp, message);
+    }
+
+    const vendorEmail = store.vendor?.email;
+    if (!vendorEmail) {
+      this.logger.log(
+        `Skipping order email for order ${order.id}: no vendor email on file.`,
+      );
+      return;
+    }
+
+    const storeName = store.businessName;
+    const subject = `New order ${order.paymentRef} at ${storeName}`;
+    const htmlBody = `<p>Hi,</p><p>You have a new paid order at <strong>${storeName}</strong>.</p><ul><li><strong>Reference:</strong> ${order.paymentRef}</li><li><strong>Customer:</strong> ${order.customerName}</li><li><strong>Product:</strong> ${order.productName} x${order.quantity}</li><li><strong>Total:</strong> ${order.totalPaid} NGN</li></ul><p><a href="${dashboardUrl}">View orders in your dashboard</a></p><p>CatalogHQ Team</p>`;
+
+    try {
+      await this.emailService.sendEmail(
+        vendorEmail,
+        subject,
+        htmlBody,
+        storeName,
+        { type: 'order_created' },
+      );
+    } catch (error) {
+      this.logger.error(
+        `Failed to send order notification email to ${vendorEmail}.`,
+        error,
+      );
+    }
   }
 
   @OnEvent(ORDER_STATUS_UPDATED_EVENT)

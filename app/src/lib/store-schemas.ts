@@ -60,6 +60,17 @@ export const slugSchema = z
     "Use lowercase letters, numbers, and hyphens only",
   );
 
+export const socialHandleSchema = z
+  .string()
+  .trim()
+  .max(30, "Handle is too long")
+  .regex(
+    /^@?[a-zA-Z0-9._]*$/,
+    "Use letters, numbers, dots, and underscores only",
+  )
+  .optional()
+  .or(z.literal(""));
+
 export const storeSetupSchema = z.object({
   businessName: z
     .string()
@@ -72,6 +83,10 @@ export const storeSetupSchema = z.object({
     .min(10, "Tell customers a bit more about your business")
     .max(300, "Bio must be at most 300 characters"),
   whatsapp: phoneSchema,
+  instagramHandle: socialHandleSchema,
+  tiktokHandle: socialHandleSchema,
+  facebookHandle: socialHandleSchema,
+  xHandle: socialHandleSchema,
   nin: ninSchema,
   slug: slugSchema,
   category: z
@@ -110,6 +125,10 @@ export const storeSetupStep2Schema = storeSetupSchema.pick({
   city: true,
   state: true,
   whatsapp: true,
+  instagramHandle: true,
+  tiktokHandle: true,
+  facebookHandle: true,
+  xHandle: true,
 });
 
 export const storeSetupStep3Schema = storeSetupSchema.pick({
@@ -129,7 +148,16 @@ export const STORE_SETUP_STEPS = [
     id: "location",
     title: "Location & contact",
     description: "Where you operate and how customers reach you.",
-    fields: ["address", "city", "state", "whatsapp"] as const,
+    fields: [
+      "address",
+      "city",
+      "state",
+      "whatsapp",
+      "instagramHandle",
+      "tiktokHandle",
+      "facebookHandle",
+      "xHandle",
+    ] as const,
   },
   {
     id: "identity",

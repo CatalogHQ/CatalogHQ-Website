@@ -8,6 +8,10 @@ export type StoreDto = {
   legalLastName?: string;
   bio: string;
   whatsapp: string;
+  instagramHandle?: string;
+  tiktokHandle?: string;
+  facebookHandle?: string;
+  xHandle?: string;
   nin: string;
   category?: string;
   address?: string;
@@ -37,6 +41,10 @@ export function toStoreDto(store: Store): StoreDto {
     legalLastName: store.legalLastName ?? undefined,
     bio: store.bio,
     whatsapp: store.whatsapp,
+    instagramHandle: store.instagramHandle ?? undefined,
+    tiktokHandle: store.tiktokHandle ?? undefined,
+    facebookHandle: store.facebookHandle ?? undefined,
+    xHandle: store.xHandle ?? undefined,
     nin: store.nin,
     category: store.category ?? undefined,
     address: store.address ?? undefined,

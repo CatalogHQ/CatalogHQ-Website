@@ -55,8 +55,8 @@ export default function Orders() {
   const [loading, setLoading] = useState(true);
 
   const canManageOrders = hasFeature(user?.planTier ?? "starter", "order-management");
-  const canSearch = hasFeature(user?.planTier ?? "starter", "order-search");
-  const canBulk = hasFeature(user?.planTier ?? "starter", "order-search");
+  const canSearch = canManageOrders;
+  const canBulk = canManageOrders;
 
   useEffect(() => {
     if (!canManageOrders || !store) return;

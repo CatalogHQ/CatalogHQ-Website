@@ -115,6 +115,10 @@ model Store {
   legalLastName           String?
   bio                     String
   whatsapp                String
+  instagramHandle         String?
+  tiktokHandle            String?
+  facebookHandle          String?
+  xHandle                 String?
   nin                     String
   category                String?
   address                 String?

@@ -286,7 +286,7 @@ export const FEATURES: Feature[] = [
     title: "Order search and bulk actions",
     description: "Find orders by phone or ref and update many at once.",
     category: "operations",
-    tier: "pro",
+    tier: "starter",
   },
   {
     id: "abandoned-cart",
