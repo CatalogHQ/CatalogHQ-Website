@@ -64,7 +64,7 @@ export default function CheckoutPricingSummary({
       )}
       {showProcessingFee && processingFee > 0 && (
         <div className="flex items-center justify-between text-gray-600">
-          <span>Flutterwave processing fee</span>
+          <span>VAT</span>
           <span>{formatNaira(processingFee)}</span>
         </div>
       )}
