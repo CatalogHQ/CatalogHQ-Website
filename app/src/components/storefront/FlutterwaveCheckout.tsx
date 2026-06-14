@@ -123,7 +123,8 @@ export default function FlutterwaveCheckout({
   const [processing, setProcessing] = useState(false);
   const vendorNet =
     unitPrice * selection.quantity + deliveryFee - discountAmount;
-  const { processingFee, customerTotal } = computeCheckoutPricing(vendorNet);
+  const { customerTotal } = computeCheckoutPricing(vendorNet);
+  const itemsTotal = customerTotal - deliveryFee;
   const isDelivery = deliveryRequiresAddress(selection.deliveryType);
   const checkoutSchema = createCheckoutSchema(selection.deliveryType);
 
@@ -254,8 +255,9 @@ export default function FlutterwaveCheckout({
           </p>
           <div className="mt-1 space-y-0.5 text-xs text-gray-500">
             <p>
-              {selection.quantity} item{selection.quantity === 1 ? "" : "s"} ·{" "}
-              {formatNaira(unitPrice)} each
+              {selection.quantity} item{selection.quantity === 1 ? "" : "s"}
+              {selection.quantity > 0 &&
+                ` · ${formatNaira(Math.round(itemsTotal / selection.quantity))} each`}
             </p>
             {deliveryFee > 0 && <p>Delivery: {formatNaira(deliveryFee)}</p>}
             {discountAmount > 0 && (
@@ -263,7 +265,6 @@ export default function FlutterwaveCheckout({
                 Discount: −{formatNaira(discountAmount)}
               </p>
             )}
-            <p>Payment processing: {formatNaira(processingFee)}</p>
           </div>
         </div>
 

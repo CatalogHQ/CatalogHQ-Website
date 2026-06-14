@@ -22,7 +22,6 @@ import {
 } from "@/lib/order-message";
 import { formatNaira, normalizePhoneForWhatsApp } from "@/lib/format";
 import { customerUnitDisplayPrice } from "@/lib/flutterwave-fees";
-import CheckoutPricingSummary from "@/components/storefront/CheckoutPricingSummary";
 import { getProductImages } from "@/lib/product-utils";
 import { orderRepository, productRepository } from "@/lib/repositories";
 import { hasFeature } from "@/data/plans";
@@ -311,11 +310,6 @@ export default function PublicProduct() {
             <p className="mt-2 text-2xl font-bold text-whatsapp-dark sm:text-3xl">
               {formatNaira(customerUnitDisplayPrice(product.price))}
             </p>
-            <CheckoutPricingSummary
-              vendorNetNgn={product.price}
-              compact
-              className="mt-1"
-            />
 
             {product.description && (
               <p className="mt-2 text-sm leading-relaxed text-gray-600">
