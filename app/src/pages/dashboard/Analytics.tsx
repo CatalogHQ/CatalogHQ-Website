@@ -169,7 +169,7 @@ export default function Analytics() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Analytics</h1>
           <p className="mt-1 text-gray-600">
-            See revenue, best sellers, and order trends in one place.
+            See revenue, best vendors, and order trends in one place.
           </p>
         </div>
         <FeatureUpgradeBanner featureName="Sales analytics dashboard" />
@@ -182,7 +182,7 @@ export default function Analytics() {
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Analytics</h1>
         <p className="mt-1 text-gray-600">
-          Track sales, best sellers, and order trends for any period.
+          Track sales, best vendors, and order trends for any period.
         </p>
       </div>
 
@@ -360,7 +360,7 @@ export default function Analytics() {
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Best sellers</CardTitle>
+            <CardTitle className="text-base">Best vendors</CardTitle>
             <CardDescription>Top products in {rangeLabel}</CardDescription>
           </CardHeader>
           <CardContent>

@@ -392,7 +392,7 @@ export default function FlutterwaveCheckout({
                   </FormControl>
                   {isDelivery ? (
                     <p className="text-xs text-gray-500">
-                      The seller may call or message you about delivery.
+                      The vendor may call or message you about delivery.
                     </p>
                   ) : null}
                   <FormMessage />

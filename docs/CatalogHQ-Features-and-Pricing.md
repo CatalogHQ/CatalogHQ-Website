@@ -1,6 +1,6 @@
 # CatalogHQ — Features & Pricing Guide
 
-**Built for Nigerian sellers online**
+**Built for Nigerian vendors online**
 
 *Social media sales deserve a real store. One link on WhatsApp, Instagram, Facebook, or X.*
 
@@ -31,7 +31,7 @@ Selling through DMs on social media means endless back-and-forth:
 
 | Tier | Price | Best for |
 |------|-------|----------|
-| **Starter** | Free | New sellers testing the platform |
+| **Starter** | Free | New vendors testing the platform |
 | **Pro** | ₦5,000/month | Growing stores that need automation |
 
 *One extra sale per month covers the entire Pro plan.*
@@ -40,7 +40,7 @@ Selling through DMs on social media means endless back-and-forth:
 
 ## Starter — Free
 
-Perfect for new sellers. Stop chasing transfers and answering "how much?" all day.
+Perfect for new vendors. Stop chasing transfers and answering "how much?" all day.
 
 - Shareable storefront link
 - Paystack checkout (automatic payment confirmation)
@@ -135,4 +135,4 @@ Features roll out in phases as the NestJS backend is built:
 - **Starter:** Free forever — no credit card required
 - **Pro:** Paid monthly — upgrade anytime from your dashboard
 
-*CatalogHQ Nigeria — Built for Nigerian sellers online.*
+*CatalogHQ Nigeria — Built for Nigerian vendors online.*

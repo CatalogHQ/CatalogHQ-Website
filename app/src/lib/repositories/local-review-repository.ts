@@ -17,7 +17,7 @@ function seedReviewsForStore(store: Store): StoreReview[] {
       buyerName: "Chioma A.",
       rating: 5,
       comment:
-        "Ordered a gown and it arrived exactly as pictured. Delivery was fast and the seller kept me updated.",
+        "Ordered a gown and it arrived exactly as pictured. Delivery was fast and the vendor kept me updated.",
       productName: "Ankara set",
       verified: true,
       createdAt: new Date(now - 1000 * 60 * 60 * 24 * 4).toISOString(),
@@ -38,7 +38,7 @@ function seedReviewsForStore(store: Store): StoreReview[] {
       buyerName: "Blessing E.",
       rating: 4,
       comment:
-        "Great experience overall. Sizing was accurate and the seller responded quickly when I had a question.",
+        "Great experience overall. Sizing was accurate and the vendor responded quickly when I had a question.",
       productName: "Office wear",
       verified: true,
       createdAt: new Date(now - 1000 * 60 * 60 * 24 * 18).toISOString(),

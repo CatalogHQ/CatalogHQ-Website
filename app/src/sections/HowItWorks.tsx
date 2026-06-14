@@ -38,7 +38,7 @@ export default function HowItWorks() {
           className="text-center"
         >
           <h2 className="section-heading text-gray-900">
-            Up and running in under 3 minutes
+            Up and running in under 1 minute
           </h2>
           <p className="section-subheading">
             Three simple steps to turn social selling into a real store

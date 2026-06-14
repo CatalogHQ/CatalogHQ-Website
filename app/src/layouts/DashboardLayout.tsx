@@ -5,7 +5,6 @@ import {
   Settings,
   LogOut,
   ExternalLink,
-  Store,
   ClipboardList,
   Warehouse,
   BarChart3,
@@ -32,6 +31,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useVendor } from "@/contexts/VendorContext";
 import VendorOrderNotifications from "@/components/vendor/VendorOrderNotifications";
+import CatalogHqLogo from "@/components/brand/CatalogHqLogo";
 import { getStoreUrl } from "@/lib/slug";
 
 const navItems = [
@@ -70,9 +70,7 @@ export default function DashboardLayout() {
       <Sidebar>
         <SidebarHeader className="border-b border-sidebar-border p-4">
           <Link to="/dashboard" className="flex items-center gap-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-whatsapp-green text-white">
-              <Store className="h-5 w-5" />
-            </div>
+            <CatalogHqLogo variant="wordmark" className="h-8 w-[144px] sm:h-9 sm:w-[162px]" />
             <div className="min-w-0">
               <p className="truncate text-sm font-semibold text-sidebar-foreground">
                 {store?.businessName || "CatalogHQ"}

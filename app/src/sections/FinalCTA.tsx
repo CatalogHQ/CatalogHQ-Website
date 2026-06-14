@@ -1,7 +1,8 @@
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router";
 import { Button } from "@/components/ui/button";
-import { Store, Lock } from "lucide-react";
+import { Lock } from "lucide-react";
+import CatalogHqLogo from "@/components/brand/CatalogHqLogo";
 
 export default function FinalCTA() {
   const navigate = useNavigate();
@@ -15,7 +16,7 @@ export default function FinalCTA() {
           viewport={{ once: true, amount: 0.2 }}
           transition={{ duration: 0.5 }}
         >
-          <Store className="h-12 w-12 text-whatsapp-green mx-auto" />
+          <CatalogHqLogo variant="wordmark" onDark className="mx-auto h-10 w-[180px] sm:h-11 sm:w-[198px]" />
         </motion.div>
 
         <motion.h2
@@ -35,7 +36,7 @@ export default function FinalCTA() {
           transition={{ duration: 0.5, delay: 0.2 }}
           className="text-base sm:text-lg text-whatsapp-light mt-3 sm:mt-4 opacity-90 text-pretty"
         >
-          Join Nigerian social sellers and first-time online vendors who
+          Join Nigerian social vendors and first-time online vendors who
           stopped chasing payments and started building a real business.
         </motion.p>
 
@@ -61,7 +62,7 @@ export default function FinalCTA() {
           className="flex items-center justify-center gap-2 text-xs sm:text-sm text-whatsapp-light opacity-70 mt-4 px-2"
         >
           <Lock className="h-3.5 w-3.5" />
-          <span>Plans from ₦3,000/month. Ready in 3 minutes.</span>
+          <span>Plans from ₦3,000/month. Ready in 1 minute.</span>
         </motion.div>
       </div>
     </section>

@@ -59,7 +59,7 @@ export default function FeatureGuide() {
           </h1>
           <p className="text-lg text-gray-600 mt-3">
             Automate the messages you repeat every day. Built for Nigerian
-            social sellers on WhatsApp, Instagram, Facebook, and X, plus
+            social vendors on WhatsApp, Instagram, Facebook, and X, plus
             first-time online vendors.
           </p>
         </header>
@@ -162,7 +162,7 @@ export default function FeatureGuide() {
 
         <footer className="border-t border-gray-200 pt-6 text-sm text-gray-500">
           <p>One extra sale per month covers the entire Pro plan.</p>
-          <p className="mt-1">© CatalogHQ Nigeria. Built for Nigerian sellers online.</p>
+          <p className="mt-1">© CatalogHQ Nigeria. Built for Nigerian vendors online.</p>
         </footer>
       </article>
       <SupportFab audience="customer" />

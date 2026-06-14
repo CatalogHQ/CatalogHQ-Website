@@ -2,7 +2,6 @@ import { Link, Outlet, useLocation, useNavigate } from "react-router";
 import {
   LayoutDashboard,
   LogOut,
-  Shield,
   Store,
   Users,
   UserCircle,
@@ -32,6 +31,7 @@ import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAdminBadges } from "@/hooks/use-admin-badges";
+import CatalogHqLogo from "@/components/brand/CatalogHqLogo";
 
 const navItems = [
   { title: "Overview", href: "/admin", icon: LayoutDashboard },
@@ -86,9 +86,7 @@ export default function AdminLayout() {
       <Sidebar>
         <SidebarHeader className="border-b border-sidebar-border p-4">
           <Link to="/admin" className="flex items-center gap-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-whatsapp-green text-white">
-              <Shield className="h-5 w-5" />
-            </div>
+            <CatalogHqLogo variant="wordmark" className="h-8 w-[144px] sm:h-9 sm:w-[162px]" />
             <div className="min-w-0">
               <p className="truncate text-sm font-semibold text-sidebar-foreground">
                 CatalogHQ

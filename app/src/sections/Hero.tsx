@@ -54,7 +54,7 @@ export default function Hero() {
                 <span className="text-gray-300"> · </span>
                 less than ₦100 a day
                 <span className="text-gray-300"> · </span>
-                live in 3 minutes
+                live in 1 minute
               </p>
             </div>
           </motion.div>

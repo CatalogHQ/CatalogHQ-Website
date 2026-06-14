@@ -248,7 +248,7 @@ export default function ProductOrderOptions({
             <p className="mt-2 text-xs text-gray-500">
               {getDeliveryType(selection.deliveryType).requiresAddress
                 ? "You'll enter your delivery address and a reachable mobile number at checkout."
-                : "Collect your order directly from the seller."}
+                : "Collect your order directly from the vendor."}
             </p>
           )}
           {deliveryRequiresAddress(selection.deliveryType ?? "pickup") &&

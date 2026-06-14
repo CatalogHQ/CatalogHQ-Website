@@ -60,7 +60,7 @@ export default function StorefrontHeader({ store }: StorefrontHeaderProps) {
                   </h1>
                   {isVerified && (
                     <Badge className="bg-whatsapp-green/10 text-[11px] text-whatsapp-dark hover:bg-whatsapp-green/10 sm:text-xs">
-                      Verified seller
+                      Verified vendor
                     </Badge>
                   )}
                 </div>

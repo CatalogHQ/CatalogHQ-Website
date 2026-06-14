@@ -61,7 +61,7 @@ export const PLANS: Plan[] = [
     price: "₦3,000",
     priceSubtext: "Less than ₦100 a day",
     tagline:
-      "Perfect for new sellers. Stop chasing transfers and answering \"how much?\" all day.",
+      "Perfect for new vendors. Stop chasing transfers and answering \"how much?\" all day.",
     cta: "Get Starter",
   },
   {
@@ -172,7 +172,7 @@ export const FEATURES: Feature[] = [
     id: "delivery-types",
     title: "Delivery types",
     description:
-      "Offer pickup from seller or delivery on each product.",
+      "Offer pickup from vendor or delivery on each product.",
     category: "operations",
     tier: "starter",
   },
@@ -215,7 +215,7 @@ export const FEATURES: Feature[] = [
     id: "analytics-dashboard",
     title: "Sales analytics dashboard",
     description:
-      "See your best sellers, total revenue, and order history in one place.",
+      "See your best vendors, total revenue, and order history in one place.",
     category: "operations",
     tier: "pro",
     showOnLanding: true,

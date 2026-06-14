@@ -1,5 +1,6 @@
 import { Link } from "react-router";
-import { ArrowLeft, Store } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
+import CatalogHqLogo from "@/components/brand/CatalogHqLogo";
 import SupportFab from "@/components/support/SupportFab";
 
 type AuthLayoutProps = {
@@ -35,11 +36,8 @@ export default function AuthLayout({
           </Link>
 
           <div className="relative">
-            <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-xl bg-whatsapp-green/20">
-              <Store className="h-6 w-6 text-whatsapp-green" />
-            </div>
-            <p className="text-2xl font-bold text-white">CatalogHQ</p>
-            <p className="mt-3 max-w-sm text-base leading-relaxed text-white/75">
+            <CatalogHqLogo variant="wordmark" onDark className="mb-6 h-10 w-[180px] sm:h-11 sm:w-[198px]" />
+            <p className="max-w-sm text-base leading-relaxed text-white/75">
               Turn social media sales into a real store. Share one link on
               WhatsApp, Instagram, Facebook, or X, or start selling online for
               the first time.
@@ -47,14 +45,14 @@ export default function AuthLayout({
           </div>
 
           <p className="relative text-sm text-white/50">
-            Built for Nigerian sellers online.
+            Built for Nigerian vendors online.
           </p>
         </div>
 
         <div className="flex flex-col justify-center px-5 py-10 sm:px-8 lg:px-16">
           <div className="mx-auto w-full max-w-md">
-            <div className="mb-8 text-center lg:hidden">
-              <p className="text-xl font-bold text-whatsapp-dark">CatalogHQ</p>
+            <div className="mb-8 flex justify-center lg:hidden">
+              <CatalogHqLogo variant="wordmark" className="h-9 w-[172px] sm:h-10 sm:w-[188px]" />
             </div>
 
             <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm sm:p-8">

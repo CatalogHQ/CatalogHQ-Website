@@ -8,6 +8,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { Menu, X } from "lucide-react";
+import CatalogHqLogo from "@/components/brand/CatalogHqLogo";
 import { cn } from "@/lib/utils";
 
 const navLinks = [
@@ -61,11 +62,14 @@ export default function Navbar() {
           <Link
             to="/"
             className={cn(
-              "text-lg sm:text-xl font-bold text-whatsapp-dark hover:opacity-80 transition-opacity",
+              "flex shrink-0 items-center transition-opacity hover:opacity-80",
               open && "max-lg:invisible",
             )}
           >
-            CatalogHQ
+            <CatalogHqLogo
+              variant="wordmark"
+              className="h-9 w-[172px] sm:h-10 sm:w-[188px]"
+            />
           </Link>
 
           <div className="hidden lg:flex items-center gap-8">
@@ -108,9 +112,7 @@ export default function Navbar() {
             >
               <div className="flex flex-col h-full">
                 <div className="flex items-center justify-between border-b border-gray-100 p-4">
-                  <span className="text-xl font-bold text-whatsapp-dark">
-                    CatalogHQ
-                  </span>
+                  <CatalogHqLogo variant="wordmark" className="h-9 w-[172px]" />
                   <SheetClose className="rounded-sm p-1 text-gray-500 opacity-70 transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-gray-300">
                     <X className="h-5 w-5" />
                     <span className="sr-only">Close</span>

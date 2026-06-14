@@ -275,12 +275,12 @@ export default function OrderStatusPage() {
           <CardContent>
             {order.status === "cancelled" ? (
               <p className="text-sm text-red-600">
-                This order was cancelled. Contact the seller if you have questions.
+                This order was cancelled. Contact the vendor if you have questions.
               </p>
             ) : order.status === "reserved" ? (
               <p className="text-sm text-amber-700">
                 Waiting for payment confirmation. Pay via the link from the
-                seller or complete checkout.
+                vendor or complete checkout.
               </p>
             ) : (
               <ol className="space-y-4">
@@ -335,7 +335,7 @@ export default function OrderStatusPage() {
         <Button asChild className="w-full bg-whatsapp-green hover:bg-whatsapp-green/90">
           <a href={whatsappUrl} target="_blank" rel="noreferrer">
             <MessageCircle className="mr-2 h-4 w-4" />
-            Message seller on WhatsApp
+            Message vendor on WhatsApp
           </a>
         </Button>
 

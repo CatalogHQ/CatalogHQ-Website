@@ -25,12 +25,12 @@ const faqs = [
   {
     question: "What if I am not good with technology?",
     answer:
-      "If you can post on social media, you can use CatalogHQ. Adding a product takes less than 2 minutes. Setup takes under 3 minutes. No technical knowledge is needed at any point.",
+      "If you can post on social media, you can use CatalogHQ. Adding a product takes less than 2 minutes. Setup takes under 1 minute. No technical knowledge is needed at any point.",
   },
   {
     question: "I've never sold online. Can I still use CatalogHQ?",
     answer:
-      "Yes. You do not need a website or any prior online store. Add your products, get your link, and share it on WhatsApp, Instagram, Facebook, or X. Your store can be live in under 3 minutes.",
+      "Yes. You do not need a website or any prior online store. Add your products, get your link, and share it on WhatsApp, Instagram, Facebook, or X. Your store can be live in under 1 minute.",
   },
   {
     question: "Can I start on a lower plan and upgrade later?",
@@ -60,7 +60,7 @@ export default function FAQ() {
           transition={{ duration: 0.4 }}
           className="section-heading text-gray-900 text-center mb-8 sm:mb-10"
         >
-          Questions sellers always ask.
+          Questions vendors always ask.
         </motion.h2>
 
         <motion.div

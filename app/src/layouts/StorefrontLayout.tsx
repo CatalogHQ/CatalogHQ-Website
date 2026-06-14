@@ -2,6 +2,7 @@ import { useEffect, type ReactNode } from "react";
 import { Link } from "react-router";
 import SupportFab from "@/components/support/SupportFab";
 import StorefrontHeader from "@/components/storefront/StorefrontHeader";
+import CatalogHqLogo from "@/components/brand/CatalogHqLogo";
 import type { PublicStoreView } from "@/types/domain";
 
 type StorefrontLayoutProps = {
@@ -56,13 +57,10 @@ export default function StorefrontLayout({
 
       <footer className="border-t bg-white py-5 sm:py-6">
         <div className="mx-auto max-w-5xl px-3 text-center text-xs text-gray-500 sm:px-6 sm:text-sm">
-          <p>
+          <p className="flex items-center justify-center gap-2">
             Powered by{" "}
-            <Link
-              to="/"
-              className="font-semibold text-whatsapp-dark hover:text-whatsapp-green"
-            >
-              CatalogHQ
+            <Link to="/" className="inline-flex transition-opacity hover:opacity-80">
+              <CatalogHqLogo variant="wordmark" className="h-8 w-[144px] sm:h-9 sm:w-[162px]" />
             </Link>
           </p>
         </div>

@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { Separator } from "@/components/ui/separator";
 import { MapPin } from "lucide-react";
+import CatalogHqLogo from "@/components/brand/CatalogHqLogo";
 
 const footerLinks = [
   { label: "About", href: "#" },
@@ -30,9 +31,9 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 text-center md:text-left">
           {/* Left: Logo + Tagline */}
           <div>
-            <p className="text-xl font-bold text-white">CatalogHQ</p>
+            <CatalogHqLogo variant="wordmark" onDark className="h-9 w-[172px] sm:h-10 sm:w-[188px]" />
             <p className="text-sm text-gray-400 mt-2">
-              Built for Nigerian sellers online.
+              Built for Nigerian vendors online.
             </p>
           </div>
 

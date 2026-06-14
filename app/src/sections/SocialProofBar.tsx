@@ -23,7 +23,7 @@ export default function SocialProofBar() {
             <span className="text-sm font-semibold text-gray-900">4.9</span>
           </div>
           <p className="text-sm text-gray-600 max-w-xl text-pretty">
-            Trusted by sellers across Lagos, Abuja, Port Harcourt, Kano and
+            Trusted by vendors across Lagos, Abuja, Port Harcourt, Kano and
             Nigeria
           </p>
         </div> */}

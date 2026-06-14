@@ -19,7 +19,7 @@ const VENDOR_USE_CASES: VendorUseCase[] = [
     id: "social",
     icon: Share2,
     title: "If you sell on Instagram, Facebook, X, or TikTok",
-    body: 'Your best posts disappear in 24 hours. "Price?" comments go cold. Link-in-bio was never built to take an order, and in-app checkout still is not available to Nigerian sellers.',
+    body: 'Your best posts disappear in 24 hours. "Price?" comments go cold. Link-in-bio was never built to take an order, and in-app checkout still is not available to Nigerian vendors.',
   },
   {
     id: "offline",

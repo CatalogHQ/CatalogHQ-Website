@@ -10,7 +10,7 @@ export type DeliveryType = {
 export const DELIVERY_TYPES: DeliveryType[] = [
   {
     id: "pickup",
-    label: "Pickup from seller",
+    label: "Pickup from vendor",
     shortLabel: "Pickup",
     requiresAddress: false,
   },
