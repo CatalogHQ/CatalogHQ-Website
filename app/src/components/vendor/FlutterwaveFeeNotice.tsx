@@ -11,7 +11,9 @@ export default function FlutterwaveFeeNotice() {
           <p className="mt-1 text-blue-900/90">
             Set the amount you want to receive per product. Customers pay your
             price plus a {FLUTTERWAVE_FEE_SUMMARY} processing fee at checkout.
-            You keep the full listed amount after each successful payment.
+            That fee is charged by Flutterwave for secure payment processing,
+            not by CatalogHQ. You keep the full listed amount after each
+            successful payment.
           </p>
         </div>
       </div>

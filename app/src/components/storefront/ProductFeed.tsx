@@ -224,9 +224,9 @@ export default function ProductFeed({ products, store }: ProductFeedProps) {
                           <p className="mt-2 text-2xl font-bold text-whatsapp-green sm:text-3xl">
                             {formatNaira(customerUnitDisplayPrice(product.price))}
                           </p>
-                          <p className="mt-0.5 text-xs text-white/60">
+                          {/* <p className="mt-0.5 text-xs text-white/60">
                             incl. payment processing
-                          </p>
+                          </p> */}
                           {product.colors.length > 0 && (
                             <p className="mt-2 line-clamp-1 text-sm text-white/75">
                               {product.colors.join(" · ")}

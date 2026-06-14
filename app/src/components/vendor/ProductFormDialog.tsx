@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -99,6 +101,7 @@ export default function ProductFormDialog({
   onSubmit,
 }: ProductFormDialogProps) {
   const [categoryManuallySet, setCategoryManuallySet] = useState(false);
+  const [imageUploading, setImageUploading] = useState(false);
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
     defaultValues,
@@ -193,11 +196,19 @@ export default function ProductFormDialog({
     inferProductCategory(productName) === productCategory;
 
   const handleOpenChange = (next: boolean) => {
+    if (!next && imageUploading) {
+      toast.message("Please wait for the image upload to finish.");
+      return;
+    }
     if (!next) {
       setCategoryManuallySet(false);
+      setImageUploading(false);
     }
     onOpenChange(next);
   };
+
+  const isSubmitting = form.formState.isSubmitting;
+  const submitBlocked = imageUploading || isSubmitting;
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -457,6 +468,8 @@ export default function ProductFormDialog({
                     <ProductImageUpload
                       value={field.value}
                       onChange={field.onChange}
+                      onUploadingChange={setImageUploading}
+                      disabled={isSubmitting}
                     />
                   </FormControl>
                   <FormMessage />
@@ -489,15 +502,31 @@ export default function ProductFormDialog({
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => onOpenChange(false)}
+                onClick={() => handleOpenChange(false)}
+                disabled={imageUploading || isSubmitting}
               >
                 Cancel
               </Button>
               <Button
                 type="submit"
                 className="bg-whatsapp-green hover:bg-whatsapp-green/90"
+                disabled={submitBlocked}
               >
-                {product ? "Save changes" : "Add product"}
+                {imageUploading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Waiting for upload...
+                  </>
+                ) : isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : product ? (
+                  "Save changes"
+                ) : (
+                  "Add product"
+                )}
               </Button>
             </DialogFooter>
           </form>

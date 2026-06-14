@@ -1,7 +1,8 @@
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ImagePlus, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 import {
   PRODUCT_IMAGE_LIMITS,
   uploadProductImages,
@@ -11,20 +12,31 @@ type ProductImageUploadProps = {
   value: string[];
   onChange: (images: string[]) => void;
   disabled?: boolean;
+  onUploadingChange?: (uploading: boolean) => void;
 };
 
 export default function ProductImageUpload({
   value,
   onChange,
   disabled,
+  onUploadingChange,
 }: ProductImageUploadProps) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const [pendingUploads, setPendingUploads] = useState(0);
+  const isUploading = pendingUploads > 0;
+
+  useEffect(() => {
+    onUploadingChange?.(isUploading);
+  }, [isUploading, onUploadingChange]);
 
   const handleFileChange = async (
     event: React.ChangeEvent<HTMLInputElement>,
   ) => {
     const files = event.target.files;
     if (!files?.length) return;
+
+    const fileCount = files.length;
+    setPendingUploads(fileCount);
 
     try {
       const uploaded = await uploadProductImages(files, value.length);
@@ -34,6 +46,7 @@ export default function ProductImageUpload({
         error instanceof Error ? error.message : "Could not upload image.",
       );
     } finally {
+      setPendingUploads(0);
       event.target.value = "";
     }
   };
@@ -42,7 +55,8 @@ export default function ProductImageUpload({
     onChange(value.filter((_, currentIndex) => currentIndex !== index));
   };
 
-  const atLimit = value.length >= PRODUCT_IMAGE_LIMITS.maxImages;
+  const atLimit = value.length + pendingUploads >= PRODUCT_IMAGE_LIMITS.maxImages;
+  const controlsDisabled = disabled || isUploading;
 
   return (
     <div className="space-y-3">
@@ -52,11 +66,11 @@ export default function ProductImageUpload({
         accept={PRODUCT_IMAGE_LIMITS.acceptAttribute}
         multiple
         className="hidden"
-        disabled={disabled || atLimit}
+        disabled={controlsDisabled || atLimit}
         onChange={handleFileChange}
       />
 
-      {value.length > 0 && (
+      {(value.length > 0 || isUploading) && (
         <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
           {value.map((image, index) => (
             <div
@@ -71,8 +85,8 @@ export default function ProductImageUpload({
               <button
                 type="button"
                 onClick={() => removeImage(index)}
-                disabled={disabled}
-                className="absolute right-1 top-1 rounded-full bg-black/60 p-1 text-white hover:bg-black/80"
+                disabled={controlsDisabled}
+                className="absolute right-1 top-1 rounded-full bg-black/60 p-1 text-white hover:bg-black/80 disabled:cursor-not-allowed disabled:opacity-50"
                 aria-label={`Remove image ${index + 1}`}
               >
                 <X className="h-3.5 w-3.5" />
@@ -84,6 +98,29 @@ export default function ProductImageUpload({
               )}
             </div>
           ))}
+
+          {Array.from({ length: pendingUploads }).map((_, index) => (
+            <div
+              key={`uploading-${index}`}
+              className="relative flex aspect-square flex-col items-center justify-center gap-2 overflow-hidden rounded-lg border border-dashed border-whatsapp-green/40 bg-whatsapp-green/5"
+              aria-live="polite"
+              aria-busy="true"
+            >
+              <Spinner className="size-6 text-whatsapp-green" />
+              <span className="px-2 text-center text-[10px] font-medium text-whatsapp-dark">
+                Uploading...
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {isUploading && (
+        <div className="flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-sm text-amber-950">
+          <Spinner className="size-4 shrink-0 text-amber-700" />
+          <p>
+            Image upload in progress. Please wait before saving your product.
+          </p>
         </div>
       )}
 
@@ -91,13 +128,22 @@ export default function ProductImageUpload({
         type="button"
         variant="outline"
         className="w-full gap-2"
-        disabled={disabled || atLimit}
+        disabled={controlsDisabled || atLimit}
         onClick={() => inputRef.current?.click()}
       >
-        <ImagePlus className="h-4 w-4" />
-        {value.length === 0
-          ? "Upload pictures"
-          : `Add more (${value.length}/${PRODUCT_IMAGE_LIMITS.maxImages})`}
+        {isUploading ? (
+          <>
+            <Spinner className="size-4" />
+            Uploading...
+          </>
+        ) : (
+          <>
+            <ImagePlus className="h-4 w-4" />
+            {value.length === 0
+              ? "Upload pictures"
+              : `Add more (${value.length}/${PRODUCT_IMAGE_LIMITS.maxImages})`}
+          </>
+        )}
       </Button>
 
       <p className="text-xs text-gray-500">
