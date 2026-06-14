@@ -43,7 +43,6 @@ export default function ProductImageSwipeGallery({
   useEffect(() => {
     if (!emblaApi) return;
     emblaApi.on("select", handleSelect);
-    handleSelect();
     return () => {
       emblaApi.off("select", handleSelect);
     };

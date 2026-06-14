@@ -36,6 +36,11 @@ describe('AppController (e2e)', () => {
     otpSendLog: { count: jest.fn(), create: jest.fn() },
     otpSendLock: { findUnique: jest.fn(), upsert: jest.fn() },
     otpIpSendLock: { findUnique: jest.fn(), upsert: jest.fn() },
+    planCatalogEntry: {
+      upsert: jest.fn().mockResolvedValue({}),
+      findMany: jest.fn().mockResolvedValue([]),
+      findUnique: jest.fn(),
+    },
   };
 
   const emailService = {

@@ -36,6 +36,15 @@ export default function Dashboard() {
   const { getProductLimit } = usePlanCatalog();
   const planTier = user?.planTier ?? "starter";
   const [salesPeriod, setSalesPeriod] = useState<"month" | "all">("month");
+  const salesRange = useMemo(
+    () =>
+      salesPeriod === "month"
+        ? getPresetDateRange("month")
+        : getPresetDateRange("all"),
+    [salesPeriod],
+  );
+  const salesMetrics = computeVendorNetMetrics(orders, salesRange);
+  const allTimeSales = computeVendorNetMetrics(orders);
 
   if (!store?.setupComplete) {
     return (
@@ -70,15 +79,6 @@ export default function Dashboard() {
   }
 
   const productLimit = getProductLimit(planTier);
-  const salesRange = useMemo(
-    () =>
-      salesPeriod === "month"
-        ? getPresetDateRange("month")
-        : getPresetDateRange("all"),
-    [salesPeriod],
-  );
-  const salesMetrics = computeVendorNetMetrics(orders, salesRange);
-  const allTimeSales = computeVendorNetMetrics(orders);
   const hasAnalytics = hasFeature(planTier, "analytics-dashboard");
   const hasLowStockAlerts = hasFeature(planTier, "low-stock-alerts");
   const lowStockCount = hasLowStockAlerts
