@@ -247,7 +247,7 @@ export class OrdersService {
   ): Promise<OrderDto> {
     const order = await this.prisma.order.findFirst({
       where: { id: orderId, storeId },
-      include: { store: { select: { businessName: true } } },
+      include: { store: { select: { businessName: true, slug: true } } },
     });
 
     if (!order) {
@@ -286,6 +286,7 @@ export class OrdersService {
           order.customerPhone,
           order.paymentRef,
           order.store.businessName,
+          order.store.slug,
         ),
       );
     }

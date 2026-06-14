@@ -6,16 +6,20 @@ import { inspectAttr } from 'kimi-plugin-inspect-react'
 // https://vite.dev/config/
 export default defineConfig({
   base: "/",
+  appType: "spa",
   plugins: [inspectAttr(), react()],
   server: {
     port: 3000,
     proxy: {
       "/api": {
-        target: "http://127.0.0.1:3000",
+        target: "http://127.0.0.1:3001",
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, ""),
       },
     },
+  },
+  preview: {
+    port: 4173,
   },
   resolve: {
     alias: {

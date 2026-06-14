@@ -3,16 +3,24 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { OrderStatus, PaymentStatus } from '@prisma/client';
+import { OrderStatus, PaymentStatus, type Order } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { StoresService } from '../stores/stores.service';
+import { normalizePhone } from '../common/phone.util';
 import { CreateReviewDto } from './dto/create-review.dto';
 import {
+  OrderReviewStatusDto,
   ReviewDto,
   ReviewSummaryDto,
   toReviewDto,
 } from './reviews.mapper';
-import { normalizePhone } from '../common/phone.util';
+
+const REVIEWABLE_STATUSES: OrderStatus[] = [
+  OrderStatus.paid,
+  OrderStatus.confirmed,
+  OrderStatus.shipped,
+  OrderStatus.delivered,
+];
 
 @Injectable()
 export class ReviewsService {
@@ -20,6 +28,13 @@ export class ReviewsService {
     private readonly prisma: PrismaService,
     private readonly storesService: StoresService,
   ) {}
+
+  private isOrderReviewable(order: Order): boolean {
+    return (
+      order.paymentStatus === PaymentStatus.paid &&
+      REVIEWABLE_STATUSES.includes(order.status)
+    );
+  }
 
   async listByStoreSlug(slug: string): Promise<ReviewDto[]> {
     const store = await this.storesService.getPublicBySlug(slug);
@@ -49,25 +64,49 @@ export class ReviewsService {
     };
   }
 
-  async createForOrder(
-    paymentRef: string,
-    dto: CreateReviewDto,
-  ): Promise<ReviewDto> {
+  async getOrderReviewStatus(paymentRef: string): Promise<OrderReviewStatusDto> {
     const order = await this.prisma.order.findFirst({
       where: { paymentRef: { equals: paymentRef, mode: 'insensitive' } },
-      include: { store: { include: { vendor: true } } },
     });
 
     if (!order) {
       throw new NotFoundException('Order not found.');
     }
 
-    if (order.status !== OrderStatus.delivered) {
-      throw new BadRequestException('You can only review delivered orders.');
+    const existing = await this.prisma.review.findUnique({
+      where: { orderId: order.id },
+    });
+
+    if (existing) {
+      return {
+        canReview: false,
+        alreadyReviewed: true,
+        review: toReviewDto(existing),
+      };
     }
 
-    if (order.paymentStatus !== PaymentStatus.paid) {
-      throw new BadRequestException('Order must be paid before reviewing.');
+    return {
+      canReview: this.isOrderReviewable(order),
+      alreadyReviewed: false,
+    };
+  }
+
+  async createForOrder(
+    paymentRef: string,
+    dto: CreateReviewDto,
+  ): Promise<ReviewDto> {
+    const order = await this.prisma.order.findFirst({
+      where: { paymentRef: { equals: paymentRef, mode: 'insensitive' } },
+    });
+
+    if (!order) {
+      throw new NotFoundException('Order not found.');
+    }
+
+    if (!this.isOrderReviewable(order)) {
+      throw new BadRequestException(
+        'You can only review paid orders that are being fulfilled or completed.',
+      );
     }
 
     if (normalizePhone(dto.customerPhone) !== order.customerPhone) {
@@ -97,6 +136,6 @@ export class ReviewsService {
   }
 
   async syncVerifiedReviewForDeliveredOrder(_orderId: string): Promise<void> {
-    // Reviews are submitted by buyers after delivery; no auto-generated placeholders.
+    // Reviews are submitted by buyers after purchase; no auto-generated placeholders.
   }
 }

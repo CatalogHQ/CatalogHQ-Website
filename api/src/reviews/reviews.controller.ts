@@ -25,6 +25,11 @@ export class ReviewsController {
 export class OrderReviewsController {
   constructor(private readonly reviewsService: ReviewsService) {}
 
+  @Get()
+  status(@Param('paymentRef', PaymentRefPipe) paymentRef: string) {
+    return this.reviewsService.getOrderReviewStatus(paymentRef);
+  }
+
   @Post()
   create(
     @Param('paymentRef', PaymentRefPipe) paymentRef: string,

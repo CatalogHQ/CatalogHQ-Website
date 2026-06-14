@@ -1,4 +1,10 @@
 import { readJson, writeJson } from "@/lib/local-storage";
+import {
+  canCustomerReviewOrder,
+  type CreateReviewInput,
+  type OrderReviewStatus,
+} from "@/lib/order-review";
+import { orderRepository } from "@/lib/repositories/local-order-repository";
 import type { Store } from "@/types/domain";
 import type { StoreRatingSummary, StoreReview } from "@/types/reviews";
 
@@ -56,16 +62,18 @@ function seedReviewsForStore(store: Store): StoreReview[] {
   ];
 }
 
+type StoredReview = StoreReview & { paymentRef?: string };
+
 export class LocalReviewRepository {
-  private getReviews(): StoreReview[] {
-    return readJson<StoreReview[]>(REVIEWS_KEY, []);
+  private getReviews(): StoredReview[] {
+    return readJson<StoredReview[]>(REVIEWS_KEY, []);
   }
 
-  private saveReviews(reviews: StoreReview[]): void {
+  private saveReviews(reviews: StoredReview[]): void {
     writeJson(REVIEWS_KEY, reviews);
   }
 
-  private ensureReviews(store: Store): StoreReview[] {
+  private ensureReviews(store: Store): StoredReview[] {
     const existing = this.getReviews().filter(
       (review) => review.storeId === store.vendorId,
     );
@@ -98,6 +106,72 @@ export class LocalReviewRepository {
       totalReviews,
       verifiedCount: verified.length,
     };
+  }
+
+  async getOrderReviewStatus(paymentRef: string): Promise<OrderReviewStatus> {
+    const order = await orderRepository.getByPaymentRef(paymentRef);
+    if (!order) {
+      throw new Error("Order not found.");
+    }
+
+    const existing = this.getReviews().find(
+      (review) => review.paymentRef?.toLowerCase() === paymentRef.toLowerCase(),
+    );
+
+    if (existing) {
+      return {
+        canReview: false,
+        alreadyReviewed: true,
+        review: existing,
+      };
+    }
+
+    return {
+      canReview: canCustomerReviewOrder(order),
+      alreadyReviewed: false,
+    };
+  }
+
+  async submitOrderReview(
+    paymentRef: string,
+    input: CreateReviewInput,
+  ): Promise<StoreReview> {
+    const order = await orderRepository.getByPaymentRef(paymentRef);
+    if (!order) {
+      throw new Error("Order not found.");
+    }
+
+    if (!canCustomerReviewOrder(order)) {
+      throw new Error(
+        "You can only review paid orders that are being fulfilled or completed.",
+      );
+    }
+
+    if (input.customerPhone.replace(/\D/g, "") !== order.customerPhone.replace(/\D/g, "")) {
+      throw new Error("Phone number does not match this order.");
+    }
+
+    const existing = this.getReviews().find(
+      (review) => review.paymentRef?.toLowerCase() === paymentRef.toLowerCase(),
+    );
+    if (existing) {
+      throw new Error("You have already reviewed this order.");
+    }
+
+    const review: StoredReview = {
+      id: generateId(),
+      storeId: order.storeId,
+      buyerName: input.buyerName.trim(),
+      rating: input.rating,
+      comment: input.comment.trim(),
+      productName: order.productName,
+      verified: true,
+      createdAt: new Date().toISOString(),
+      paymentRef: order.paymentRef,
+    };
+
+    this.saveReviews([...this.getReviews(), review]);
+    return review;
   }
 }
 

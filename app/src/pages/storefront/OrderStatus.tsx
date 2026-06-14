@@ -20,8 +20,9 @@ import {
   buildOrderWhatsAppMessage,
   buildWhatsAppUrl,
 } from "@/lib/order-message";
+import { canCustomerReviewOrder } from "@/lib/order-review";
 import { loadPendingPaymentDetails } from "@/lib/flutterwave-payment-methods";
-import { orderRepository } from "@/lib/repositories";
+import { orderRepository, reviewRepository } from "@/lib/repositories";
 import { hasFeature } from "@/data/plans";
 import {
   ORDER_STATUS_FLOW,
@@ -57,6 +58,9 @@ export default function OrderStatusPage() {
   const { store, isLoading: storeLoading } = usePublicStore(slug);
   const [order, setOrder] = useState<CustomerOrder | null>(null);
   const [orderLoading, setOrderLoading] = useState(true);
+  const [reviewStatusLoading, setReviewStatusLoading] = useState(false);
+  const [canLeaveReview, setCanLeaveReview] = useState(false);
+  const [alreadyReviewed, setAlreadyReviewed] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -101,6 +105,52 @@ export default function OrderStatusPage() {
     };
   }, [paymentRef, searchParams]);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadReviewStatus() {
+      if (!paymentRef || !order || !store) {
+        setCanLeaveReview(false);
+        setAlreadyReviewed(false);
+        setReviewStatusLoading(false);
+        return;
+      }
+
+      if (!hasFeature(store.planTier, "verified-reviews")) {
+        setCanLeaveReview(false);
+        setAlreadyReviewed(false);
+        setReviewStatusLoading(false);
+        return;
+      }
+
+      setReviewStatusLoading(true);
+      try {
+        const status = await reviewRepository.getOrderReviewStatus(paymentRef);
+        if (!cancelled) {
+          setAlreadyReviewed(status.alreadyReviewed);
+          setCanLeaveReview(
+            !status.alreadyReviewed &&
+              status.canReview &&
+              canCustomerReviewOrder(order),
+          );
+        }
+      } catch {
+        if (!cancelled) {
+          setCanLeaveReview(false);
+          setAlreadyReviewed(false);
+        }
+      } finally {
+        if (!cancelled) setReviewStatusLoading(false);
+      }
+    }
+
+    void loadReviewStatus();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [paymentRef, order, store]);
+
   const isValid = store && order && order.storeId === store.vendorId;
 
   if (storeLoading || orderLoading) {
@@ -141,9 +191,8 @@ export default function OrderStatusPage() {
     }),
   );
 
-  const showReviewLink =
-    order.status === "delivered" &&
-    hasFeature(store.planTier, "verified-reviews");
+  const showReviewLink = canLeaveReview && !reviewStatusLoading;
+  const showReviewSubmitted = alreadyReviewed && !reviewStatusLoading;
 
   const pendingPayment =
     order.paymentStatus !== "paid"
@@ -327,7 +376,16 @@ export default function OrderStatusPage() {
           <Button asChild className="w-full bg-whatsapp-green hover:bg-whatsapp-green/90">
             <Link to={`/s/${store.slug}/order/${order.paymentRef}/review`}>
               <Star className="mr-2 h-4 w-4" />
-              Leave a verified review
+              Review {store.businessName}
+            </Link>
+          </Button>
+        )}
+
+        {showReviewSubmitted && (
+          <Button asChild variant="outline" className="w-full">
+            <Link to={`/s/${store.slug}/reviews`}>
+              <Star className="mr-2 h-4 w-4" />
+              View your submitted review
             </Link>
           </Button>
         )}

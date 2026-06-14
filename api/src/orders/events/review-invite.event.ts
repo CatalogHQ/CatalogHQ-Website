@@ -4,5 +4,6 @@ export class ReviewInviteEvent {
     readonly customerPhone: string,
     readonly paymentRef: string,
     readonly storeName: string,
+    readonly storeSlug: string,
   ) {}
 }

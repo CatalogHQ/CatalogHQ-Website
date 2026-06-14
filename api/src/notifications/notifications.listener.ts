@@ -118,7 +118,7 @@ export class NotificationsListener {
 
   @OnEvent(REVIEW_INVITE_EVENT)
   async handleReviewInvite(event: ReviewInviteEvent): Promise<void> {
-    const message = `How was your order ${event.paymentRef} from ${event.storeName}? Leave a review: ${this.appOrigin}/s/order/${event.paymentRef}/review`;
+    const message = `How was your order ${event.paymentRef} from ${event.storeName}? Leave a review: ${this.appOrigin}/s/${event.storeSlug}/order/${event.paymentRef}/review`;
     await this.smsService.sendSms(event.customerPhone, message);
   }
 

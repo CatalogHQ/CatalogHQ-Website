@@ -17,6 +17,12 @@ export type ReviewSummaryDto = {
   verifiedCount: number;
 };
 
+export type OrderReviewStatusDto = {
+  canReview: boolean;
+  alreadyReviewed: boolean;
+  review?: ReviewDto;
+};
+
 export function toReviewDto(review: Review): ReviewDto {
   return {
     id: review.id,

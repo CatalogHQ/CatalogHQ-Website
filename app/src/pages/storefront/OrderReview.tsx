@@ -27,9 +27,9 @@ import { Spinner } from "@/components/ui/spinner";
 import StorefrontLayout from "@/layouts/StorefrontLayout";
 import { usePublicStore } from "@/hooks/use-public-store";
 import { phoneSchema } from "@/lib/auth-schemas";
-import { apiClient } from "@/lib/api-client";
-import { orderRepository } from "@/lib/repositories";
-import { isApiMode } from "@/lib/use-api";
+import { canCustomerReviewOrder } from "@/lib/order-review";
+import { orderRepository, reviewRepository } from "@/lib/repositories";
+import { hasFeature } from "@/data/plans";
 import type { CustomerOrder } from "@/types/orders";
 
 const reviewSchema = z.object({
@@ -44,6 +44,8 @@ export default function OrderReview() {
   const { store, isLoading: storeLoading } = usePublicStore(slug);
   const [order, setOrder] = useState<CustomerOrder | null>(null);
   const [orderLoading, setOrderLoading] = useState(true);
+  const [statusLoading, setStatusLoading] = useState(true);
+  const [alreadyReviewed, setAlreadyReviewed] = useState(false);
   const [rating, setRating] = useState(5);
   const [submitted, setSubmitted] = useState(false);
 
@@ -64,15 +66,37 @@ export default function OrderReview() {
       if (!paymentRef) {
         setOrder(null);
         setOrderLoading(false);
+        setStatusLoading(false);
         return;
       }
 
       setOrderLoading(true);
+      setStatusLoading(true);
       try {
         const loaded = await orderRepository.getByPaymentRef(paymentRef);
-        if (!cancelled) setOrder(loaded);
+        if (!cancelled) {
+          setOrder(loaded);
+          if (loaded) {
+            form.reset({
+              buyerName: loaded.customerName,
+              customerPhone: loaded.customerPhone,
+              rating: 5,
+              comment: "",
+            });
+          }
+        }
+
+        const status = await reviewRepository.getOrderReviewStatus(paymentRef);
+        if (!cancelled) {
+          setAlreadyReviewed(status.alreadyReviewed);
+        }
+      } catch {
+        if (!cancelled) setOrder(null);
       } finally {
-        if (!cancelled) setOrderLoading(false);
+        if (!cancelled) {
+          setOrderLoading(false);
+          setStatusLoading(false);
+        }
       }
     }
 
@@ -82,22 +106,24 @@ export default function OrderReview() {
     };
   }, [paymentRef]);
 
+  const reviewsEnabled =
+    store !== null && hasFeature(store.planTier, "verified-reviews");
+
   const canReview =
     order &&
     store &&
     order.storeId === store.vendorId &&
-    order.status === "delivered";
+    reviewsEnabled &&
+    canCustomerReviewOrder(order) &&
+    !alreadyReviewed;
 
   const onSubmit = async (values: z.infer<typeof reviewSchema>) => {
-    if (!paymentRef || !isApiMode()) {
-      toast.error("Reviews require API mode.");
-      return;
-    }
+    if (!paymentRef) return;
 
     try {
-      await apiClient(`/orders/ref/${encodeURIComponent(paymentRef)}/reviews`, {
-        method: "POST",
-        body: JSON.stringify({ ...values, rating }),
+      await reviewRepository.submitOrderReview(paymentRef, {
+        ...values,
+        rating,
       });
       setSubmitted(true);
       toast.success("Thank you for your review!");
@@ -108,7 +134,7 @@ export default function OrderReview() {
     }
   };
 
-  if (storeLoading || orderLoading) {
+  if (storeLoading || orderLoading || statusLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-50">
         <Spinner className="size-8 text-whatsapp-green" />
@@ -116,12 +142,12 @@ export default function OrderReview() {
     );
   }
 
-  if (!store || !order || !canReview) {
+  if (!store || !order) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-gray-50 px-4 text-center">
         <h1 className="text-xl font-bold text-gray-900">Review not available</h1>
         <p className="mt-2 max-w-md text-gray-600">
-          Reviews can only be left after your order is delivered.
+          We could not find this order. Check your order reference and try again.
         </p>
         {store ? (
           <Button asChild className="mt-6">
@@ -136,12 +162,34 @@ export default function OrderReview() {
     );
   }
 
-  if (submitted) {
+  if (!reviewsEnabled) {
     return (
       <StorefrontLayout store={store}>
         <Card className="mx-auto max-w-md text-center">
           <CardHeader>
-            <CardTitle>Review submitted</CardTitle>
+            <CardTitle>Reviews unavailable</CardTitle>
+            <CardDescription>
+              This store has not enabled verified buyer reviews yet.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button asChild>
+              <Link to={`/s/${store.slug}`}>Back to store</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </StorefrontLayout>
+    );
+  }
+
+  if (alreadyReviewed || submitted) {
+    return (
+      <StorefrontLayout store={store}>
+        <Card className="mx-auto max-w-md text-center">
+          <CardHeader>
+            <CardTitle>
+              {submitted ? "Review submitted" : "Review already submitted"}
+            </CardTitle>
             <CardDescription>
               Thank you for helping other buyers trust {store.businessName}.
             </CardDescription>
@@ -156,13 +204,36 @@ export default function OrderReview() {
     );
   }
 
+  if (!canReview) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center bg-gray-50 px-4 text-center">
+        <h1 className="text-xl font-bold text-gray-900">Review not available yet</h1>
+        <p className="mt-2 max-w-md text-gray-600">
+          You can leave a review after your payment is confirmed and the vendor
+          starts processing your order.
+        </p>
+        <Button asChild className="mt-6">
+          <Link to={`/s/${store.slug}/order/${order.paymentRef}`}>
+            Track your order
+          </Link>
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <StorefrontLayout store={store}>
       <div className="mx-auto max-w-md space-y-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Leave a review</h1>
+          <h1 className="text-2xl font-bold text-gray-900">
+            Review {store.businessName}
+          </h1>
           <p className="mt-1 text-gray-600">
             Order {order.paymentRef} · {order.productName}
+          </p>
+          <p className="mt-2 text-sm text-gray-500">
+            Share your experience with this vendor. Your review is linked to this
+            purchase and shown as verified on the storefront.
           </p>
         </div>
 
@@ -231,11 +302,11 @@ export default function OrderReview() {
                   name="comment"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Your experience</FormLabel>
+                      <FormLabel>Your experience with this vendor</FormLabel>
                       <FormControl>
                         <Textarea
                           className="min-h-[100px]"
-                          placeholder="What did you think of the product and delivery?"
+                          placeholder="How was the product, communication, and delivery?"
                           {...field}
                         />
                       </FormControl>
@@ -244,7 +315,10 @@ export default function OrderReview() {
                   )}
                 />
 
-                <Button type="submit" className="w-full bg-whatsapp-green hover:bg-whatsapp-green/90">
+                <Button
+                  type="submit"
+                  className="w-full bg-whatsapp-green hover:bg-whatsapp-green/90"
+                >
                   Submit verified review
                 </Button>
               </form>
