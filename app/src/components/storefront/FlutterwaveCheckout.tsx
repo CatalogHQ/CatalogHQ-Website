@@ -41,6 +41,7 @@ import {
 } from "@/lib/flutterwave-payment-methods";
 import { formatNaira } from "@/lib/format";
 import { computeCheckoutPricing } from "@/lib/flutterwave-fees";
+import CheckoutPricingSummary from "@/components/storefront/CheckoutPricingSummary";
 import { orderRepository } from "@/lib/repositories";
 import { isApiMode } from "@/lib/use-api";
 import type { DeliveryTypeId } from "@/lib/delivery-types";
@@ -124,7 +125,6 @@ export default function FlutterwaveCheckout({
   const vendorNet =
     unitPrice * selection.quantity + deliveryFee - discountAmount;
   const { customerTotal } = computeCheckoutPricing(vendorNet);
-  const itemsTotal = customerTotal - deliveryFee;
   const isDelivery = deliveryRequiresAddress(selection.deliveryType);
   const checkoutSchema = createCheckoutSchema(selection.deliveryType);
 
@@ -249,23 +249,16 @@ export default function FlutterwaveCheckout({
         </DialogHeader>
 
         <div className="rounded-xl border bg-gray-50 p-4">
-          <p className="text-sm text-gray-600">Amount to pay</p>
-          <p className="text-2xl font-bold text-gray-900">
-            {formatNaira(customerTotal)}
-          </p>
-          <div className="mt-1 space-y-0.5 text-xs text-gray-500">
-            <p>
-              {selection.quantity} item{selection.quantity === 1 ? "" : "s"}
-              {selection.quantity > 0 &&
-                ` · ${formatNaira(Math.round(itemsTotal / selection.quantity))} each`}
-            </p>
-            {deliveryFee > 0 && <p>Delivery: {formatNaira(deliveryFee)}</p>}
-            {discountAmount > 0 && (
-              <p className="text-whatsapp-green">
-                Discount: −{formatNaira(discountAmount)}
-              </p>
-            )}
-          </div>
+          <CheckoutPricingSummary
+            vendorNetNgn={vendorNet}
+            showProcessingFee
+            showSubtotalLines={{
+              unitPrice,
+              quantity: selection.quantity,
+              deliveryFee,
+              discountAmount,
+            }}
+          />
         </div>
 
         <Form {...form}>

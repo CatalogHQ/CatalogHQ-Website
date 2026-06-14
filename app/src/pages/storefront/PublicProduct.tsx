@@ -21,7 +21,6 @@ import {
   buildWhatsAppUrl,
 } from "@/lib/order-message";
 import { formatNaira, normalizePhoneForWhatsApp } from "@/lib/format";
-import { customerUnitDisplayPrice } from "@/lib/flutterwave-fees";
 import ProductImageSwipeGallery from "@/components/storefront/ProductImageSwipeGallery";
 import { getProductImages } from "@/lib/product-utils";
 import { orderRepository, productRepository } from "@/lib/repositories";
@@ -296,7 +295,7 @@ export default function PublicProduct() {
               </h2>
 
               <p className="text-2xl font-bold text-whatsapp-dark sm:text-3xl">
-                {formatNaira(customerUnitDisplayPrice(product.price))}
+                {formatNaira(product.price)}
               </p>
 
               {product.stock <= 0 ? (

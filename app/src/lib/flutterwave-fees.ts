@@ -71,7 +71,3 @@ export function vendorNetFromOrderLine(input: {
       (input.discountAmount ?? 0),
   );
 }
-
-export function customerUnitDisplayPrice(vendorUnitPrice: number): number {
-  return customerPriceForVendorNet(vendorUnitPrice);
-}

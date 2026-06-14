@@ -5,7 +5,10 @@ import { cn } from "@/lib/utils";
 type CheckoutPricingSummaryProps = {
   vendorNetNgn: number;
   className?: string;
+  showProcessingFee?: boolean;
+  totalLabel?: string;
   showSubtotalLines?: {
+    unitPrice: number;
     quantity: number;
     deliveryFee?: number;
     discountAmount?: number;
@@ -15,24 +18,35 @@ type CheckoutPricingSummaryProps = {
 export default function CheckoutPricingSummary({
   vendorNetNgn,
   className,
+  showProcessingFee = false,
+  totalLabel,
   showSubtotalLines,
 }: CheckoutPricingSummaryProps) {
-  const { vendorNet, customerTotal } = computeCheckoutPricing(vendorNetNgn);
+  const { vendorNet, processingFee, customerTotal } =
+    computeCheckoutPricing(vendorNetNgn);
 
   if (vendorNet <= 0) {
     return null;
   }
 
+  const listedItemsTotal = showSubtotalLines
+    ? showSubtotalLines.unitPrice * showSubtotalLines.quantity
+    : vendorNet;
   const deliveryFee = showSubtotalLines?.deliveryFee ?? 0;
-  const itemsTotal = customerTotal - deliveryFee;
+  const discountAmount = showSubtotalLines?.discountAmount ?? 0;
+  const displayTotal = showProcessingFee ? customerTotal : vendorNet;
+  const resolvedTotalLabel =
+    totalLabel ?? (showProcessingFee ? "Total" : "Subtotal");
 
   return (
     <div className={cn("space-y-1.5 text-sm", className)}>
       {showSubtotalLines && (
         <>
           <div className="flex items-center justify-between text-gray-600">
-            <span>Items ({showSubtotalLines.quantity})</span>
-            <span>{formatNaira(itemsTotal)}</span>
+            <span>
+              Items ({showSubtotalLines.quantity})
+            </span>
+            <span>{formatNaira(listedItemsTotal)}</span>
           </div>
           {deliveryFee > 0 && (
             <div className="flex items-center justify-between text-gray-600">
@@ -40,20 +54,24 @@ export default function CheckoutPricingSummary({
               <span>{formatNaira(deliveryFee)}</span>
             </div>
           )}
-          {(showSubtotalLines.discountAmount ?? 0) > 0 && (
+          {discountAmount > 0 && (
             <div className="flex items-center justify-between text-gray-600">
               <span>Discount</span>
-              <span>
-                −{formatNaira(showSubtotalLines.discountAmount ?? 0)}
-              </span>
+              <span>−{formatNaira(discountAmount)}</span>
             </div>
           )}
         </>
       )}
+      {showProcessingFee && processingFee > 0 && (
+        <div className="flex items-center justify-between text-gray-600">
+          <span>Flutterwave processing fee</span>
+          <span>{formatNaira(processingFee)}</span>
+        </div>
+      )}
       <div className="flex items-center justify-between border-t border-gray-200 pt-2 text-base font-semibold text-gray-900">
-        <span>Total</span>
+        <span>{resolvedTotalLabel}</span>
         <span className="text-lg text-whatsapp-dark">
-          {formatNaira(customerTotal)}
+          {formatNaira(displayTotal)}
         </span>
       </div>
     </div>

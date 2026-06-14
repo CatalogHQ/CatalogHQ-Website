@@ -13,7 +13,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { formatNaira } from "@/lib/format";
-import { customerUnitDisplayPrice } from "@/lib/flutterwave-fees";
 import { getProductImages } from "@/lib/product-utils";
 import ProductImageSwipeGallery from "@/components/storefront/ProductImageSwipeGallery";
 import { searchProducts } from "@/lib/product-search";
@@ -217,7 +216,7 @@ export default function ProductFeed({ products, store }: ProductFeedProps) {
                             {product.name}
                           </h2>
                           <p className="mt-2 text-2xl font-bold text-whatsapp-green sm:text-3xl">
-                            {formatNaira(customerUnitDisplayPrice(product.price))}
+                            {formatNaira(product.price)}
                           </p>
                           {product.colors.length > 0 && (
                             <p className="mt-2 line-clamp-1 text-sm text-white/75">
