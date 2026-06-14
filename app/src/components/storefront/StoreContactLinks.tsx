@@ -1,20 +1,18 @@
-import { MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  getSocialPlatformButtonClass,
+  SocialPlatformIcon,
+  WhatsAppIcon,
+} from "@/components/icons/SocialPlatformIcons";
 import { buildWhatsAppUrl } from "@/lib/order-message";
 import { normalizePhoneForWhatsApp } from "@/lib/format";
 import { getStoreSocialLinks, type StoreSocialHandles } from "@/lib/social-links";
+import { cn } from "@/lib/utils";
 
 type StoreContactLinksProps = {
   whatsapp: string;
   businessName: string;
 } & StoreSocialHandles;
-
-const SOCIAL_LABELS: Record<string, string> = {
-  instagram: "IG",
-  tiktok: "TT",
-  facebook: "FB",
-  x: "X",
-};
 
 export default function StoreContactLinks({
   whatsapp,
@@ -35,7 +33,7 @@ export default function StoreContactLinks({
         className="h-8 bg-whatsapp-green text-xs hover:bg-whatsapp-green/90 sm:text-sm"
       >
         <a href={whatsappUrl} target="_blank" rel="noreferrer">
-          <MessageCircle className="mr-1.5 h-3.5 w-3.5" />
+          <WhatsAppIcon className="mr-1.5" />
           WhatsApp
         </a>
       </Button>
@@ -45,16 +43,20 @@ export default function StoreContactLinks({
           key={link.platform}
           asChild
           variant="outline"
-          size="sm"
-          className="h-8 text-xs sm:text-sm"
+          size="icon"
+          className={cn(
+            "h-8 w-8 shrink-0",
+            getSocialPlatformButtonClass(link.platform),
+          )}
         >
           <a
             href={link.href}
             target="_blank"
             rel="noreferrer"
             aria-label={`${link.label} @${link.handle}`}
+            title={`${link.label} @${link.handle}`}
           >
-            {SOCIAL_LABELS[link.platform] ?? link.label}
+            <SocialPlatformIcon platform={link.platform} />
           </a>
         </Button>
       ))}
