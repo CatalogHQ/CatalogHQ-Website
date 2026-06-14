@@ -2,7 +2,6 @@ import { motion } from "framer-motion";
 import { useNavigate } from "react-router";
 import { Button } from "@/components/ui/button";
 import { Lock } from "lucide-react";
-import CatalogHqLogo from "@/components/brand/CatalogHqLogo";
 
 export default function FinalCTA() {
   const navigate = useNavigate();

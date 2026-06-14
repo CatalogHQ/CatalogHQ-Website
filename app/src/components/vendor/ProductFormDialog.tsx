@@ -30,6 +30,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import NumericFormInput from "@/components/vendor/NumericFormInput";
+import FlutterwaveFeeBreakdown from "@/components/vendor/FlutterwaveFeeBreakdown";
 import ProductImageUpload from "@/components/vendor/ProductImageUpload";
 import ProductSizeSelector from "@/components/vendor/ProductSizeSelector";
 import {
@@ -110,6 +111,7 @@ export default function ProductFormDialog({
     useWatch({ control: form.control, name: "sizingType" }) ?? "none";
   const sizes = useWatch({ control: form.control, name: "sizes" }) ?? [];
   const customSizes = useWatch({ control: form.control, name: "customSizes" }) ?? "";
+  const listPrice = useWatch({ control: form.control, name: "price" }) ?? 0;
   const numericFieldKey = `${product?.id ?? "new"}-${open ? "open" : "closed"}`;
 
   useEffect(() => {
@@ -325,7 +327,7 @@ export default function ProductFormDialog({
                 name="price"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Price (₦)</FormLabel>
+                    <FormLabel>Listed price (₦)</FormLabel>
                     <FormControl>
                       <NumericFormInput
                         key={`price-${numericFieldKey}`}
@@ -337,6 +339,10 @@ export default function ProductFormDialog({
                         ref={field.ref}
                       />
                     </FormControl>
+                    <FormDescription>
+                      What customers pay at checkout. Include Flutterwave
+                      processing in this amount.
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -389,6 +395,13 @@ export default function ProductFormDialog({
                 )}
               />
             </div>
+
+            {listPrice > 0 && (
+              <FlutterwaveFeeBreakdown
+                amountNgn={listPrice}
+                label="Listed price (per item)"
+              />
+            )}
 
             <FormField
               control={form.control}

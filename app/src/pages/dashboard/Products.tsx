@@ -31,6 +31,8 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty";
 import ProductFormDialog from "@/components/vendor/ProductFormDialog";
+import FlutterwaveFeeNotice from "@/components/vendor/FlutterwaveFeeNotice";
+import FlutterwaveFeeBreakdown from "@/components/vendor/FlutterwaveFeeBreakdown";
 import { useAuth } from "@/contexts/AuthContext";
 import { useVendor } from "@/contexts/VendorContext";
 import { formatDeliverySummary } from "@/lib/delivery-types";
@@ -137,6 +139,8 @@ export default function Products() {
         </div>
       )}
 
+      <FlutterwaveFeeNotice />
+
       {products.length === 0 ? (
         <Empty className="border bg-white">
           <EmptyHeader>
@@ -163,7 +167,7 @@ export default function Products() {
             <TableHeader>
               <TableRow>
                 <TableHead>Product</TableHead>
-                <TableHead>Price</TableHead>
+                <TableHead>Listed price</TableHead>
                 <TableHead>Stock</TableHead>
                 <TableHead>Delivery</TableHead>
                 <TableHead>Status</TableHead>
@@ -209,7 +213,14 @@ export default function Products() {
                       </div>
                     </div>
                   </TableCell>
-                  <TableCell>{formatNaira(product.price)}</TableCell>
+                  <TableCell>
+                    <p>{formatNaira(product.price)}</p>
+                    <FlutterwaveFeeBreakdown
+                      amountNgn={product.price}
+                      compact
+                      className="mt-0.5"
+                    />
+                  </TableCell>
                   <TableCell>{product.stock}</TableCell>
                   <TableCell className="text-sm text-gray-600">
                     {formatDeliverySummary(product.deliveryOptions ?? ["pickup"])}

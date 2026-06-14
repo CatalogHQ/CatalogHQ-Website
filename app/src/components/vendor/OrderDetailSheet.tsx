@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import OrderStatusBadge from "@/components/vendor/OrderStatusBadge";
+import FlutterwaveFeeBreakdown from "@/components/vendor/FlutterwaveFeeBreakdown";
 import { useAuth } from "@/contexts/AuthContext";
 import { hasFeature } from "@/data/plans";
 import { getDeliveryLabel } from "@/lib/delivery-types";
@@ -212,6 +213,10 @@ export default function OrderDetailSheet({
               </p>
             </div>
           </div>
+
+          {order.paymentStatus === "paid" && (
+            <FlutterwaveFeeBreakdown amountNgn={order.totalPaid} />
+          )}
 
           <div className="space-y-3 rounded-lg border p-4 text-sm">
             <div>
