@@ -31,7 +31,6 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty";
 import ProductFormDialog from "@/components/vendor/ProductFormDialog";
-import FlutterwaveFeeNotice from "@/components/vendor/FlutterwaveFeeNotice";
 import FlutterwaveFeeBreakdown from "@/components/vendor/FlutterwaveFeeBreakdown";
 import { useAuth } from "@/contexts/AuthContext";
 import { useVendor } from "@/contexts/VendorContext";
@@ -138,8 +137,6 @@ export default function Products() {
           to add more products.
         </div>
       )}
-
-      <FlutterwaveFeeNotice />
 
       {products.length === 0 ? (
         <Empty className="border bg-white">

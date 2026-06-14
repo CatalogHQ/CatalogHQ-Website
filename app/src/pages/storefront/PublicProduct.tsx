@@ -22,6 +22,7 @@ import {
 } from "@/lib/order-message";
 import { formatNaira, normalizePhoneForWhatsApp } from "@/lib/format";
 import { customerUnitDisplayPrice } from "@/lib/flutterwave-fees";
+import ProductImageSwipeGallery from "@/components/storefront/ProductImageSwipeGallery";
 import { getProductImages } from "@/lib/product-utils";
 import { orderRepository, productRepository } from "@/lib/repositories";
 import { hasFeature } from "@/data/plans";
@@ -79,6 +80,10 @@ export default function PublicProduct() {
       cancelled = true;
     };
   }, [store, slug, productId]);
+
+  useEffect(() => {
+    setActiveImageIndex(0);
+  }, [product?.id]);
 
   useEffect(() => {
     if (product) {
@@ -220,7 +225,6 @@ export default function PublicProduct() {
   }
 
   const images = getProductImages(product);
-  const activeImage = images[activeImageIndex];
   const lowStock =
     product.stock > 0 && product.stock <= (product.lowStockThreshold ?? 5);
 
@@ -247,24 +251,22 @@ export default function PublicProduct() {
       </div>
 
       <div className="mx-auto w-full max-w-4xl overflow-hidden rounded-xl border bg-white p-3 sm:rounded-2xl sm:p-5 lg:p-6">
-        <div className="grid gap-4 sm:gap-5 md:grid-cols-[minmax(0,240px)_1fr] lg:grid-cols-[minmax(0,280px)_1fr] md:items-center">
+        <div className="grid gap-6 md:grid-cols-[minmax(0,300px)_minmax(0,1fr)] md:items-start md:gap-8 lg:grid-cols-[minmax(0,340px)_minmax(0,1fr)]">
           <div className="mx-auto w-full max-w-[280px] md:mx-0 md:max-w-none">
             <div className="aspect-square overflow-hidden rounded-xl bg-gray-100">
-              {activeImage ? (
-                <img
-                  src={activeImage}
-                  alt={product.name}
-                  className="h-full w-full object-cover"
-                />
-              ) : (
-                <div className="flex h-full items-center justify-center text-gray-400">
-                  <ShoppingBag className="h-12 w-12 sm:h-16 sm:w-16" />
-                </div>
-              )}
+              <ProductImageSwipeGallery
+                images={images}
+                alt={product.name}
+                className="h-full w-full"
+                selectedIndex={activeImageIndex}
+                onIndexChange={setActiveImageIndex}
+                dotVariant="dark"
+                dotsClassName="top-3"
+              />
             </div>
 
             {images.length > 1 && (
-              <div className="mt-2 flex gap-2">
+              <div className="mt-3 flex justify-center gap-2 md:justify-start">
                 {images.map((image, index) => (
                   <button
                     key={`${index}-${image.slice(0, 24)}`}
@@ -287,35 +289,37 @@ export default function PublicProduct() {
             )}
           </div>
 
-          <div className="flex min-w-0 flex-col text-center md:text-left">
-            <div className="flex flex-col items-center gap-2 md:flex-row md:items-start md:justify-between">
-              <h2 className="text-xl font-bold leading-snug text-gray-900 sm:text-2xl">
-                {product.name}
-              </h2>
-              {product.stock <= 0 ? (
-                <Badge variant="secondary" className="shrink-0 text-xs">
-                  Sold out
-                </Badge>
-              ) : lowStock ? (
-                <Badge variant="destructive" className="shrink-0 text-xs">
-                  Only {product.stock} left
-                </Badge>
-              ) : (
-                <Badge className="shrink-0 bg-whatsapp-green text-xs hover:bg-whatsapp-green">
-                  In stock
-                </Badge>
+          <div className="flex min-w-0 flex-col text-center md:max-w-xl md:text-left lg:max-w-2xl">
+            <div className="flex flex-col items-center gap-2 md:items-start">
+              <div className="flex flex-col items-center gap-2 sm:flex-row sm:flex-wrap sm:justify-center md:justify-start">
+                <h2 className="text-xl font-bold leading-snug text-gray-900 sm:text-2xl">
+                  {product.name}
+                </h2>
+                {product.stock <= 0 ? (
+                  <Badge variant="secondary" className="shrink-0 text-xs">
+                    Sold out
+                  </Badge>
+                ) : lowStock ? (
+                  <Badge variant="destructive" className="shrink-0 text-xs">
+                    Only {product.stock} left
+                  </Badge>
+                ) : (
+                  <Badge className="shrink-0 bg-whatsapp-green text-xs hover:bg-whatsapp-green">
+                    In stock
+                  </Badge>
+                )}
+              </div>
+
+              <p className="text-2xl font-bold text-whatsapp-dark sm:text-3xl">
+                {formatNaira(customerUnitDisplayPrice(product.price))}
+              </p>
+
+              {product.description && (
+                <p className="max-w-prose text-sm leading-relaxed text-gray-600">
+                  {product.description}
+                </p>
               )}
             </div>
-
-            <p className="mt-2 text-2xl font-bold text-whatsapp-dark sm:text-3xl">
-              {formatNaira(customerUnitDisplayPrice(product.price))}
-            </p>
-
-            {product.description && (
-              <p className="mt-2 text-sm leading-relaxed text-gray-600">
-                {product.description}
-              </p>
-            )}
           </div>
         </div>
 

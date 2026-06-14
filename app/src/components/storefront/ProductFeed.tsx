@@ -14,7 +14,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { formatNaira } from "@/lib/format";
 import { customerUnitDisplayPrice } from "@/lib/flutterwave-fees";
-import { getProductPrimaryImage } from "@/lib/product-utils";
+import { getProductImages } from "@/lib/product-utils";
+import ProductImageSwipeGallery from "@/components/storefront/ProductImageSwipeGallery";
 import { searchProducts } from "@/lib/product-search";
 import { usePublicReviews } from "@/hooks/use-public-reviews";
 import { hasFeature } from "@/data/plans";
@@ -173,7 +174,7 @@ export default function ProductFeed({ products, store }: ProductFeedProps) {
             className="h-dvh snap-y snap-mandatory overflow-y-auto overscroll-y-contain scroll-smooth [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           >
             {filteredProducts.map((product, index) => {
-              const primaryImage = getProductPrimaryImage(product);
+              const productImages = getProductImages(product);
               const isLast = index === filteredProducts.length - 1;
               const soldOut = product.stock <= 0;
               const lowStock =
@@ -186,18 +187,12 @@ export default function ProductFeed({ products, store }: ProductFeedProps) {
                   className="relative h-dvh w-full shrink-0 snap-start snap-always"
                 >
                   <div className="relative mx-auto h-dvh w-full max-w-lg">
-                    {primaryImage ? (
-                      <img
-                        src={primaryImage}
-                        alt={product.name}
-                        className="absolute inset-0 h-full w-full object-cover"
-                        draggable={false}
-                      />
-                    ) : (
-                      <div className="absolute inset-0 flex items-center justify-center bg-gray-900">
-                        <ShoppingBag className="h-16 w-16 text-white/20" />
-                      </div>
-                    )}
+                    <ProductImageSwipeGallery
+                      images={productImages}
+                      alt={product.name}
+                      className="absolute inset-0"
+                      dotsClassName="top-[max(4.5rem,env(safe-area-inset-top,0px)+3.25rem)]"
+                    />
 
                     <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-black/10" />
 
