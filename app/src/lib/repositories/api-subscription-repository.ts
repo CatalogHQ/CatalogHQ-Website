@@ -23,6 +23,13 @@ export class ApiSubscriptionRepository implements SubscriptionRepository {
     });
   }
 
+  confirm(reference: string): Promise<VendorSubscription> {
+    return apiClient<VendorSubscription>("/subscriptions/confirm", {
+      method: "POST",
+      body: JSON.stringify({ reference }),
+    });
+  }
+
   cancel(): Promise<VendorSubscription> {
     return apiClient<VendorSubscription>("/subscriptions/cancel", {
       method: "POST",

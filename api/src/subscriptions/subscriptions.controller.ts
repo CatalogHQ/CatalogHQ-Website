@@ -3,6 +3,7 @@ import { User } from '@prisma/client';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { SkipSubscriptionGuard } from '../common/decorators/plan-access.decorator';
 import { SubscriptionCheckoutDto } from './dto/subscription-checkout.dto';
+import { ConfirmSubscriptionDto } from './dto/confirm-subscription.dto';
 import { VendorSubscriptionService } from './vendor-subscription.service';
 
 @Controller('subscriptions')
@@ -42,6 +43,14 @@ export class SubscriptionsController {
       user.id,
       user.email,
       dto,
+    );
+  }
+
+  @Post('confirm')
+  confirm(@CurrentUser() user: User, @Body() dto: ConfirmSubscriptionDto) {
+    return this.vendorSubscriptionService.confirmCheckout(
+      user.id,
+      dto.reference,
     );
   }
 }

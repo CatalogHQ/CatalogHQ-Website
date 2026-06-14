@@ -104,6 +104,11 @@ export class LocalSubscriptionRepository implements SubscriptionRepository {
     };
   }
 
+  async confirm(reference: string): Promise<VendorSubscription> {
+    void reference;
+    return this.getSubscription();
+  }
+
   async cancel(): Promise<VendorSubscription> {
     const session = authRepository.getSession();
     if (!session) {

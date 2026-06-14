@@ -19,7 +19,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import SubscriptionPaywallBanner from "@/components/vendor/SubscriptionPaywallBanner";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePlanCatalog } from "@/contexts/PlanCatalogContext";
 import { PLAN_TIER_LABELS, type PlanTier } from "@/data/plans";
@@ -94,14 +93,21 @@ export default function Billing() {
     }
 
     void (async () => {
-      await refreshUser();
-      const sub = await subscriptionRepository.getSubscription();
-      setSubscription(sub);
-      toast.success(
-        reference
-          ? "Subscription payment received. Your plan will update shortly."
-          : "Subscription updated.",
-      );
+      try {
+        if (reference) {
+          await subscriptionRepository.confirm(reference);
+        }
+        await refreshUser();
+        const sub = await subscriptionRepository.getSubscription();
+        setSubscription(sub);
+        toast.success("Subscription activated. Your store is now open.");
+      } catch (error) {
+        toast.error(
+          error instanceof Error
+            ? error.message
+            : "Payment received but activation is still pending.",
+        );
+      }
     })();
   }, [searchParams, refreshUser]);
 
@@ -142,6 +148,10 @@ export default function Billing() {
   }
 
   const currentTier = subscription.planTier;
+  const hasPaidPlan =
+    subscription.hasActiveAccess &&
+    subscription.status !== "pending" &&
+    !subscription.subscriptionExempt;
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
@@ -153,22 +163,24 @@ export default function Billing() {
         </p>
       </div>
 
-      <SubscriptionPaywallBanner />
-
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Current subscription</CardTitle>
           <CardDescription>
             {subscription.subscriptionExempt
               ? "This account is comped by CatalogHQ admin."
-              : "Monthly billing through Flutterwave."}
+              : hasPaidPlan
+                ? "Monthly billing through Flutterwave."
+                : "Choose a plan below to activate your store."}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="flex flex-wrap items-center gap-2">
-            <Badge variant="secondary">
-              {PLAN_TIER_LABELS[currentTier]}
-            </Badge>
+            {hasPaidPlan ? (
+              <Badge variant="secondary">
+                {PLAN_TIER_LABELS[currentTier]}
+              </Badge>
+            ) : null}
             <Badge
               variant={
                 subscription.status === "active" ? "default" : "outline"
@@ -207,7 +219,7 @@ export default function Billing() {
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {plans.map((plan) => {
-          const isCurrent = plan.id === currentTier;
+          const isCurrent = hasPaidPlan && plan.id === currentTier;
           const bullets = getFeatureBullets(plan.id);
 
           return (
@@ -245,7 +257,7 @@ export default function Billing() {
                     ? "Current plan"
                     : checkoutTier === plan.id
                       ? "Redirecting..."
-                      : subscription.hasActiveAccess
+                      : hasPaidPlan
                         ? "Switch plan"
                         : "Subscribe"}
                 </Button>

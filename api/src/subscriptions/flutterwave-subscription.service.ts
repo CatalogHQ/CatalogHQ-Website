@@ -25,11 +25,7 @@ type V3PaymentPlan = {
   status: string;
 };
 
-type V3Subscription = {
-  id: number;
-  status: string;
-  plan: number;
-  customer: string;
+type V3PaymentInit = {
   link?: string;
 };
 
@@ -103,7 +99,6 @@ export class FlutterwaveSubscriptionService implements OnModuleInit {
           amount: entry.monthlyPriceKobo / 100,
           name: `CatalogHQ ${entry.name}`,
           interval: 'monthly',
-          duration: 0,
           currency: 'NGN',
         },
       });
@@ -161,13 +156,20 @@ export class FlutterwaveSubscriptionService implements OnModuleInit {
       );
     }
 
-    const payload = await this.request<V3Subscription>('/subscriptions', {
+    const amountNaira = refreshed.monthlyPriceKobo / 100;
+
+    const payload = await this.request<V3PaymentInit>('/payments', {
       method: 'POST',
       body: {
-        plan: refreshed.flutterwavePaymentPlanId,
-        email: input.email,
         tx_ref: input.reference,
-        redirect_url: `${this.callbackBaseUrl}/dashboard/billing?status=success`,
+        amount: amountNaira,
+        currency: 'NGN',
+        redirect_url: `${this.callbackBaseUrl}/dashboard/billing?status=success&reference=${encodeURIComponent(input.reference)}`,
+        payment_plan: refreshed.flutterwavePaymentPlanId,
+        customer: {
+          email: input.email,
+          name: input.email.split('@')[0] || 'CatalogHQ Vendor',
+        },
       },
     });
 
@@ -180,8 +182,20 @@ export class FlutterwaveSubscriptionService implements OnModuleInit {
     return {
       authorizationUrl: payload.link,
       reference: input.reference,
-      flutterwaveSubscriptionId: String(payload.id),
     };
+  }
+
+  async verifySubscriptionPayment(reference: string): Promise<boolean> {
+    if (!this.isConfigured()) {
+      return reference.startsWith('sub_');
+    }
+
+    const payload = await this.request<{ status?: string }>(
+      `/transactions/verify_by_reference?tx_ref=${encodeURIComponent(reference)}`,
+      { method: 'GET' },
+    );
+
+    return payload?.status === 'successful';
   }
 
   async cancelSubscription(flutterwaveSubscriptionId: string): Promise<void> {

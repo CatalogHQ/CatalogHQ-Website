@@ -9,6 +9,7 @@ export type SubscriptionRepository = {
   getSubscription(): Promise<VendorSubscription>;
   listPayments(): Promise<SubscriptionPayment[]>;
   checkout(input: SubscriptionCheckoutInput): Promise<SubscriptionCheckoutResult>;
+  confirm(reference: string): Promise<VendorSubscription>;
   cancel(): Promise<VendorSubscription>;
   changePlan(input: SubscriptionCheckoutInput): Promise<SubscriptionCheckoutResult>;
 };

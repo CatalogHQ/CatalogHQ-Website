@@ -160,6 +160,45 @@ export class VendorSubscriptionService {
     return this.startCheckout(vendorId, email, dto);
   }
 
+  async confirmCheckout(
+    vendorId: string,
+    reference: string,
+  ): Promise<VendorSubscriptionDto> {
+    if (!reference.startsWith(SUBSCRIPTION_REFERENCE_PREFIX)) {
+      throw new BadRequestException('Invalid subscription reference.');
+    }
+
+    const payment = await this.prisma.subscriptionPayment.findUnique({
+      where: { flutterwaveReference: reference },
+    });
+
+    if (!payment || payment.vendorId !== vendorId) {
+      throw new NotFoundException('Subscription payment not found.');
+    }
+
+    if (payment.status === SubscriptionPaymentStatus.paid) {
+      return this.getSubscription(vendorId);
+    }
+
+    const verified =
+      await this.flutterwaveSubscriptionService.verifySubscriptionPayment(
+        reference,
+      );
+
+    if (!verified) {
+      throw new BadRequestException(
+        'Payment not confirmed yet. Wait a moment and refresh, or try again.',
+      );
+    }
+
+    await this.activateFromPayment(reference, {
+      currency: 'NGN',
+      amountKobo: payment.amountKobo,
+    });
+
+    return this.getSubscription(vendorId);
+  }
+
   async confirmMockCheckout(vendorId: string, reference: string): Promise<void> {
     if (!reference.startsWith(SUBSCRIPTION_REFERENCE_PREFIX)) {
       return;
