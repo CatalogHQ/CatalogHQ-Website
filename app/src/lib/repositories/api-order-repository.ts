@@ -1,4 +1,5 @@
 import { apiClient } from "@/lib/api-client";
+import { buildOrderRefQuery } from "@/lib/order-phone-session";
 import type { OrderRepository } from "@/lib/repositories/order-repository";
 import type {
   CheckoutInput,
@@ -16,7 +17,6 @@ type OrderResponse = {
 type UnreadCountResponse = {
   count: number;
 };
-
 
 export class ApiOrderRepository implements OrderRepository {
   async create(input: CustomerOrderInput): Promise<CustomerOrder> {
@@ -45,29 +45,36 @@ export class ApiOrderRepository implements OrderRepository {
     });
   }
 
-  async verifyPayment(paymentRef: string): Promise<CustomerOrder> {
+  async verifyPayment(
+    paymentRef: string,
+    phoneLastFour: string,
+  ): Promise<CustomerOrder> {
     const response = await apiClient<OrderResponse>(
-      `/orders/ref/${encodeURIComponent(paymentRef)}/verify`,
+      `/orders/ref/${encodeURIComponent(paymentRef)}/verify${buildOrderRefQuery(phoneLastFour)}`,
       { method: "POST" },
     );
     return response.order;
   }
 
-  async getReceipt(paymentRef: string): Promise<OrderReceipt> {
+  async getReceipt(
+    paymentRef: string,
+    phoneLastFour: string,
+  ): Promise<OrderReceipt> {
     return apiClient<OrderReceipt>(
-      `/orders/ref/${encodeURIComponent(paymentRef)}/receipt`,
+      `/orders/ref/${encodeURIComponent(paymentRef)}/receipt${buildOrderRefQuery(phoneLastFour)}`,
     );
   }
 
   async markTransferReference(
     paymentRef: string,
     transferReference: string,
+    phoneLastFour: string,
   ): Promise<CustomerOrder> {
     return apiClient<CustomerOrder>(
       `/orders/ref/${encodeURIComponent(paymentRef)}/transfer`,
       {
         method: "PATCH",
-        body: JSON.stringify({ transferReference }),
+        body: JSON.stringify({ transferReference, phoneLastFour }),
       },
     );
   }
@@ -82,10 +89,13 @@ export class ApiOrderRepository implements OrderRepository {
     return apiClient<CustomerOrder[]>(`/stores/me/orders${params}`);
   }
 
-  async getByPaymentRef(paymentRef: string): Promise<CustomerOrder | null> {
+  async getByPaymentRef(
+    paymentRef: string,
+    phoneLastFour: string,
+  ): Promise<CustomerOrder | null> {
     try {
       const response = await apiClient<OrderResponse>(
-        `/orders/ref/${encodeURIComponent(paymentRef)}`,
+        `/orders/ref/${encodeURIComponent(paymentRef)}${buildOrderRefQuery(phoneLastFour)}`,
       );
       return response.order;
     } catch {

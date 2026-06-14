@@ -1,7 +1,4 @@
 import { ApiError } from "@/lib/api-error";
-import { readJson } from "@/lib/local-storage";
-import { STORAGE_KEYS } from "@/lib/storage-keys";
-import type { AuthSession } from "@/types/domain";
 
 const API_URL = import.meta.env.VITE_API_URL ?? "";
 
@@ -23,10 +20,6 @@ function toNetworkError(error: unknown): Error {
   return error instanceof Error
     ? error
     : new Error("Something went wrong. Please try again.");
-}
-
-function getSession(): AuthSession | null {
-  return readJson<AuthSession | null>(STORAGE_KEYS.session, null);
 }
 
 async function parseApiError(response: Response): Promise<ApiError> {
@@ -59,15 +52,10 @@ export async function apiClient<T>(
 ): Promise<T> {
   assertApiUrlConfigured();
 
-  const session = getSession();
   const headers = new Headers(options.headers);
 
   if (!headers.has("Content-Type") && options.body) {
     headers.set("Content-Type", "application/json");
-  }
-
-  if (session?.token) {
-    headers.set("Authorization", `Bearer ${session.token}`);
   }
 
   let response: Response;
@@ -76,6 +64,7 @@ export async function apiClient<T>(
     response = await fetch(`${API_URL}${path}`, {
       ...options,
       headers,
+      credentials: "include",
     });
   } catch (error) {
     throw toNetworkError(error);

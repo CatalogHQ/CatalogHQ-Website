@@ -90,6 +90,18 @@ class EnvironmentVariables {
 
   @IsOptional()
   @IsString()
+  FLUTTERWAVE_SECRET_KEY?: string;
+
+  @IsOptional()
+  @IsString()
+  SUBSCRIPTION_GRACE_DAYS?: string;
+
+  @IsOptional()
+  @IsString()
+  SUBSCRIPTION_COMP_DAYS?: string;
+
+  @IsOptional()
+  @IsString()
   ASHLAB_VERIFY_API_KEY?: string;
 
   @IsOptional()
@@ -111,6 +123,10 @@ class EnvironmentVariables {
   @IsOptional()
   @IsString()
   ASHLAB_VERIFY_DEBUG?: string;
+
+  @IsOptional()
+  @IsString()
+  NIN_ENCRYPTION_KEY?: string;
 }
 
 export function validateEnv(config: Record<string, unknown>) {
@@ -124,6 +140,19 @@ export function validateEnv(config: Record<string, unknown>) {
 
   if (errors.length > 0) {
     throw new Error(errors.toString());
+  }
+
+  if (config.NODE_ENV === 'production') {
+    const ninKey = config.NIN_ENCRYPTION_KEY;
+    if (typeof ninKey !== 'string' || ninKey.length !== 64) {
+      throw new Error(
+        'NIN_ENCRYPTION_KEY must be a 64-character hex string in production',
+      );
+    }
+    const webhookSecret = config.FLUTTERWAVE_WEBHOOK_SECRET;
+    if (typeof webhookSecret !== 'string' || !webhookSecret.trim()) {
+      throw new Error('FLUTTERWAVE_WEBHOOK_SECRET is required in production');
+    }
   }
 
   return validated;

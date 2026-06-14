@@ -18,7 +18,7 @@ type AuthContextValue = {
   initSignUp: (email: string, password: string) => Promise<void>;
   resendSignUpOtp: (email: string, password: string) => Promise<void>;
   verifySignUp: (email: string, code: string) => Promise<StoredUser>;
-  signIn: (email: string, password: string) => Promise<StoredUser>;
+  signIn: (email: string, password: string, totpCode?: string) => Promise<StoredUser>;
   forgotPassword: (email: string) => Promise<void>;
   resetPassword: (
     email: string,
@@ -77,11 +77,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return created;
   }, []);
 
-  const signIn = useCallback(async (email: string, password: string) => {
-    const current = await authRepository.signIn(email, password);
-    setUser(current);
-    return current;
-  }, []);
+  const signIn = useCallback(
+    async (email: string, password: string, totpCode?: string) => {
+      const current = await authRepository.signIn(email, password, totpCode);
+      setUser(current);
+      return current;
+    },
+    [],
+  );
 
   const forgotPassword = useCallback(async (email: string) => {
     await authRepository.forgotPassword(email);

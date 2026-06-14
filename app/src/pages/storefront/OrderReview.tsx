@@ -24,7 +24,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Spinner } from "@/components/ui/spinner";
+import OrderPhoneGate from "@/components/storefront/OrderPhoneGate";
 import StorefrontLayout from "@/layouts/StorefrontLayout";
+import { useOrderPhoneGate } from "@/hooks/use-order-phone-gate";
 import { usePublicStore } from "@/hooks/use-public-store";
 import { phoneSchema } from "@/lib/auth-schemas";
 import { canCustomerReviewOrder } from "@/lib/order-review";
@@ -42,6 +44,8 @@ const reviewSchema = z.object({
 export default function OrderReview() {
   const { slug = "", paymentRef = "" } = useParams();
   const { store, isLoading: storeLoading } = usePublicStore(slug);
+  const { phoneLastFour, onVerified, needsPhoneGate } =
+    useOrderPhoneGate(paymentRef);
   const [order, setOrder] = useState<CustomerOrder | null>(null);
   const [orderLoading, setOrderLoading] = useState(true);
   const [statusLoading, setStatusLoading] = useState(true);
@@ -63,7 +67,7 @@ export default function OrderReview() {
     let cancelled = false;
 
     async function load() {
-      if (!paymentRef) {
+      if (!paymentRef || !phoneLastFour) {
         setOrder(null);
         setOrderLoading(false);
         setStatusLoading(false);
@@ -73,7 +77,10 @@ export default function OrderReview() {
       setOrderLoading(true);
       setStatusLoading(true);
       try {
-        const loaded = await orderRepository.getByPaymentRef(paymentRef);
+        const loaded = await orderRepository.getByPaymentRef(
+          paymentRef,
+          phoneLastFour,
+        );
         if (!cancelled) {
           setOrder(loaded);
           if (loaded) {
@@ -86,7 +93,10 @@ export default function OrderReview() {
           }
         }
 
-        const status = await reviewRepository.getOrderReviewStatus(paymentRef);
+        const status = await reviewRepository.getOrderReviewStatus(
+          paymentRef,
+          phoneLastFour,
+        );
         if (!cancelled) {
           setAlreadyReviewed(status.alreadyReviewed);
         }
@@ -104,7 +114,15 @@ export default function OrderReview() {
     return () => {
       cancelled = true;
     };
-  }, [paymentRef]);
+  }, [paymentRef, phoneLastFour, form]);
+
+  if (needsPhoneGate) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
+        <OrderPhoneGate paymentRef={paymentRef} onVerified={onVerified} />
+      </div>
+    );
+  }
 
   const reviewsEnabled =
     store !== null && hasFeature(store.planTier, "verified-reviews");

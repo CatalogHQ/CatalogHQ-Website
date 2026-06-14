@@ -4,9 +4,12 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { OrderStatus, PaymentStatus, type Order } from '@prisma/client';
+import { PlanEntitlementService } from '../plans/plan-entitlement.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { StoresService } from '../stores/stores.service';
 import { normalizePhone } from '../common/phone.util';
+import { verifyPhoneLastFour } from '../common/order-phone.util';
+import { sanitizeUserText } from '../common/sanitize.util';
 import { CreateReviewDto } from './dto/create-review.dto';
 import {
   OrderReviewStatusDto,
@@ -27,6 +30,7 @@ export class ReviewsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly storesService: StoresService,
+    private readonly planEntitlementService: PlanEntitlementService,
   ) {}
 
   private isOrderReviewable(order: Order): boolean {
@@ -39,6 +43,12 @@ export class ReviewsService {
   async listByStoreSlug(slug: string): Promise<ReviewDto[]> {
     const store = await this.storesService.getPublicBySlug(slug);
     if (!store) return [];
+
+    const hasReviews = await this.planEntitlementService.hasFeature(
+      store.vendorId,
+      'verified-reviews',
+    );
+    if (!hasReviews) return [];
 
     const reviews = await this.prisma.review.findMany({
       where: { storeId: store.vendorId },
@@ -64,13 +74,29 @@ export class ReviewsService {
     };
   }
 
-  async getOrderReviewStatus(paymentRef: string): Promise<OrderReviewStatusDto> {
+  async getOrderReviewStatus(
+    paymentRef: string,
+    phoneLastFour: string,
+  ): Promise<OrderReviewStatusDto> {
     const order = await this.prisma.order.findFirst({
       where: { paymentRef: { equals: paymentRef, mode: 'insensitive' } },
     });
 
     if (!order) {
-      throw new NotFoundException('Order not found.');
+      throw new NotFoundException('Order not found');
+    }
+
+    verifyPhoneLastFour(order.customerPhone, phoneLastFour);
+
+    const hasReviews = await this.planEntitlementService.hasFeature(
+      order.storeId,
+      'verified-reviews',
+    );
+    if (!hasReviews) {
+      return {
+        canReview: false,
+        alreadyReviewed: false,
+      };
     }
 
     const existing = await this.prisma.review.findUnique({
@@ -103,6 +129,14 @@ export class ReviewsService {
       throw new NotFoundException('Order not found.');
     }
 
+    const hasReviews = await this.planEntitlementService.hasFeature(
+      order.storeId,
+      'verified-reviews',
+    );
+    if (!hasReviews) {
+      throw new BadRequestException('Reviews are not enabled for this store.');
+    }
+
     if (!this.isOrderReviewable(order)) {
       throw new BadRequestException(
         'You can only review paid orders that are being fulfilled or completed.',
@@ -125,7 +159,7 @@ export class ReviewsService {
         storeId: order.storeId,
         buyerName: dto.buyerName.trim(),
         rating: dto.rating,
-        comment: dto.comment.trim(),
+        comment: sanitizeUserText(dto.comment.trim()),
         productName: order.productName,
         verified: true,
         orderId: order.id,

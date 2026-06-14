@@ -1,14 +1,11 @@
 import { apiClient } from "@/lib/api-client";
-import { readJson, writeJson } from "@/lib/local-storage";
-import { STORAGE_KEYS } from "@/lib/storage-keys";
 import type { AuthRepository } from "@/lib/repositories/auth-repository";
-import type { AuthSession, StoredUser } from "@/types/domain";
+import type { StoredUser } from "@/types/domain";
 
 type AuthApiUser = Omit<StoredUser, "passwordHash">;
 
 type AuthResponse = {
   user: AuthApiUser;
-  session: AuthSession;
 };
 
 type MeResponse = {
@@ -19,24 +16,16 @@ function toStoredUser(user: AuthApiUser): StoredUser {
   return { ...user, passwordHash: "" };
 }
 
-function saveSession(session: AuthSession): void {
-  writeJson(STORAGE_KEYS.session, session);
-}
-
 export class ApiAuthRepository implements AuthRepository {
-  getSession(): AuthSession | null {
-    return readJson<AuthSession | null>(STORAGE_KEYS.session, null);
+  getSession(): null {
+    return null;
   }
 
   async getCurrentUser(): Promise<StoredUser | null> {
-    const session = this.getSession();
-    if (!session?.token) return null;
-
     try {
       const response = await apiClient<MeResponse>("/auth/me");
       return toStoredUser(response.user);
     } catch {
-      localStorage.removeItem(STORAGE_KEYS.session);
       return null;
     }
   }
@@ -64,29 +53,27 @@ export class ApiAuthRepository implements AuthRepository {
       method: "POST",
       body: JSON.stringify({ email, code }),
     });
-    saveSession(response.session);
     return toStoredUser(response.user);
   }
 
-  async signIn(email: string, password: string): Promise<StoredUser> {
+  async signIn(
+    email: string,
+    password: string,
+    totpCode?: string,
+  ): Promise<StoredUser> {
     const response = await apiClient<AuthResponse>("/auth/signin", {
       method: "POST",
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ email, password, totpCode }),
     });
-    saveSession(response.session);
     return toStoredUser(response.user);
   }
 
   async signOut(): Promise<void> {
-    const session = this.getSession();
-    if (session?.token) {
-      try {
-        await apiClient("/auth/signout", { method: "POST" });
-      } catch {
-        // Client clears session regardless.
-      }
+    try {
+      await apiClient("/auth/signout", { method: "POST" });
+    } catch {
+      // Cookie cleared server-side when request succeeds.
     }
-    localStorage.removeItem(STORAGE_KEYS.session);
   }
 
   async forgotPassword(email: string): Promise<void> {

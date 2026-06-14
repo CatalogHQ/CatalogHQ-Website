@@ -1,4 +1,5 @@
 import { INestApplication, ValidationPipe } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { AppModule } from '../src/app.module';
@@ -7,6 +8,10 @@ import { PrismaService } from '../src/prisma/prisma.service';
 
 describe('AppController (e2e)', () => {
   let app: INestApplication;
+  let jwtService: JwtService;
+
+  const vendorAId = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+  const vendorBOrderId = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb';
 
   const prisma = {
     $connect: jest.fn(),
@@ -25,6 +30,7 @@ describe('AppController (e2e)', () => {
       aggregate: jest.fn(),
       groupBy: jest.fn(),
       findMany: jest.fn(),
+      update: jest.fn(),
     },
     supportTicket: { count: jest.fn(), findMany: jest.fn() },
     emailOtp: {
@@ -70,6 +76,7 @@ describe('AppController (e2e)', () => {
       }),
     );
     await app.init();
+    jwtService = app.get(JwtService);
   });
 
   afterAll(async () => {
@@ -160,5 +167,30 @@ describe('AppController (e2e)', () => {
         customerPhone: '08012345678',
       })
       .expect(400);
+  });
+
+  it('PATCH /stores/me/orders/:id/status rejects cross-vendor order access', async () => {
+    const token = jwtService.sign({ sub: vendorAId });
+
+    prisma.user.findUnique.mockImplementation(({ where }: { where: { id: string } }) => {
+      if (where.id === vendorAId) {
+        return Promise.resolve({
+          id: vendorAId,
+          email: 'vendor-a@example.com',
+          role: 'vendor',
+          planTier: 'starter',
+          subscriptionExempt: true,
+          subscription: null,
+        });
+      }
+      return Promise.resolve(null);
+    });
+    prisma.order.findFirst.mockResolvedValue(null);
+
+    await request(app.getHttpServer())
+      .patch(`/stores/me/orders/${vendorBOrderId}/status`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ status: 'delivered' })
+      .expect(404);
   });
 });

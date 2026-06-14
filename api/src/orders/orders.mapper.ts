@@ -34,6 +34,30 @@ export type OrderDto = {
   createdAt: string;
 };
 
+export type PublicOrderDto = Omit<
+  OrderDto,
+  | 'internalNotes'
+  | 'vendorNet'
+  | 'platformFee'
+  | 'riderPhone'
+  | 'vendorSeenAt'
+  | 'gatewayReference'
+>;
+
+export function toPublicOrderDto(order: Order): PublicOrderDto {
+  const full = toOrderDto(order);
+  const {
+    internalNotes: _internalNotes,
+    vendorNet: _vendorNet,
+    platformFee: _platformFee,
+    riderPhone: _riderPhone,
+    vendorSeenAt: _vendorSeenAt,
+    gatewayReference: _gatewayReference,
+    ...publicOrder
+  } = full;
+  return publicOrder;
+}
+
 export function toOrderDto(order: Order): OrderDto {
   return {
     id: order.id,

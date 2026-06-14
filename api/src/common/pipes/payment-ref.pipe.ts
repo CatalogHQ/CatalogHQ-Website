@@ -4,7 +4,7 @@ import {
   PipeTransform,
 } from '@nestjs/common';
 
-const PAYMENT_REF_PATTERN = /^SHP-\d{8}-[A-Z0-9]{4}$/i;
+const PAYMENT_REF_PATTERN = /^SHP-[a-f0-9]{32}$/i;
 
 @Injectable()
 export class PaymentRefPipe implements PipeTransform<string, string> {
@@ -15,6 +15,6 @@ export class PaymentRefPipe implements PipeTransform<string, string> {
       throw new BadRequestException('Invalid order reference.');
     }
 
-    return trimmed.toUpperCase();
+    return trimmed.toLowerCase();
   }
 }

@@ -1,4 +1,4 @@
-import { BadRequestException, ServiceUnavailableException } from '@nestjs/common';
+import { ServiceUnavailableException, UnauthorizedException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import * as bcrypt from 'bcrypt';
 import { EmailOtpPurpose } from '@prisma/client';
@@ -6,6 +6,7 @@ import { PingramEmailService } from '../notifications/pingram-email.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuthService } from './auth.service';
 import { OtpRateLimitService } from './otp-rate-limit.service';
+import { OtpVerifyAttemptService } from './otp-verify-attempt.service';
 import { OtpService } from './otp.service';
 
 describe('OtpService', () => {
@@ -40,6 +41,12 @@ describe('OtpService', () => {
     recordOtpSend: jest.fn().mockResolvedValue(undefined),
   };
 
+  const otpVerifyAttemptService = {
+    assertCanAttempt: jest.fn().mockResolvedValue(undefined),
+    recordFailedAttempt: jest.fn().mockResolvedValue(undefined),
+    resetAttempts: jest.fn().mockResolvedValue(undefined),
+  };
+
   let service: OtpService;
 
   beforeEach(async () => {
@@ -52,6 +59,7 @@ describe('OtpService', () => {
         { provide: PingramEmailService, useValue: emailService },
         { provide: AuthService, useValue: authService },
         { provide: OtpRateLimitService, useValue: otpRateLimitService },
+        { provide: OtpVerifyAttemptService, useValue: otpVerifyAttemptService },
       ],
     }).compile();
 
@@ -157,6 +165,6 @@ describe('OtpService', () => {
 
     await expect(
       service.resetPassword('vendor@example.com', '000000', 'newpassword1'),
-    ).rejects.toBeInstanceOf(BadRequestException);
+    ).rejects.toBeInstanceOf(UnauthorizedException);
   });
 });

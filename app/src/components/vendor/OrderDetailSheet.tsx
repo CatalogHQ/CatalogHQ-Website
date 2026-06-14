@@ -167,6 +167,7 @@ export default function OrderDetailSheet({
             <TransferReferenceField
               key={order.id}
               paymentRef={order.paymentRef}
+              customerPhone={order.customerPhone}
               initialRef={order.transferReference ?? ""}
             />
           )}
@@ -236,18 +237,22 @@ export default function OrderDetailSheet({
 
 function TransferReferenceField({
   paymentRef,
+  customerPhone,
   initialRef,
 }: {
   paymentRef: string;
+  customerPhone: string;
   initialRef: string;
 }) {
   const [transferRef, setTransferRef] = useState(initialRef);
 
   const handleSave = async () => {
     try {
+      const phoneLastFour = customerPhone.replace(/\D/g, "").slice(-4);
       await orderRepository.markTransferReference(
         paymentRef,
         transferRef.trim(),
+        phoneLastFour,
       );
       toast.success("Transfer reference saved.");
     } catch (error) {

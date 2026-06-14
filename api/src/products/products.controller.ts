@@ -33,7 +33,7 @@ export class ProductsController {
 
   @Post('me/products')
   create(@CurrentUser() user: User, @Body() dto: ProductInputDto) {
-    return this.productsService.create(user.id, user.planTier, dto);
+    return this.productsService.create(user.id, dto);
   }
 
   @Put('me/products/:productId')

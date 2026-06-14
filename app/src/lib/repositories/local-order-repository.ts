@@ -12,14 +12,10 @@ import type {
 } from "@/types/orders";
 
 function generatePaymentRef(): string {
-  const date = new Date();
-  const datePart = [
-    date.getFullYear(),
-    String(date.getMonth() + 1).padStart(2, "0"),
-    String(date.getDate()).padStart(2, "0"),
-  ].join("");
-  const shortId = crypto.randomUUID().slice(0, 4).toUpperCase();
-  return `SHP-${datePart}-${shortId}`;
+  const bytes = new Uint8Array(16);
+  crypto.getRandomValues(bytes);
+  const hex = Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
+  return `SHP-${hex}`;
 }
 
 function buildOrder(
@@ -112,15 +108,21 @@ export class LocalOrderRepository implements OrderRepository {
     return order;
   }
 
-  async verifyPayment(paymentRef: string): Promise<CustomerOrder> {
-    const order = await this.getByPaymentRef(paymentRef);
+  async verifyPayment(
+    paymentRef: string,
+    _phoneLastFour: string,
+  ): Promise<CustomerOrder> {
+    const order = await this.getByPaymentRef(paymentRef, _phoneLastFour);
     if (!order) throw new Error("Order not found.");
     if (order.paymentStatus === "paid") return order;
     return this.updateStatus(order.id, "paid");
   }
 
-  async getReceipt(paymentRef: string): Promise<OrderReceipt> {
-    const order = await this.getByPaymentRef(paymentRef);
+  async getReceipt(
+    paymentRef: string,
+    phoneLastFour: string,
+  ): Promise<OrderReceipt> {
+    const order = await this.getByPaymentRef(paymentRef, phoneLastFour);
     if (!order) throw new Error("Order not found.");
     return {
       valid: order.paymentStatus === "paid" || order.status !== "reserved",
@@ -132,6 +134,7 @@ export class LocalOrderRepository implements OrderRepository {
   async markTransferReference(
     paymentRef: string,
     transferReference: string,
+    _phoneLastFour: string,
   ): Promise<CustomerOrder> {
     const orders = this.getOrders();
     const index = orders.findIndex(
@@ -161,7 +164,10 @@ export class LocalOrderRepository implements OrderRepository {
       );
   }
 
-  async getByPaymentRef(paymentRef: string): Promise<CustomerOrder | null> {
+  async getByPaymentRef(
+    paymentRef: string,
+    _phoneLastFour: string,
+  ): Promise<CustomerOrder | null> {
     return (
       this.getOrders().find(
         (order) => order.paymentRef.toUpperCase() === paymentRef.toUpperCase(),

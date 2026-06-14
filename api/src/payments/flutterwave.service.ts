@@ -2,9 +2,10 @@ import {
   Injectable,
   InternalServerErrorException,
   Logger,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { createHmac } from 'crypto';
+import { createHmac, timingSafeEqual } from 'crypto';
 import { FlutterwaveAuthService } from './flutterwave-auth.service';
 import {
   newFlutterwaveTraceId,
@@ -307,12 +308,31 @@ export class FlutterwaveService {
     return true;
   }
 
-  verifyWebhookSignature(rawBody: string, signature: string): boolean {
-    if (!this.webhookSecret || !signature) return false;
-    const hash = createHmac('sha256', this.webhookSecret)
+  verifyWebhookSignature(rawBody: string, signature: string): void {
+    if (!this.webhookSecret) {
+      throw new InternalServerErrorException(
+        'Webhook secret is not configured. All webhook requests are being rejected for security.',
+      );
+    }
+
+    if (!signature) {
+      throw new UnauthorizedException('Missing webhook signature');
+    }
+
+    const expectedHash = createHmac('sha256', this.webhookSecret)
       .update(rawBody)
       .digest('base64');
-    return hash === signature;
+
+    const expectedBuffer = Buffer.from(expectedHash);
+    const signatureBuffer = Buffer.from(signature);
+
+    if (expectedBuffer.length !== signatureBuffer.length) {
+      throw new UnauthorizedException('Invalid webhook signature');
+    }
+
+    if (!timingSafeEqual(expectedBuffer, signatureBuffer)) {
+      throw new UnauthorizedException('Invalid webhook signature');
+    }
   }
 
   private async request<T>(

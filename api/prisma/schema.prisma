@@ -31,16 +31,37 @@ enum EmailOtpPurpose {
   password_reset
 }
 
+enum SubscriptionStatus {
+  pending
+  active
+  past_due
+  grace
+  expired
+  canceled
+}
+
+enum SubscriptionPaymentStatus {
+  pending
+  paid
+  failed
+}
+
 model User {
-  id              String    @id @default(uuid())
-  email           String    @unique
-  phone           String?
-  passwordHash    String
-  emailVerifiedAt DateTime?
-  planTier        PlanTier  @default(starter)
-  role            UserRole  @default(vendor)
-  createdAt       DateTime  @default(now())
-  store           Store?
+  id                 String              @id @default(uuid())
+  email              String              @unique
+  phone              String?
+  passwordHash       String
+  emailVerifiedAt    DateTime?
+  planTier           PlanTier            @default(starter)
+  subscriptionExempt Boolean             @default(false)
+  role               UserRole            @default(vendor)
+  totpSecret         String?
+  totpEnabled        Boolean             @default(false)
+  totpVerifiedAt     DateTime?
+  createdAt          DateTime            @default(now())
+  store              Store?
+  subscription       VendorSubscription?
+  subscriptionPayments SubscriptionPayment[]
 }
 
 model SignupPending {
@@ -91,6 +112,21 @@ model OtpIpSendLock {
   updatedAt   DateTime @updatedAt
 }
 
+model OtpVerifyAttempt {
+  email       String   @id
+  attempts    Int      @default(0)
+  lockedUntil DateTime?
+  updatedAt   DateTime @updatedAt
+}
+
+model ProcessedWebhook {
+  id          String   @id @default(cuid())
+  txRef       String   @unique
+  processedAt DateTime @default(now())
+
+  @@index([processedAt])
+}
+
 enum OrderStatus {
   reserved
   paid
@@ -127,6 +163,7 @@ model Store {
   facebookHandle          String?
   xHandle                 String?
   nin                     String
+  ninHash                 String?                  @unique
   category                String?
   address                 String?
   city                    String?
@@ -291,18 +328,52 @@ model ActivityLog {
 }
 
 model PlanCatalogEntry {
-  tier             PlanTier @id
-  name             String
-  monthlyPriceKobo Int
-  priceSubtext     String
-  tagline          String
-  cta              String
-  popular          Boolean  @default(false)
-  productLimit     Int
-  active           Boolean  @default(true)
-  featureBullets   Json     @default("[]")
-  sortOrder        Int      @default(0)
-  updatedAt        DateTime @updatedAt
+  tier                     PlanTier @id
+  name                     String
+  monthlyPriceKobo         Int
+  priceSubtext             String
+  tagline                  String
+  cta                      String
+  popular                  Boolean  @default(false)
+  productLimit             Int
+  active                   Boolean  @default(true)
+  featureBullets           Json     @default("[]")
+  sortOrder                Int      @default(0)
+  flutterwavePaymentPlanId Int?
+  updatedAt                DateTime @updatedAt
+}
+
+model VendorSubscription {
+  vendorId                 String             @id
+  vendor                   User               @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  status                   SubscriptionStatus @default(pending)
+  planTier                 PlanTier           @default(starter)
+  flutterwaveSubscriptionId String?
+  flutterwaveCustomerId    String?
+  currentPeriodStart       DateTime?
+  currentPeriodEnd         DateTime?
+  graceEndsAt              DateTime?
+  canceledAt               DateTime?
+  cancelAtPeriodEnd        Boolean            @default(false)
+  lastPaymentAt            DateTime?
+  lastPaymentReference     String?
+  createdAt                DateTime           @default(now())
+  updatedAt                DateTime           @updatedAt
+}
+
+model SubscriptionPayment {
+  id                  String                    @id @default(uuid())
+  vendorId            String
+  vendor              User                      @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  planTier            PlanTier
+  amountKobo          Int
+  currency            String                    @default("NGN")
+  flutterwaveReference String                   @unique
+  status              SubscriptionPaymentStatus @default(pending)
+  paidAt              DateTime?
+  createdAt           DateTime                  @default(now())
+
+  @@index([vendorId])
 }
 
 model Order {

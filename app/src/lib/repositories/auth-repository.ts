@@ -4,7 +4,7 @@ export interface AuthRepository {
   initSignUp(email: string, password: string): Promise<void>;
   resendSignUpOtp(email: string, password: string): Promise<void>;
   verifySignUp(email: string, code: string): Promise<StoredUser>;
-  signIn(email: string, password: string): Promise<StoredUser>;
+  signIn(email: string, password: string, totpCode?: string): Promise<StoredUser>;
   signOut(): Promise<void>;
   forgotPassword(email: string): Promise<void>;
   resetPassword(email: string, code: string, newPassword: string): Promise<void>;

@@ -10,6 +10,7 @@ import {
   BarChart3,
   Shield,
   Wallet,
+  CreditCard,
 } from "lucide-react";
 import {
   Sidebar,
@@ -33,6 +34,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useVendor } from "@/contexts/VendorContext";
 import VendorOrderNotifications from "@/components/vendor/VendorOrderNotifications";
 import CatalogHqLogo from "@/components/brand/CatalogHqLogo";
+import SubscriptionPaywallBanner from "@/components/vendor/SubscriptionPaywallBanner";
+import { useVendorEntitlements } from "@/hooks/use-vendor-entitlements";
 import { getStoreUrl } from "@/lib/slug";
 
 const navItems = [
@@ -42,6 +45,7 @@ const navItems = [
   { title: "Inventory", href: "/dashboard/inventory", icon: Warehouse },
   { title: "Analytics", href: "/dashboard/analytics", icon: BarChart3 },
   { title: "Payouts", href: "/dashboard/payouts", icon: Wallet },
+  { title: "Billing", href: "/dashboard/billing", icon: CreditCard },
   { title: "Settings", href: "/dashboard/settings", icon: Settings },
 ];
 
@@ -50,6 +54,12 @@ export default function DashboardLayout() {
   const navigate = useNavigate();
   const { signOut, isAdmin } = useAuth();
   const { store, unreadOrderCount } = useVendor();
+  const { isHardBlocked, subscriptionExempt } = useVendorEntitlements();
+
+  const billingOnly =
+    isHardBlocked &&
+    !subscriptionExempt &&
+    !location.pathname.startsWith("/dashboard/billing");
 
   const handleSignOut = async () => {
     await signOut();
@@ -165,7 +175,23 @@ export default function DashboardLayout() {
           )}
         </header>
         <div className="relative flex-1 bg-gray-50 p-4 sm:p-6">
-          <Outlet />
+          <SubscriptionPaywallBanner />
+          {billingOnly ? (
+            <div className="mx-auto max-w-lg rounded-xl border border-red-200 bg-white p-6 text-center shadow-sm">
+              <h2 className="text-lg font-semibold text-gray-900">
+                Subscription required
+              </h2>
+              <p className="mt-2 text-sm text-gray-600">
+                Your subscription has expired. Renew to access your dashboard
+                and accept orders again.
+              </p>
+              <Button className="mt-4 bg-whatsapp-green hover:bg-whatsapp-green/90" asChild>
+                <Link to="/dashboard/billing">Go to billing</Link>
+              </Button>
+            </div>
+          ) : (
+            <Outlet />
+          )}
         </div>
       </SidebarInset>
     </SidebarProvider>

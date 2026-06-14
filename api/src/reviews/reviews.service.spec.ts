@@ -1,6 +1,7 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { OrderStatus, PaymentStatus } from '@prisma/client';
 import { Test, TestingModule } from '@nestjs/testing';
+import { PlanEntitlementService } from '../plans/plan-entitlement.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { StoresService } from '../stores/stores.service';
 import { ReviewsService } from './reviews.service';
@@ -21,6 +22,10 @@ describe('ReviewsService', () => {
     getPublicBySlug: jest.fn(),
   };
 
+  const planEntitlementService = {
+    hasFeature: jest.fn().mockResolvedValue(true),
+  };
+
   let service: ReviewsService;
 
   beforeEach(async () => {
@@ -31,6 +36,7 @@ describe('ReviewsService', () => {
         ReviewsService,
         { provide: PrismaService, useValue: prisma },
         { provide: StoresService, useValue: storesService },
+        { provide: PlanEntitlementService, useValue: planEntitlementService },
       ],
     }).compile();
 
@@ -40,12 +46,14 @@ describe('ReviewsService', () => {
   it('allows review status for paid fulfilled orders', async () => {
     prisma.order.findFirst.mockResolvedValue({
       id: 'order-1',
+      storeId: 'store-1',
+      customerPhone: '08012345678',
       paymentStatus: PaymentStatus.paid,
       status: OrderStatus.confirmed,
     });
     prisma.review.findUnique.mockResolvedValue(null);
 
-    const status = await service.getOrderReviewStatus('SHP-123');
+    const status = await service.getOrderReviewStatus('SHP-123', '5678');
 
     expect(status.canReview).toBe(true);
     expect(status.alreadyReviewed).toBe(false);
@@ -110,6 +118,7 @@ describe('ReviewsService', () => {
       id: 'order-1',
       paymentStatus: PaymentStatus.paid,
       status: OrderStatus.delivered,
+      customerPhone: '08012345678',
     });
     prisma.review.findUnique.mockResolvedValue({
       id: 'review-1',
@@ -123,7 +132,7 @@ describe('ReviewsService', () => {
       orderId: 'order-1',
     });
 
-    const status = await service.getOrderReviewStatus('SHP-123');
+    const status = await service.getOrderReviewStatus('SHP-123', '5678');
 
     expect(status.alreadyReviewed).toBe(true);
     expect(status.canReview).toBe(false);
@@ -132,7 +141,7 @@ describe('ReviewsService', () => {
   it('throws when order is missing', async () => {
     prisma.order.findFirst.mockResolvedValue(null);
 
-    await expect(service.getOrderReviewStatus('SHP-123')).rejects.toBeInstanceOf(
+    await expect(service.getOrderReviewStatus('SHP-123', '5678')).rejects.toBeInstanceOf(
       NotFoundException,
     );
   });

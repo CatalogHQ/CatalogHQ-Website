@@ -10,13 +10,17 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
+import OrderPhoneGate from "@/components/storefront/OrderPhoneGate";
 import OrderStatusBadge from "@/components/vendor/OrderStatusBadge";
+import { useOrderPhoneGate } from "@/hooks/use-order-phone-gate";
 import { formatNaira } from "@/lib/format";
 import { orderRepository } from "@/lib/repositories";
 import type { OrderReceipt } from "@/types/orders";
 
 export default function VerifyReceipt() {
   const { paymentRef = "" } = useParams();
+  const { phoneLastFour, onVerified, needsPhoneGate } =
+    useOrderPhoneGate(paymentRef);
   const [receipt, setReceipt] = useState<OrderReceipt | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -24,7 +28,7 @@ export default function VerifyReceipt() {
     let cancelled = false;
 
     async function load() {
-      if (!paymentRef) {
+      if (!paymentRef || !phoneLastFour) {
         setReceipt(null);
         setLoading(false);
         return;
@@ -32,7 +36,7 @@ export default function VerifyReceipt() {
 
       setLoading(true);
       try {
-        const loaded = await orderRepository.getReceipt(paymentRef);
+        const loaded = await orderRepository.getReceipt(paymentRef, phoneLastFour);
         if (!cancelled) setReceipt(loaded);
       } catch {
         if (!cancelled) setReceipt(null);
@@ -45,7 +49,15 @@ export default function VerifyReceipt() {
     return () => {
       cancelled = true;
     };
-  }, [paymentRef]);
+  }, [paymentRef, phoneLastFour]);
+
+  if (needsPhoneGate) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
+        <OrderPhoneGate paymentRef={paymentRef} onVerified={onVerified} />
+      </div>
+    );
+  }
 
   if (loading) {
     return (

@@ -21,6 +21,8 @@ import {
   buildWhatsAppUrl,
 } from "@/lib/order-message";
 import { canCustomerReviewOrder } from "@/lib/order-review";
+import OrderPhoneGate from "@/components/storefront/OrderPhoneGate";
+import { useOrderPhoneGate } from "@/hooks/use-order-phone-gate";
 import { loadPendingPaymentDetails } from "@/lib/flutterwave-payment-methods";
 import { orderRepository, reviewRepository } from "@/lib/repositories";
 import { hasFeature } from "@/data/plans";
@@ -56,6 +58,8 @@ export default function OrderStatusPage() {
   const { slug = "", paymentRef = "" } = useParams();
   const [searchParams] = useSearchParams();
   const { store, isLoading: storeLoading } = usePublicStore(slug);
+  const { phoneLastFour, onVerified, needsPhoneGate } =
+    useOrderPhoneGate(paymentRef);
   const [order, setOrder] = useState<CustomerOrder | null>(null);
   const [orderLoading, setOrderLoading] = useState(true);
   const [reviewStatusLoading, setReviewStatusLoading] = useState(false);
@@ -66,7 +70,7 @@ export default function OrderStatusPage() {
     let cancelled = false;
 
     async function loadOrder() {
-      if (!paymentRef) {
+      if (!paymentRef || !phoneLastFour) {
         setOrder(null);
         setOrderLoading(false);
         return;
@@ -75,12 +79,18 @@ export default function OrderStatusPage() {
       setOrderLoading(true);
       try {
         if (searchParams.get("paid") === "1") {
-          const verified = await orderRepository.verifyPayment(paymentRef);
+          const verified = await orderRepository.verifyPayment(
+            paymentRef,
+            phoneLastFour,
+          );
           if (!cancelled) setOrder(verified);
           return;
         }
 
-        const loaded = await orderRepository.getByPaymentRef(paymentRef);
+        const loaded = await orderRepository.getByPaymentRef(
+          paymentRef,
+          phoneLastFour,
+        );
         if (!cancelled) setOrder(loaded);
       } catch (error) {
         if (!cancelled) {
@@ -103,13 +113,13 @@ export default function OrderStatusPage() {
     return () => {
       cancelled = true;
     };
-  }, [paymentRef, searchParams]);
+  }, [paymentRef, phoneLastFour, searchParams]);
 
   useEffect(() => {
     let cancelled = false;
 
     async function loadReviewStatus() {
-      if (!paymentRef || !order || !store) {
+      if (!paymentRef || !phoneLastFour || !order || !store) {
         setCanLeaveReview(false);
         setAlreadyReviewed(false);
         setReviewStatusLoading(false);
@@ -125,7 +135,10 @@ export default function OrderStatusPage() {
 
       setReviewStatusLoading(true);
       try {
-        const status = await reviewRepository.getOrderReviewStatus(paymentRef);
+        const status = await reviewRepository.getOrderReviewStatus(
+          paymentRef,
+          phoneLastFour!,
+        );
         if (!cancelled) {
           setAlreadyReviewed(status.alreadyReviewed);
           setCanLeaveReview(
@@ -149,7 +162,15 @@ export default function OrderStatusPage() {
     return () => {
       cancelled = true;
     };
-  }, [paymentRef, order, store]);
+  }, [paymentRef, phoneLastFour, order, store]);
+
+  if (needsPhoneGate) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
+        <OrderPhoneGate paymentRef={paymentRef} onVerified={onVerified} />
+      </div>
+    );
+  }
 
   const isValid = store && order && order.storeId === store.vendorId;
 

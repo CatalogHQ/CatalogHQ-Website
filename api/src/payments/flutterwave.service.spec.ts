@@ -173,7 +173,7 @@ describe('FlutterwaveService', () => {
       .update(rawBody)
       .digest('base64');
 
-    expect(service.verifyWebhookSignature(rawBody, signature)).toBe(true);
-    expect(service.verifyWebhookSignature(rawBody, 'invalid')).toBe(false);
+    expect(() => service.verifyWebhookSignature(rawBody, signature)).not.toThrow();
+    expect(() => service.verifyWebhookSignature(rawBody, 'invalid')).toThrow();
   });
 });

@@ -1,10 +1,12 @@
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
   NotFoundException,
   UnprocessableEntityException,
 } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { randomBytes } from 'crypto';
 import {
   OrderStatus,
   PaymentStatus,
@@ -14,11 +16,13 @@ import {
 import { DELIVERY_TYPE_IDS } from '../common/constants/delivery-types';
 import { deliveryRequiresAddress } from '../common/delivery.util';
 import { normalizePhone } from '../common/phone.util';
+import { verifyPhoneLastFour } from '../common/order-phone.util';
 import { FlutterwaveService } from '../payments/flutterwave.service';
 import { computeCheckoutPricing } from '../payments/flutterwave-fees.util';
 import { buildCheckoutSplitPayload } from '../payments/flutterwave-split.util';
 import { buildFlutterwaveReference } from '../payments/flutterwave-reference.util';
 import { PaymentsService } from '../payments/payments.service';
+import { PlanEntitlementService } from '../plans/plan-entitlement.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { OrderDeliveredEvent } from './events/order-delivered.event';
 import { OrderCreatedEvent } from './events/order-created.event';
@@ -33,19 +37,12 @@ import { ReviewInviteEvent } from './events/review-invite.event';
 import { OrderCheckoutBaseDto } from './dto/order-checkout-base.dto';
 import { CheckoutPaymentDto } from './dto/checkout-payment.dto';
 import { CreateOrderDto } from './dto/create-order.dto';
-import { OrderDto, toOrderDto } from './orders.mapper';
+import { OrderDto, PublicOrderDto, toOrderDto, toPublicOrderDto } from './orders.mapper';
 
 type DeliveryZone = { id: string; name: string; fee: number };
 
 function generatePaymentRef(): string {
-  const date = new Date();
-  const datePart = [
-    date.getFullYear(),
-    String(date.getMonth() + 1).padStart(2, '0'),
-    String(date.getDate()).padStart(2, '0'),
-  ].join('');
-  const shortId = crypto.randomUUID().slice(0, 4).toUpperCase();
-  return `SHP-${datePart}-${shortId}`;
+  return `SHP-${randomBytes(16).toString('hex')}`;
 }
 
 @Injectable()
@@ -55,6 +52,7 @@ export class OrdersService {
     private readonly eventEmitter: EventEmitter2,
     private readonly flutterwave: FlutterwaveService,
     private readonly paymentsService: PaymentsService,
+    private readonly planEntitlementService: PlanEntitlementService,
   ) {}
 
   async checkout(dto: CheckoutPaymentDto, storeSlug: string) {
@@ -70,12 +68,19 @@ export class OrdersService {
         await this.consumeDiscountCode(tx, pricing.discountRecordId);
       }
 
+      const product = await tx.product.findFirst({
+        where: { id: dto.productId, storeId: dto.storeId },
+      });
+      if (!product) {
+        throw new NotFoundException('Product not found.');
+      }
+
       return tx.order.create({
         data: {
           paymentRef,
           storeId: dto.storeId,
           productId: dto.productId,
-          productName: dto.productName,
+          productName: product.name,
           color: dto.color ?? null,
           size: dto.size ?? null,
           quantity: dto.quantity,
@@ -119,7 +124,7 @@ export class OrdersService {
       });
 
       return {
-        order: toOrderDto(order),
+        order: toPublicOrderDto(order),
         payment: {
           mock: false,
           authorizationUrl: init.authorizationUrl,
@@ -130,16 +135,33 @@ export class OrdersService {
       };
     }
 
+    const nodeEnv = process.env.NODE_ENV ?? 'development';
+    if (nodeEnv === 'production') {
+      throw new UnprocessableEntityException(
+        'Payment provider is not configured for this store.',
+      );
+    }
+
     await this.paymentsService.confirmPayment(gatewayReference);
     const paid = await this.prisma.order.findUnique({ where: { id: order.id } });
 
     return {
-      order: toOrderDto(paid!),
+      order: toPublicOrderDto(paid!),
       payment: { mock: true, authorizationUrl: null, reference: gatewayReference },
     };
   }
 
-  async reserve(dto: OrderCheckoutBaseDto): Promise<OrderDto> {
+  async reserve(dto: OrderCheckoutBaseDto): Promise<PublicOrderDto> {
+    const hasReserveFeature = await this.planEntitlementService.hasFeature(
+      dto.storeId,
+      'reserved-orders',
+    );
+    if (!hasReserveFeature) {
+      throw new UnprocessableEntityException(
+        'Reserved orders are not available for this store.',
+      );
+    }
+
     const pricing = await this.resolvePricing(dto);
     const reservedUntil = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
@@ -153,7 +175,11 @@ export class OrdersService {
           paymentRef: generatePaymentRef(),
           storeId: dto.storeId,
           productId: dto.productId,
-          productName: dto.productName,
+          productName: (
+            await tx.product.findFirst({
+              where: { id: dto.productId, storeId: dto.storeId },
+            })
+          )?.name ?? dto.productName,
           color: dto.color ?? null,
           size: dto.size ?? null,
           quantity: dto.quantity,
@@ -178,10 +204,10 @@ export class OrdersService {
       return created;
     });
 
-    return toOrderDto(order);
+    return toPublicOrderDto(order);
   }
 
-  async create(dto: CreateOrderDto): Promise<OrderDto> {
+  async create(dto: CreateOrderDto): Promise<PublicOrderDto> {
     const store = await this.prisma.store.findUnique({
       where: { vendorId: dto.storeId },
     });
@@ -189,13 +215,15 @@ export class OrdersService {
     return result.order;
   }
 
-  async verifyPayment(paymentRef: string): Promise<OrderDto> {
-    const order = await this.prisma.order.findFirst({
-      where: { paymentRef: { equals: paymentRef, mode: 'insensitive' } },
-    });
+  async verifyPayment(
+    paymentRef: string,
+    phoneLastFour: string,
+  ): Promise<PublicOrderDto> {
+    const order = await this.findOrderByPaymentRef(paymentRef);
+    verifyPhoneLastFour(order.customerPhone, phoneLastFour);
 
-    if (!order?.gatewayReference) {
-      throw new NotFoundException('Order not found.');
+    if (!order.gatewayReference) {
+      throw new NotFoundException('Order not found');
     }
 
     if (order.paymentStatus !== PaymentStatus.paid) {
@@ -207,14 +235,14 @@ export class OrdersService {
     });
 
     if (!updated) {
-      throw new NotFoundException('Order not found.');
+      throw new NotFoundException('Order not found');
     }
 
-    return toOrderDto(updated);
+    return toPublicOrderDto(updated);
   }
 
-  async getReceipt(paymentRef: string) {
-    const order = await this.getByPaymentRef(paymentRef);
+  async getReceipt(paymentRef: string, phoneLastFour: string) {
+    const order = await this.getByPaymentRef(paymentRef, phoneLastFour);
     return {
       valid: order.paymentStatus === 'paid' || order.status !== 'reserved',
       order,
@@ -242,18 +270,13 @@ export class OrdersService {
     return orders.map(toOrderDto);
   }
 
-  async getByPaymentRef(paymentRef: string): Promise<OrderDto> {
-    const order = await this.prisma.order.findFirst({
-      where: {
-        paymentRef: { equals: paymentRef, mode: 'insensitive' },
-      },
-    });
-
-    if (!order) {
-      throw new NotFoundException('Order not found.');
-    }
-
-    return toOrderDto(order);
+  async getByPaymentRef(
+    paymentRef: string,
+    phoneLastFour: string,
+  ): Promise<PublicOrderDto> {
+    const order = await this.findOrderByPaymentRef(paymentRef);
+    verifyPhoneLastFour(order.customerPhone, phoneLastFour);
+    return toPublicOrderDto(order);
   }
 
   async updateStatus(
@@ -339,13 +362,13 @@ export class OrdersService {
   async markTransferReference(
     paymentRef: string,
     transferReference: string,
-  ): Promise<OrderDto> {
-    const order = await this.prisma.order.findFirst({
-      where: { paymentRef: { equals: paymentRef, mode: 'insensitive' } },
-    });
+    phoneLastFour: string,
+  ): Promise<PublicOrderDto> {
+    const order = await this.findOrderByPaymentRef(paymentRef);
+    verifyPhoneLastFour(order.customerPhone, phoneLastFour);
 
-    if (!order) {
-      throw new NotFoundException('Order not found.');
+    if (order.transferReference) {
+      throw new ConflictException('Transfer reference already attached');
     }
 
     const updated = await this.prisma.order.update({
@@ -353,7 +376,19 @@ export class OrdersService {
       data: { transferReference: transferReference.trim() },
     });
 
-    return toOrderDto(updated);
+    return toPublicOrderDto(updated);
+  }
+
+  private async findOrderByPaymentRef(paymentRef: string) {
+    const order = await this.prisma.order.findFirst({
+      where: { paymentRef: { equals: paymentRef, mode: 'insensitive' } },
+    });
+
+    if (!order) {
+      throw new NotFoundException('Order not found');
+    }
+
+    return order;
   }
 
   async markAllSeen(storeId: string): Promise<void> {
@@ -396,6 +431,24 @@ export class OrdersService {
       throw new UnprocessableEntityException(
         'This store is not ready to accept payments. The vendor must link a settlement bank account first.',
       );
+    }
+
+    const storeAvailable =
+      await this.planEntitlementService.isStorePubliclyAvailable(store.vendorId);
+    if (!storeAvailable) {
+      throw new UnprocessableEntityException(
+        'This store is temporarily unavailable. The vendor must renew their subscription.',
+      );
+    }
+
+    if (dto.discountCode?.trim()) {
+      const hasDiscountFeature = await this.planEntitlementService.hasFeature(
+        store.vendorId,
+        'discount-codes',
+      );
+      if (!hasDiscountFeature) {
+        throw new BadRequestException('Discount codes are not available for this store.');
+      }
     }
 
     const product = await this.prisma.product.findFirst({
@@ -522,19 +575,25 @@ export class OrdersService {
     productId: string,
     quantity: number,
   ): Promise<void> {
-    const product = await tx.product.findFirst({
-      where: { id: productId, storeId },
+    const result = await tx.product.updateMany({
+      where: {
+        id: productId,
+        storeId,
+        stock: { gte: quantity },
+      },
+      data: {
+        stock: { decrement: quantity },
+      },
     });
-    if (!product) {
-      throw new NotFoundException('Product not found.');
+
+    if (result.count === 0) {
+      const product = await tx.product.findFirst({
+        where: { id: productId, storeId },
+      });
+      throw new ConflictException(
+        `"${product?.name ?? productId}" is out of stock or has insufficient quantity`,
+      );
     }
-    if (product.stock < quantity) {
-      throw new BadRequestException('Not enough stock for this order.');
-    }
-    await tx.product.update({
-      where: { id: productId },
-      data: { stock: product.stock - quantity },
-    });
   }
 
   private normalizeDeliveryOptions(value: Prisma.JsonValue): string[] {

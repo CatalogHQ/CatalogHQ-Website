@@ -15,9 +15,12 @@ import { PrismaService } from '../prisma/prisma.service';
 import { AuthResponse } from './auth.types';
 import { AuthService } from './auth.service';
 import { OtpRateLimitService } from './otp-rate-limit.service';
+import { OtpVerifyAttemptService } from './otp-verify-attempt.service';
 
 const OTP_TTL_MS = 10 * 60 * 1000;
 const SIGNUP_PENDING_TTL_MS = 30 * 60 * 1000;
+const GENERIC_OTP_ERROR = 'Invalid or expired verification code';
+const GENERIC_SIGNUP_ERROR = 'Unable to complete sign-up. Please try again.';
 
 @Injectable()
 export class OtpService {
@@ -26,6 +29,7 @@ export class OtpService {
     private readonly emailService: PingramEmailService,
     private readonly authService: AuthService,
     private readonly otpRateLimitService: OtpRateLimitService,
+    private readonly otpVerifyAttemptService: OtpVerifyAttemptService,
   ) {}
 
   private generateCode(): string {
@@ -94,6 +98,8 @@ export class OtpService {
     code: string,
     purpose: EmailOtpPurpose,
   ): Promise<void> {
+    await this.otpVerifyAttemptService.assertCanAttempt(email);
+
     const otp = await this.prisma.emailOtp.findFirst({
       where: {
         email,
@@ -105,13 +111,17 @@ export class OtpService {
     });
 
     if (!otp) {
-      throw new BadRequestException('Invalid or expired code.');
+      await this.otpVerifyAttemptService.recordFailedAttempt(email);
+      throw new UnauthorizedException(GENERIC_OTP_ERROR);
     }
 
     const valid = await bcrypt.compare(code, otp.codeHash);
     if (!valid) {
-      throw new BadRequestException('Invalid or expired code.');
+      await this.otpVerifyAttemptService.recordFailedAttempt(email);
+      throw new UnauthorizedException(GENERIC_OTP_ERROR);
     }
+
+    await this.otpVerifyAttemptService.resetAttempts(email);
 
     await this.prisma.emailOtp.update({
       where: { id: otp.id },
@@ -133,7 +143,7 @@ export class OtpService {
     });
 
     if (existing) {
-      throw new ConflictException('An account with this email already exists.');
+      throw new UnauthorizedException(GENERIC_SIGNUP_ERROR);
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
@@ -181,9 +191,7 @@ export class OtpService {
     });
 
     if (existing) {
-      throw new ConflictException(
-        'An account with this email already exists. Sign in instead.',
-      );
+      throw new UnauthorizedException(GENERIC_SIGNUP_ERROR);
     }
 
     const pending = await this.prisma.signupPending.findUnique({
@@ -191,9 +199,7 @@ export class OtpService {
     });
 
     if (!pending) {
-      throw new NotFoundException(
-        'No pending sign-up found for this email. Create an account first.',
-      );
+      throw new UnauthorizedException(GENERIC_SIGNUP_ERROR);
     }
 
     const passwordMatches = await bcrypt.compare(
@@ -233,7 +239,10 @@ export class OtpService {
     }
   }
 
-  async verifySignUp(email: string, code: string): Promise<AuthResponse> {
+  async verifySignUp(
+    email: string,
+    code: string,
+  ): Promise<{ user: AuthResponse['user']; token: string }> {
     const normalized = normalizeEmail(email);
 
     const pending = await this.prisma.signupPending.findUnique({
@@ -241,9 +250,7 @@ export class OtpService {
     });
 
     if (!pending || pending.expiresAt < new Date()) {
-      throw new BadRequestException(
-        'Sign-up session expired. Please start again.',
-      );
+      throw new UnauthorizedException(GENERIC_OTP_ERROR);
     }
 
     await this.validateEmailOtp(normalized, code, EmailOtpPurpose.signup);
@@ -254,6 +261,14 @@ export class OtpService {
           email: normalized,
           passwordHash: pending.passwordHash,
           emailVerifiedAt: new Date(),
+        },
+      });
+
+      await tx.vendorSubscription.create({
+        data: {
+          vendorId: created.id,
+          status: 'pending',
+          planTier: 'starter',
         },
       });
 
@@ -298,7 +313,7 @@ export class OtpService {
     });
 
     if (!user) {
-      throw new NotFoundException('No account found for this email.');
+      throw new UnauthorizedException(GENERIC_OTP_ERROR);
     }
 
     await this.validateEmailOtp(

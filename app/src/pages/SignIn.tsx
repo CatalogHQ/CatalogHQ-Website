@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/form";
 import AuthLayout from "@/components/auth/AuthLayout";
 import OtpCodeField from "@/components/auth/OtpCodeField";
+import { Input } from "@/components/ui/input";
 import {
   AuthMinimalInput,
   AuthMinimalPasswordInput,
@@ -51,6 +52,7 @@ export default function SignIn() {
     defaultValues: {
       email: "",
       password: "",
+      totpCode: "",
     },
   });
 
@@ -80,7 +82,11 @@ export default function SignIn() {
     setLoading(true);
     try {
       const email = data.email.trim().toLowerCase();
-      const user = await signIn(email, data.password);
+      const user = await signIn(
+        email,
+        data.password,
+        data.totpCode?.trim() || undefined,
+      );
       await completeSignIn(user);
     } catch (error) {
       if (isSignupVerificationPending(error)) {
@@ -238,6 +244,29 @@ export default function SignIn() {
                     autoComplete="current-password"
                     placeholder="Password"
                     invalid={!!fieldState.error}
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage
+                  className={authMinimalMessageClass(!!fieldState.error)}
+                />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="totpCode"
+            render={({ field, fieldState }) => (
+              <FormItem>
+                <FormLabel className="text-sm text-gray-600">
+                  2FA code (admin accounts only)
+                </FormLabel>
+                <FormControl>
+                  <Input
+                    inputMode="numeric"
+                    maxLength={6}
+                    placeholder="6-digit code"
                     {...field}
                   />
                 </FormControl>

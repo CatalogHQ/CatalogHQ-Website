@@ -1,6 +1,7 @@
 import { ConfigService } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
 import { OrderCreatedEvent } from '../orders/events/order-created.event';
+import { PlanEntitlementService } from '../plans/plan-entitlement.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsListener } from './notifications.listener';
 import { PingramEmailService } from './pingram-email.service';
@@ -56,6 +57,10 @@ describe('NotificationsListener', () => {
         { provide: PingramEmailService, useValue: emailService },
         { provide: PrismaService, useValue: prisma },
         { provide: ConfigService, useValue: configService },
+        {
+          provide: PlanEntitlementService,
+          useValue: { hasFeature: jest.fn().mockResolvedValue(true) },
+        },
       ],
     }).compile();
 

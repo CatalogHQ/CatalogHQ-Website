@@ -16,7 +16,9 @@ import { VendorVerificationDecidedEvent } from '../admin/events/vendor-verificat
 import { normalizePhone } from '../common/phone.util';
 import { normalizeSocialHandle } from '../common/social-handle.util';
 import { slugify } from '../common/slug.util';
+import { PlanEntitlementService } from '../plans/plan-entitlement.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { sanitizeUserHtml } from '../common/sanitize.util';
 import { AshlabNinVerificationService } from '../verification/ashlab-nin-verification.service';
 import {
   NIN_NAME_MISMATCH_MESSAGE,
@@ -27,6 +29,13 @@ import {
   isNinVerifyDebugEnabled,
   maskNin,
 } from '../verification/nin-verify-debug.util';
+import {
+  decryptNIN,
+  encryptNIN,
+  hashNIN,
+  isEncryptedNIN,
+  maskNIN,
+} from '../lib/encryption';
 import { StoreSetupDto } from './dto/store-setup.dto';
 import { PublicStoreDto, StoreDto, toPublicStoreDto, toStoreDto } from './stores.mapper';
 
@@ -39,7 +48,23 @@ export class StoresService {
     private readonly ninVerification: AshlabNinVerificationService,
     private readonly eventEmitter: EventEmitter2,
     private readonly configService: ConfigService,
+    private readonly planEntitlementService: PlanEntitlementService,
   ) {}
+
+  private getPlainNin(store: Store): string {
+    if (isEncryptedNIN(store.nin)) {
+      return decryptNIN(store.nin).replace(/\D/g, '');
+    }
+    return store.nin.replace(/\D/g, '');
+  }
+
+  private prepareNinFields(rawNin: string): { nin: string; ninHash: string } {
+    const digits = rawNin.replace(/\D/g, '');
+    return {
+      nin: encryptNIN(digits),
+      ninHash: hashNIN(digits),
+    };
+  }
 
   private hasIdentityChanged(
     existing: Store | null,
@@ -54,7 +79,7 @@ export class StoresService {
     }
 
     return (
-      existing.nin !== identity.nin ||
+      this.getPlainNin(existing) !== identity.nin ||
       (existing.legalFirstName ?? '') !== identity.legalFirstName ||
       (existing.legalLastName ?? '') !== identity.legalLastName
     );
@@ -101,7 +126,7 @@ export class StoresService {
     const nin = dto.nin.replace(/\D/g, '');
     if (
       existing?.verificationStatus === VendorVerificationStatus.verified &&
-      existing.nin !== nin
+      this.getPlainNin(existing) !== nin
     ) {
       throw new BadRequestException('NIN cannot be changed after verification.');
     }
@@ -113,6 +138,7 @@ export class StoresService {
       legalFirstName,
       legalLastName,
     });
+    const ninFields = this.prepareNinFields(nin);
 
     return {
       vendorId,
@@ -120,13 +146,14 @@ export class StoresService {
       businessName: dto.businessName.trim(),
       legalFirstName,
       legalLastName,
-      bio: dto.bio.trim(),
+      bio: sanitizeUserHtml(dto.bio.trim()),
       whatsapp: normalizePhone(dto.whatsapp),
       instagramHandle: normalizeSocialHandle(dto.instagramHandle),
       tiktokHandle: normalizeSocialHandle(dto.tiktokHandle),
       facebookHandle: normalizeSocialHandle(dto.facebookHandle),
       xHandle: normalizeSocialHandle(dto.xHandle),
-      nin,
+      nin: ninFields.nin,
+      ninHash: ninFields.ninHash,
       category: dto.category.trim(),
       address: dto.address.trim(),
       city: dto.city.trim(),
@@ -162,7 +189,12 @@ export class StoresService {
       return null;
     }
 
-    return toPublicStoreDto(store, store.vendor.planTier);
+    const storeAvailable =
+      await this.planEntitlementService.isStorePubliclyAvailable(store.vendorId);
+
+    return toPublicStoreDto(store, store.vendor.planTier, {
+      storeUnavailable: !storeAvailable,
+    });
   }
 
   async saveDraft(vendorId: string, dto: StoreSetupDto): Promise<StoreDto> {
@@ -186,9 +218,10 @@ export class StoresService {
     nin: string,
     vendorId: string,
   ): Promise<void> {
+    const ninHash = hashNIN(nin);
     const duplicate = await this.prisma.store.findFirst({
       where: {
-        nin,
+        ninHash,
         NOT: { vendorId },
       },
       select: { vendorId: true },

@@ -10,9 +10,11 @@ import {
   UseGuards,
   BadRequestException,
 } from '@nestjs/common';
-import { PlanTier } from '@prisma/client';
+import { PlanTier, User } from '@prisma/client';
 import { AdminGuard } from '../common/guards/admin.guard';
 import { PlanCatalogService } from '../plans/plan-catalog.service';
+import { CurrentUser } from '../common/decorators/current-user.decorator';
+import { AdminAuthService } from './admin-auth.service';
 import { AdminService } from './admin.service';
 import {
   RevenueAnalyticsQueryDto,
@@ -39,7 +41,22 @@ export class AdminController {
     private readonly adminService: AdminService,
     private readonly ticketsService: TicketsService,
     private readonly planCatalogService: PlanCatalogService,
+    private readonly adminAuthService: AdminAuthService,
   ) {}
+
+  @Post('totp/setup')
+  setupTotp(@CurrentUser() user: User) {
+    return this.adminAuthService.setupTotp(user.id);
+  }
+
+  @Post('totp/enable')
+  async enableTotp(
+    @CurrentUser() user: User,
+    @Body() body: { token: string },
+  ) {
+    await this.adminAuthService.enableTotp(user.id, body.token);
+    return { success: true };
+  }
 
   @Get('badges')
   getBadges() {

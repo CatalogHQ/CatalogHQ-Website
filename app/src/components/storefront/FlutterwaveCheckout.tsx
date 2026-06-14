@@ -39,6 +39,7 @@ import {
   USSD_BANK_OPTIONS,
   type FlutterwavePaymentMethodId,
 } from "@/lib/flutterwave-payment-methods";
+import { saveOrderPhoneLastFour } from "@/lib/order-phone-session";
 import { formatNaira } from "@/lib/format";
 import { computeCheckoutPricing } from "@/lib/flutterwave-fees";
 import CheckoutPricingSummary from "@/components/storefront/CheckoutPricingSummary";
@@ -215,6 +216,10 @@ export default function FlutterwaveCheckout({
           paymentInstruction: result.payment.paymentInstruction,
           virtualAccount: result.payment.virtualAccount,
         });
+        saveOrderPhoneLastFour(
+          result.order.paymentRef,
+          values.customerPhone.trim(),
+        );
         form.reset();
         onOpenChange(false);
         window.location.href = `/s/${storeSlug}/order/${result.order.paymentRef}`;
@@ -222,6 +227,10 @@ export default function FlutterwaveCheckout({
       }
 
       onSuccess(result.order);
+      saveOrderPhoneLastFour(
+        result.order.paymentRef,
+        values.customerPhone.trim(),
+      );
       form.reset();
       onOpenChange(false);
     } catch (error) {

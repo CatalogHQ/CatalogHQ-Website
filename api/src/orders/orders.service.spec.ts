@@ -1,4 +1,4 @@
-import { BadRequestException, UnprocessableEntityException } from '@nestjs/common';
+import { BadRequestException, NotFoundException, UnprocessableEntityException } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Test, TestingModule } from '@nestjs/testing';
 import {
@@ -9,6 +9,7 @@ import {
 } from '@prisma/client';
 import { FlutterwaveService } from '../payments/flutterwave.service';
 import { PaymentsService } from '../payments/payments.service';
+import { PlanEntitlementService } from '../plans/plan-entitlement.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { OrdersService } from './orders.service';
 
@@ -41,6 +42,11 @@ describe('OrdersService', () => {
 
   const paymentsService = {
     confirmPayment: jest.fn().mockResolvedValue(undefined),
+  };
+
+  const planEntitlementService = {
+    isStorePubliclyAvailable: jest.fn().mockResolvedValue(true),
+    hasFeature: jest.fn().mockResolvedValue(true),
   };
 
   let service: OrdersService;
@@ -94,6 +100,7 @@ describe('OrdersService', () => {
         { provide: EventEmitter2, useValue: eventEmitter },
         { provide: FlutterwaveService, useValue: flutterwave },
         { provide: PaymentsService, useValue: paymentsService },
+        { provide: PlanEntitlementService, useValue: planEntitlementService },
       ],
     }).compile();
 
@@ -200,6 +207,18 @@ describe('OrdersService', () => {
         paymentMethod: 'opay',
       }),
     ).rejects.toBeInstanceOf(UnprocessableEntityException);
+  });
+
+  it('rejects status update when order belongs to another store', async () => {
+    prisma.order.findFirst.mockResolvedValue(null);
+
+    await expect(
+      service.updateStatus(
+        'store-a',
+        'order-b',
+        OrderStatus.delivered,
+      ),
+    ).rejects.toBeInstanceOf(NotFoundException);
   });
 
   it('emits delivered event when status changes to delivered', async () => {

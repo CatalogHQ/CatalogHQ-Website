@@ -69,7 +69,12 @@ export class StoreStaffService {
       throw new NotFoundException('Team member not found.');
     }
 
-    await this.prisma.storeMember.delete({ where: { id: memberId } });
+    const deleted = await this.prisma.storeMember.deleteMany({
+      where: { id: memberId, storeId },
+    });
+    if (deleted.count === 0) {
+      throw new NotFoundException('Team member not found.');
+    }
   }
 
   async listActivity(storeId: string) {

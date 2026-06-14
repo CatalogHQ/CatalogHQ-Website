@@ -1,6 +1,7 @@
-import { Body, Controller, Get, Param, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
 import { Public } from '../common/decorators/public.decorator';
 import { PaymentRefPipe } from '../common/pipes/payment-ref.pipe';
+import { OrderRefQueryDto } from '../orders/dto/order-ref-query.dto';
 import { CreateReviewDto } from './dto/create-review.dto';
 import { ReviewsService } from './reviews.service';
 
@@ -26,8 +27,11 @@ export class OrderReviewsController {
   constructor(private readonly reviewsService: ReviewsService) {}
 
   @Get()
-  status(@Param('paymentRef', PaymentRefPipe) paymentRef: string) {
-    return this.reviewsService.getOrderReviewStatus(paymentRef);
+  status(
+    @Param('paymentRef', PaymentRefPipe) paymentRef: string,
+    @Query() query: OrderRefQueryDto,
+  ) {
+    return this.reviewsService.getOrderReviewStatus(paymentRef, query.phone);
   }
 
   @Post()

@@ -7,6 +7,8 @@ export type AdminVendor = {
   email: string;
   phone: string;
   planTier: PlanTier;
+  subscriptionStatus?: string;
+  subscriptionExempt?: boolean;
   createdAt: string;
   businessName: string;
   slug: string;

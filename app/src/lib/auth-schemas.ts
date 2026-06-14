@@ -57,6 +57,11 @@ export const verifySignUpSchema = verifySignUpCodeSchema.extend({
 export const signInSchema = z.object({
   email: emailSchema,
   password: z.string().min(1, "Password is required"),
+  totpCode: z
+    .string()
+    .regex(/^\d{6}$/, "Enter a 6-digit 2FA code")
+    .optional()
+    .or(z.literal("")),
 });
 
 export const forgotPasswordRequestSchema = z.object({

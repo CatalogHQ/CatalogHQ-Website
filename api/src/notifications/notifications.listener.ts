@@ -14,6 +14,7 @@ import { REVIEW_INVITE_EVENT } from '../orders/events/order.events';
 import { ReviewInviteEvent } from '../orders/events/review-invite.event';
 import { LOW_STOCK_EVENT } from '../orders/events/order.events';
 import { LowStockEvent } from '../orders/events/low-stock.event';
+import { PlanEntitlementService } from '../plans/plan-entitlement.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { TICKET_RESOLVED_EVENT } from '../tickets/events/ticket.events';
 import { TicketResolvedEvent } from '../tickets/events/ticket-resolved.event';
@@ -39,6 +40,7 @@ export class NotificationsListener {
     private readonly emailService: PingramEmailService,
     private readonly prisma: PrismaService,
     private readonly configService: ConfigService,
+    private readonly planEntitlementService: PlanEntitlementService,
   ) {}
 
   private get appOrigin(): string {
@@ -130,6 +132,14 @@ export class NotificationsListener {
 
   @OnEvent(ABANDONED_CART_EVENT)
   async handleAbandonedCart(event: AbandonedCartEvent): Promise<void> {
+    const hasFeature = await this.planEntitlementService.hasFeature(
+      event.storeId,
+      'abandoned-cart',
+    );
+    if (!hasFeature) {
+      return;
+    }
+
     const store = await this.prisma.store.findUnique({
       where: { vendorId: event.storeId },
     });

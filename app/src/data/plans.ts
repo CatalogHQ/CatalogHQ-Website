@@ -351,6 +351,8 @@ export function getFeatureById(id: string): Feature | undefined {
   return FEATURES.find((f) => f.id === id);
 }
 
+export const PLAN_FEATURE_IDS = FEATURES.map((feature) => feature.id);
+
 export function hasFeature(tier: PlanTier, featureId: string): boolean {
   const feature = getFeatureById(featureId);
   if (!feature) return false;

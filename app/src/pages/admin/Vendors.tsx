@@ -131,6 +131,7 @@ export default function AdminVendors() {
               <TableHead>Email</TableHead>
               <TableHead>WhatsApp</TableHead>
               <TableHead>Plan</TableHead>
+              <TableHead>Subscription</TableHead>
               <TableHead>Verification</TableHead>
               <TableHead>Orders</TableHead>
               <TableHead>Revenue</TableHead>
@@ -181,6 +182,17 @@ export default function AdminVendors() {
                       ))}
                     </SelectContent>
                   </Select>
+                </TableCell>
+                <TableCell>
+                  {vendor.subscriptionExempt ? (
+                    <Badge variant="outline">Comped</Badge>
+                  ) : vendor.subscriptionStatus ? (
+                    <Badge variant="secondary" className="capitalize">
+                      {vendor.subscriptionStatus.replace("_", " ")}
+                    </Badge>
+                  ) : (
+                    <span className="text-sm text-gray-400">—</span>
+                  )}
                 </TableCell>
                 <TableCell>
                   <VerificationStatusBadge status={vendor.verificationStatus} />

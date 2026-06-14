@@ -18,6 +18,7 @@ import Orders from './pages/dashboard/Orders'
 import Inventory from './pages/dashboard/Inventory'
 import Analytics from './pages/dashboard/Analytics'
 import Payouts from './pages/dashboard/Payouts'
+import Billing from './pages/dashboard/Billing'
 import AdminOverview from './pages/admin/Overview'
 import AdminVendors from './pages/admin/Vendors'
 import AdminCustomers from './pages/admin/Customers'
@@ -26,6 +27,7 @@ import AdminTickets from './pages/admin/Tickets'
 import AdminVerification from './pages/admin/Verification'
 import AdminAnalytics from './pages/admin/Analytics'
 import AdminPlans from './pages/admin/Plans'
+import AdminTotpSetup from './pages/admin/TotpSetup'
 import PublicStore from './pages/storefront/PublicStore'
 import PublicProduct from './pages/storefront/PublicProduct'
 import PublicStoreReviews from './pages/storefront/PublicStoreReviews'
@@ -114,6 +116,7 @@ export default function App() {
             </SetupRequired>
           }
         />
+        <Route path="billing" element={<Billing />} />
       </Route>
 
       <Route
@@ -132,6 +135,7 @@ export default function App() {
         <Route path="verification" element={<AdminVerification />} />
         <Route path="analytics" element={<AdminAnalytics />} />
         <Route path="plans" element={<AdminPlans />} />
+        <Route path="totp-setup" element={<AdminTotpSetup />} />
       </Route>
 
       <Route path="*" element={<NotFound />} />

@@ -16,14 +16,18 @@ export interface OrderRepository {
       discountCode?: string;
     },
   ): Promise<CustomerOrder>;
-  verifyPayment(paymentRef: string): Promise<CustomerOrder>;
-  getReceipt(paymentRef: string): Promise<OrderReceipt>;
+  verifyPayment(paymentRef: string, phoneLastFour: string): Promise<CustomerOrder>;
+  getReceipt(paymentRef: string, phoneLastFour: string): Promise<OrderReceipt>;
   markTransferReference(
     paymentRef: string,
     transferReference: string,
+    phoneLastFour: string,
   ): Promise<CustomerOrder>;
   listByStoreId(storeId: string, query?: string): Promise<CustomerOrder[]>;
-  getByPaymentRef(paymentRef: string): Promise<CustomerOrder | null>;
+  getByPaymentRef(
+    paymentRef: string,
+    phoneLastFour: string,
+  ): Promise<CustomerOrder | null>;
   updateStatus(orderId: string, status: OrderStatus): Promise<CustomerOrder>;
   bulkUpdateStatus(
     orderIds: string[],

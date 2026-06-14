@@ -12,6 +12,7 @@ import { Throttle } from '@nestjs/throttler';
 import { User } from '@prisma/client';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { Public } from '../common/decorators/public.decorator';
+import { RequireFeature } from '../common/decorators/plan-access.decorator';
 import { CustomerPhoneParamPipe } from '../common/pipes/customer-phone.param.pipe';
 import { PaymentRefPipe } from '../common/pipes/payment-ref.pipe';
 import { AbandonedCartService } from './abandoned-cart.service';
@@ -20,6 +21,7 @@ import { BulkUpdateOrdersDto } from './dto/bulk-update-orders.dto';
 import { CheckoutOrderDto } from './dto/checkout-order.dto';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { MarkTransferReferenceDto } from './dto/mark-transfer-reference.dto';
+import { OrderRefQueryDto } from './dto/order-ref-query.dto';
 import { ReserveOrderDto } from './dto/reserve-order.dto';
 import { SearchOrdersQueryDto } from './dto/search-orders-query.dto';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
@@ -62,28 +64,45 @@ export class OrdersController {
   }
 
   @Public()
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
   @Get('orders/ref/:paymentRef')
-  async getByPaymentRef(@Param('paymentRef', PaymentRefPipe) paymentRef: string) {
-    const order = await this.ordersService.getByPaymentRef(paymentRef);
+  async getByPaymentRef(
+    @Param('paymentRef', PaymentRefPipe) paymentRef: string,
+    @Query() query: OrderRefQueryDto,
+  ) {
+    const order = await this.ordersService.getByPaymentRef(
+      paymentRef,
+      query.phone,
+    );
     return { order };
   }
 
   @Public()
-  @Throttle({ checkout: { limit: 10, ttl: 60_000 } })
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
   @Post('orders/ref/:paymentRef/verify')
-  async verifyPayment(@Param('paymentRef', PaymentRefPipe) paymentRef: string) {
-    const order = await this.ordersService.verifyPayment(paymentRef);
+  async verifyPayment(
+    @Param('paymentRef', PaymentRefPipe) paymentRef: string,
+    @Query() query: OrderRefQueryDto,
+  ) {
+    const order = await this.ordersService.verifyPayment(
+      paymentRef,
+      query.phone,
+    );
     return { order };
   }
 
   @Public()
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
   @Get('orders/ref/:paymentRef/receipt')
-  getReceipt(@Param('paymentRef', PaymentRefPipe) paymentRef: string) {
-    return this.ordersService.getReceipt(paymentRef);
+  getReceipt(
+    @Param('paymentRef', PaymentRefPipe) paymentRef: string,
+    @Query() query: OrderRefQueryDto,
+  ) {
+    return this.ordersService.getReceipt(paymentRef, query.phone);
   }
 
   @Public()
-  @Throttle({ checkout: { limit: 10, ttl: 60_000 } })
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
   @Patch('orders/ref/:paymentRef/transfer')
   markTransfer(
     @Param('paymentRef', PaymentRefPipe) paymentRef: string,
@@ -92,10 +111,12 @@ export class OrdersController {
     return this.ordersService.markTransferReference(
       paymentRef,
       dto.transferReference,
+      dto.phoneLastFour,
     );
   }
 
   @Get('stores/me/orders')
+  @RequireFeature('order-management')
   listMine(
     @CurrentUser() user: User,
     @Query() query: SearchOrdersQueryDto,
@@ -110,6 +131,7 @@ export class OrdersController {
   }
 
   @Patch('stores/me/orders/:orderId/status')
+  @RequireFeature('order-management')
   updateStatus(
     @CurrentUser() user: User,
     @Param('orderId', ParseUUIDPipe) orderId: string,
@@ -124,6 +146,7 @@ export class OrdersController {
   }
 
   @Post('stores/me/orders/bulk-status')
+  @RequireFeature('order-search')
   bulkUpdateStatus(
     @CurrentUser() user: User,
     @Body() dto: BulkUpdateOrdersDto,

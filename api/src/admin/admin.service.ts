@@ -72,23 +72,26 @@ export class AdminService {
   }
 
   private async computeSubscriptionMrr(): Promise<number> {
-    const [catalog, grouped] = await Promise.all([
-      this.planCatalogService.listAdminCatalog(),
-      this.prisma.user.groupBy({
-        by: ['planTier'],
-        where: { role: 'vendor' },
-        _count: { _all: true },
-      }),
-    ]);
+    const activeSubscriptions = await this.prisma.vendorSubscription.findMany({
+      where: {
+        status: { in: ['active', 'grace', 'past_due'] },
+      },
+      include: {
+        vendor: { select: { subscriptionExempt: true } },
+      },
+    });
 
+    const catalog = await this.planCatalogService.listAdminCatalog();
     const priceByTier = new Map(
       catalog.map((plan) => [plan.id, plan.monthlyPriceKobo]),
     );
 
     let mrrKobo = 0;
-    for (const entry of grouped) {
-      const priceKobo = priceByTier.get(entry.planTier) ?? 0;
-      mrrKobo += priceKobo * entry._count._all;
+    for (const subscription of activeSubscriptions) {
+      if (subscription.vendor.subscriptionExempt) {
+        continue;
+      }
+      mrrKobo += priceByTier.get(subscription.planTier) ?? 0;
     }
 
     return Math.round(mrrKobo / 100);
@@ -145,7 +148,11 @@ export class AdminService {
   async listVendors(): Promise<AdminVendorDto[]> {
     const [stores, aggregates] = await Promise.all([
       this.prisma.store.findMany({
-        include: { vendor: true },
+        include: {
+          vendor: {
+            include: { subscription: true },
+          },
+        },
         orderBy: { vendor: { createdAt: 'desc' } },
       }),
       this.getOrderAggregatesByStore(),

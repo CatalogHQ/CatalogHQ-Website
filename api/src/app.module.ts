@@ -2,11 +2,14 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { EventEmitterModule } from '@nestjs/event-emitter';
+import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { AdminModule } from './admin/admin.module';
 import { AuthModule } from './auth/auth.module';
 import { JwtAuthGuard } from './auth/jwt-auth.guard';
 import { CommonModule } from './common/common.module';
+import { ActiveSubscriptionGuard } from './common/guards/active-subscription.guard';
+import { PlanFeatureGuard } from './common/guards/plan-feature.guard';
 import { validateEnv } from './config/env.validation';
 import { HealthModule } from './health/health.module';
 import { NotificationsModule } from './notifications/notifications.module';
@@ -17,6 +20,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { ProductsModule } from './products/products.module';
 import { ReviewsModule } from './reviews/reviews.module';
 import { StoresModule } from './stores/stores.module';
+import { SubscriptionsModule } from './subscriptions/subscriptions.module';
 import { TicketsModule } from './tickets/tickets.module';
 import { UploadsModule } from './uploads/uploads.module';
 @Module({
@@ -25,6 +29,7 @@ import { UploadsModule } from './uploads/uploads.module';
       isGlobal: true,
       validate: validateEnv,
     }),
+    ScheduleModule.forRoot(),
     EventEmitterModule.forRoot(),
     ThrottlerModule.forRoot([
       {
@@ -55,6 +60,7 @@ import { UploadsModule } from './uploads/uploads.module';
     UploadsModule,
     TicketsModule,
     PlansModule,
+    SubscriptionsModule,
     AdminModule,
     HealthModule,
   ],
@@ -66,6 +72,14 @@ import { UploadsModule } from './uploads/uploads.module';
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: ActiveSubscriptionGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: PlanFeatureGuard,
     },
   ],
 })

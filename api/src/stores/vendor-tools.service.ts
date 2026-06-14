@@ -67,7 +67,12 @@ export class VendorToolsService {
       where: { id: codeId, storeId: vendorId },
     });
     if (!code) throw new NotFoundException('Discount code not found.');
-    await this.prisma.discountCode.delete({ where: { id: codeId } });
+    const deleted = await this.prisma.discountCode.deleteMany({
+      where: { id: codeId, storeId: vendorId },
+    });
+    if (deleted.count === 0) {
+      throw new NotFoundException('Discount code not found.');
+    }
     return { success: true };
   }
 

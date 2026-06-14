@@ -1,4 +1,5 @@
 import type { PlanTier } from "@/data/plans";
+import type { VendorSubscription } from "@/types/subscription";
 import type { DeliveryZone } from "@/lib/delivery-zones";
 import type { DeliveryTypeId } from "@/lib/delivery-types";
 import type { ProductCategoryId } from "@/lib/product-categories";
@@ -23,6 +24,16 @@ export type StoredUser = {
   phone?: string;
   passwordHash: string;
   planTier: PlanTier;
+  subscriptionExempt?: boolean;
+  subscription?: Pick<
+    VendorSubscription,
+    | "status"
+    | "planTier"
+    | "currentPeriodEnd"
+    | "graceEndsAt"
+    | "isHardBlocked"
+    | "hasActiveAccess"
+  >;
   role?: UserRole;
   createdAt: string;
 };
@@ -60,6 +71,7 @@ export type PublicStoreView = Store & {
   planTier: PlanTier;
   deliveryZones?: DeliveryZone[];
   payoutSetupComplete: boolean;
+  storeUnavailable?: boolean;
 };
 
 export const DEFAULT_LOW_STOCK_THRESHOLD = 5;

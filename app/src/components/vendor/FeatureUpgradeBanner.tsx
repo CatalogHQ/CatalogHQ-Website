@@ -12,8 +12,8 @@ export default function FeatureUpgradeBanner({
   return (
     <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
       {featureName} is available on the {requiredTier} plan.{" "}
-      <Link to="/#pricing" className="font-semibold underline">
-        Upgrade your plan
+      <Link to="/dashboard/billing" className="font-semibold underline">
+        Upgrade in billing
       </Link>{" "}
       to unlock it.
     </div>

@@ -35,7 +35,7 @@ const faqs = [
   {
     question: "Can I start on a lower plan and upgrade later?",
     answer:
-      "Yes. Start on Starter at ₦3,000/month and upgrade to Pro or Growth from your dashboard whenever your catalog or sales volume needs more room.",
+      "Yes. Start on Starter at ₦3,000/month and upgrade to Pro or Growth from Billing in your dashboard whenever your catalog or sales volume needs more room.",
   },
   {
     question: "What is the difference between Starter, Pro, and Growth?",

@@ -12,6 +12,7 @@ import {
 import { User } from '@prisma/client';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { Public } from '../common/decorators/public.decorator';
+import { RequireFeature } from '../common/decorators/plan-access.decorator';
 import { ValidateBodyArrayPipe } from '../common/pipes/validate-body-array.pipe';
 import { PaymentsService } from '../payments/payments.service';
 import { AddTeamMemberDto } from './dto/add-team-member.dto';
@@ -75,6 +76,7 @@ export class StoresController {
   }
 
   @Put('me/quick-replies')
+  @RequireFeature('quick-reply-templates')
   saveQuickReplies(
     @CurrentUser() user: User,
     @Body(ValidateBodyArrayPipe(QuickReplyDto))
@@ -89,6 +91,7 @@ export class StoresController {
   }
 
   @Put('me/delivery-zones')
+  @RequireFeature('delivery-zones')
   saveDeliveryZones(
     @CurrentUser() user: User,
     @Body(ValidateBodyArrayPipe(DeliveryZoneDto))
@@ -98,11 +101,13 @@ export class StoresController {
   }
 
   @Get('me/discount-codes')
+  @RequireFeature('discount-codes')
   listDiscountCodes(@CurrentUser() user: User) {
     return this.vendorToolsService.listDiscountCodes(user.id);
   }
 
   @Post('me/discount-codes')
+  @RequireFeature('discount-codes')
   createDiscountCode(
     @CurrentUser() user: User,
     @Body() dto: CreateDiscountCodeDto,
@@ -111,6 +116,7 @@ export class StoresController {
   }
 
   @Delete('me/discount-codes/:id')
+  @RequireFeature('discount-codes')
   deleteDiscountCode(
     @CurrentUser() user: User,
     @Param('id', ParseUUIDPipe) id: string,
@@ -119,16 +125,19 @@ export class StoresController {
   }
 
   @Get('me/analytics/advanced')
+  @RequireFeature('advanced-analytics')
   advancedAnalytics(@CurrentUser() user: User) {
     return this.vendorToolsService.getAnalytics(user.id);
   }
 
   @Get('me/team')
+  @RequireFeature('staff-roles')
   listTeam(@CurrentUser() user: User) {
     return this.storeStaffService.listMembers(user.id);
   }
 
   @Post('me/team')
+  @RequireFeature('staff-roles')
   addTeamMember(
     @CurrentUser() user: User,
     @Body() dto: AddTeamMemberDto,
@@ -137,6 +146,7 @@ export class StoresController {
   }
 
   @Delete('me/team/:memberId')
+  @RequireFeature('staff-roles')
   removeTeamMember(
     @CurrentUser() user: User,
     @Param('memberId', ParseUUIDPipe) memberId: string,
@@ -145,6 +155,7 @@ export class StoresController {
   }
 
   @Get('me/activity')
+  @RequireFeature('staff-roles')
   listActivity(@CurrentUser() user: User) {
     return this.storeStaffService.listActivity(user.id);
   }
@@ -173,6 +184,7 @@ export class StoresController {
   }
 
   @Post('me/orders/:orderId/payment-link')
+  @RequireFeature('payment-links')
   getPaymentLink(
     @CurrentUser() user: User,
     @Param('orderId', ParseUUIDPipe) orderId: string,
@@ -181,6 +193,7 @@ export class StoresController {
   }
 
   @Get('me/products/:productId/stock-locations')
+  @RequireFeature('multi-location-stock')
   listStockLocations(
     @CurrentUser() user: User,
     @Param('productId', ParseUUIDPipe) productId: string,
@@ -189,6 +202,7 @@ export class StoresController {
   }
 
   @Put('me/products/:productId/stock-locations')
+  @RequireFeature('multi-location-stock')
   upsertStockLocation(
     @CurrentUser() user: User,
     @Param('productId', ParseUUIDPipe) productId: string,

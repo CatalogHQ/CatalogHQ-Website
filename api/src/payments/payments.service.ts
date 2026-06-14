@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { OrderStatus, PaymentStatus, PayoutStatus } from '@prisma/client';
@@ -18,6 +18,25 @@ export class PaymentsService {
     private readonly eventEmitter: EventEmitter2,
     private readonly configService: ConfigService,
   ) {}
+
+  async markWebhookProcessed(txRef: string): Promise<boolean> {
+    try {
+      await this.prisma.processedWebhook.create({
+        data: { txRef },
+      });
+      return false;
+    } catch (error) {
+      if (
+        typeof error === 'object' &&
+        error !== null &&
+        'code' in error &&
+        error.code === 'P2002'
+      ) {
+        return true;
+      }
+      throw error;
+    }
+  }
 
   async confirmPayment(
     gatewayReference: string,
@@ -87,25 +106,39 @@ export class PaymentsService {
     productId: string,
     quantity: number,
   ): Promise<void> {
+    const result = await tx.product.updateMany({
+      where: {
+        id: productId,
+        storeId,
+        stock: { gte: quantity },
+      },
+      data: {
+        stock: { decrement: quantity },
+      },
+    });
+
+    if (result.count === 0) {
+      const product = await tx.product.findFirst({
+        where: { id: productId, storeId },
+      });
+      throw new ConflictException(
+        `"${product?.name ?? productId}" is out of stock or has insufficient quantity`,
+      );
+    }
+
     const product = await tx.product.findFirst({
       where: { id: productId, storeId },
     });
     if (!product) return;
 
-    const newStock = Math.max(0, product.stock - quantity);
-    await tx.product.update({
-      where: { id: productId },
-      data: { stock: newStock },
-    });
-
-    if (newStock <= product.lowStockThreshold) {
+    if (product.stock <= product.lowStockThreshold) {
       const store = await tx.store.findUnique({
         where: { vendorId: storeId },
       });
       if (store?.whatsapp) {
         this.eventEmitter.emit(
           LOW_STOCK_EVENT,
-          new LowStockEvent(store.whatsapp, product.name, newStock),
+          new LowStockEvent(store.whatsapp, product.name, product.stock),
         );
       }
     }

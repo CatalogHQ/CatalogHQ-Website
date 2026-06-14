@@ -1,7 +1,8 @@
-import { Body, Controller, Get, Post, Req } from '@nestjs/common';
+import { Body, Controller, Get, Post, Req, Res } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Throttle } from '@nestjs/throttler';
 import { User } from '@prisma/client';
-import type { Request } from 'express';
+import type { Request, Response } from 'express';
 import { getClientIp } from '../common/client-ip.util';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { Public } from '../common/decorators/public.decorator';
@@ -12,12 +13,14 @@ import { SignInDto } from './dto/sign-in.dto';
 import { SignUpDto } from './dto/sign-up.dto';
 import { VerifySignUpDto } from './dto/verify-sign-up.dto';
 import { OtpService } from './otp.service';
+import { clearSessionCookie, setSessionCookie } from './session-cookie.util';
 
 @Controller('auth')
 export class AuthController {
   constructor(
     private readonly authService: AuthService,
     private readonly otpService: OtpService,
+    private readonly configService: ConfigService,
   ) {}
 
   @Public()
@@ -33,10 +36,15 @@ export class AuthController {
   }
 
   @Public()
-  @Throttle({ auth: { limit: 5, ttl: 60_000 } })
+  @Throttle({ auth: { limit: 5, ttl: 300_000 } })
   @Post('signup/verify')
-  verifySignUp(@Body() dto: VerifySignUpDto) {
-    return this.otpService.verifySignUp(dto.email, dto.code);
+  async verifySignUp(
+    @Body() dto: VerifySignUpDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const result = await this.otpService.verifySignUp(dto.email, dto.code);
+    setSessionCookie(res, result.token, this.configService);
+    return { user: result.user };
   }
 
   @Public()
@@ -54,8 +62,13 @@ export class AuthController {
   @Public()
   @Throttle({ auth: { limit: 5, ttl: 60_000 } })
   @Post('signin')
-  signIn(@Body() dto: SignInDto) {
-    return this.authService.signIn(dto);
+  async signIn(
+    @Body() dto: SignInDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const result = await this.authService.signIn(dto);
+    setSessionCookie(res, result.token, this.configService);
+    return { user: result.user };
   }
 
   @Public()
@@ -67,7 +80,7 @@ export class AuthController {
   }
 
   @Public()
-  @Throttle({ auth: { limit: 5, ttl: 60_000 } })
+  @Throttle({ auth: { limit: 5, ttl: 300_000 } })
   @Post('reset-password')
   async resetPassword(@Body() dto: ResetPasswordDto) {
     await this.otpService.resetPassword(
@@ -79,12 +92,13 @@ export class AuthController {
   }
 
   @Get('me')
-  me(@CurrentUser() user: User) {
-    return { user: this.authService.toSafeUser(user) };
+  async me(@CurrentUser() user: User) {
+    return { user: await this.authService.toSafeUser(user) };
   }
 
   @Post('signout')
-  signOut() {
+  signOut(@Res({ passthrough: true }) res: Response) {
+    clearSessionCookie(res, this.configService);
     return { success: true };
   }
 }

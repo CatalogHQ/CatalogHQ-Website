@@ -1,4 +1,9 @@
 import { Store, VendorVerificationStatus } from '@prisma/client';
+import {
+  decryptNIN,
+  isEncryptedNIN,
+  maskNIN,
+} from '../lib/encryption';
 
 export type StoreDto = {
   vendorId: string;
@@ -35,6 +40,7 @@ export type PublicStoreDto = Omit<
 > & {
   planTier: 'starter' | 'pro' | 'growth' | 'business';
   deliveryZones: unknown;
+  storeUnavailable?: boolean;
 };
 
 export function toStoreDto(store: Store): StoreDto {
@@ -50,7 +56,7 @@ export function toStoreDto(store: Store): StoreDto {
     tiktokHandle: store.tiktokHandle ?? undefined,
     facebookHandle: store.facebookHandle ?? undefined,
     xHandle: store.xHandle ?? undefined,
-    nin: store.nin,
+    nin: formatNinForVendor(store),
     category: store.category ?? undefined,
     address: store.address ?? undefined,
     city: store.city ?? undefined,
@@ -70,6 +76,17 @@ export function toStoreDto(store: Store): StoreDto {
   };
 }
 
+function formatNinForVendor(store: Store): string {
+  try {
+    const plain = isEncryptedNIN(store.nin)
+      ? decryptNIN(store.nin)
+      : store.nin;
+    return maskNIN(plain);
+  } catch {
+    return '****';
+  }
+}
+
 function maskAccountNumber(accountNumber: string): string {
   if (accountNumber.length <= 4) {
     return accountNumber;
@@ -80,6 +97,7 @@ function maskAccountNumber(accountNumber: string): string {
 export function toPublicStoreDto(
   store: Store,
   planTier: 'starter' | 'pro' | 'growth' | 'business',
+  options?: { storeUnavailable?: boolean },
 ): PublicStoreDto {
   const dto = toStoreDto(store);
   const {
@@ -93,5 +111,6 @@ export function toPublicStoreDto(
     planTier,
     deliveryZones: store.deliveryZones,
     payoutSetupComplete: store.payoutSetupComplete,
+    storeUnavailable: options?.storeUnavailable,
   };
 }

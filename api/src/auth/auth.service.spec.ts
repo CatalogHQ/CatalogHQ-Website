@@ -3,7 +3,9 @@ import { JwtService } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
+import { VendorSubscriptionService } from '../subscriptions/vendor-subscription.service';
 import { AuthService } from './auth.service';
+import { AdminAuthService } from '../admin/admin-auth.service';
 
 jest.mock('bcrypt');
 
@@ -21,6 +23,22 @@ describe('AuthService', () => {
     sign: jest.fn().mockReturnValue('token-123'),
   };
 
+  const vendorSubscriptionService = {
+    getSubscription: jest.fn().mockResolvedValue({
+      status: 'active',
+      planTier: 'starter',
+      subscriptionExempt: false,
+      hasActiveAccess: true,
+      isHardBlocked: false,
+      cancelAtPeriodEnd: false,
+    }),
+  };
+
+  const adminAuthService = {
+    requiresTotp: jest.fn().mockReturnValue(false),
+    verifyTotp: jest.fn().mockResolvedValue(true),
+  };
+
   let service: AuthService;
 
   beforeEach(async () => {
@@ -31,6 +49,11 @@ describe('AuthService', () => {
         AuthService,
         { provide: PrismaService, useValue: prisma },
         { provide: JwtService, useValue: jwtService },
+        {
+          provide: VendorSubscriptionService,
+          useValue: vendorSubscriptionService,
+        },
+        { provide: AdminAuthService, useValue: adminAuthService },
       ],
     }).compile();
 
@@ -44,7 +67,9 @@ describe('AuthService', () => {
       phone: null,
       passwordHash: 'hashed',
       planTier: 'starter',
+      subscriptionExempt: false,
       role: 'vendor',
+      totpEnabled: false,
       createdAt: new Date('2026-06-08T10:00:00.000Z'),
     });
     (bcrypt.compare as jest.Mock).mockResolvedValue(true);
@@ -54,26 +79,16 @@ describe('AuthService', () => {
       password: 'password123',
     });
 
-    expect(result.session.token).toBe('token-123');
+    expect(result.token).toBe('token-123');
     expect(result.user.email).toBe('vendor@example.com');
   });
 
-  it('prompts pending sign-ups to verify email instead of signing in', async () => {
+  it('rejects unknown credentials', async () => {
     prisma.user.findUnique.mockResolvedValue(null);
-    prisma.signupPending.findUnique.mockResolvedValue({
-      email: 'vendor@example.com',
-      passwordHash: 'hashed',
-      expiresAt: new Date(Date.now() + 60_000),
-    });
-    (bcrypt.compare as jest.Mock).mockResolvedValue(true);
 
     await expect(
       service.signIn({ email: 'vendor@example.com', password: 'password123' }),
-    ).rejects.toMatchObject({
-      response: {
-        code: 'SIGNUP_VERIFICATION_PENDING',
-      },
-    });
+    ).rejects.toBeInstanceOf(UnauthorizedException);
   });
 
   it('rejects invalid credentials on signin', async () => {
@@ -83,6 +98,7 @@ describe('AuthService', () => {
       passwordHash: 'hashed',
       planTier: 'starter',
       role: 'vendor',
+      totpEnabled: false,
     });
     (bcrypt.compare as jest.Mock).mockResolvedValue(false);
 

@@ -6,7 +6,9 @@ import {
 import { PlanTier } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { PlanCatalogService } from '../plans/plan-catalog.service';
+import { PlanEntitlementService } from '../plans/plan-entitlement.service';
 import { StoresService } from '../stores/stores.service';
+import { sanitizeUserHtml, sanitizeUserText } from '../common/sanitize.util';
 import { ProductInputDto } from './dto/product-input.dto';
 import { ProductDto, toProductDto } from './products.mapper';
 
@@ -23,13 +25,14 @@ export class ProductsService {
     private readonly prisma: PrismaService,
     private readonly storesService: StoresService,
     private readonly planCatalogService: PlanCatalogService,
+    private readonly planEntitlementService: PlanEntitlementService,
   ) {}
 
   private normalizeInput(input: ProductInputDto) {
     const images = input.images ?? [];
     return {
-      name: input.name.trim(),
-      description: (input.description ?? '').trim(),
+      name: sanitizeUserText(input.name.trim()),
+      description: sanitizeUserHtml((input.description ?? '').trim()),
       price: input.price,
       images,
       imageUrl: images[0] ?? null,
@@ -82,7 +85,16 @@ export class ProductsService {
     }
 
     const products = await this.listPublishedByStoreId(store.vendorId);
-    return { products };
+    const hideSoldOut = await this.planEntitlementService.hasFeature(
+      store.vendorId,
+      'advanced-inventory-tracking',
+    );
+
+    const filtered = hideSoldOut
+      ? products.filter((product) => product.stock > 0)
+      : products;
+
+    return { products: filtered };
   }
 
   async getPublicBySlugAndId(
@@ -120,12 +132,13 @@ export class ProductsService {
     return toProductDto(product);
   }
 
-  async create(
-    storeId: string,
-    planTier: PlanTier,
-    input: ProductInputDto,
-  ): Promise<ProductDto> {
-    await this.assertProductLimit(storeId, planTier);
+  async create(storeId: string, input: ProductInputDto): Promise<ProductDto> {
+    await this.planEntitlementService.assertActiveSubscription(storeId);
+    const effectiveTier = await this.planEntitlementService.getEffectiveTier(storeId);
+    if (!effectiveTier) {
+      throw new ForbiddenException('Subscribe to a plan to add products.');
+    }
+    await this.assertProductLimit(storeId, effectiveTier);
     const product = await this.prisma.product.create({
       data: {
         storeId,
@@ -142,7 +155,7 @@ export class ProductsService {
   ): Promise<ProductDto> {
     await this.getById(storeId, productId);
     const product = await this.prisma.product.update({
-      where: { id: productId },
+      where: { id: productId, storeId },
       data: this.normalizeInput(input),
     });
     return toProductDto(product);
@@ -150,7 +163,7 @@ export class ProductsService {
 
   async remove(storeId: string, productId: string): Promise<void> {
     await this.getById(storeId, productId);
-    await this.prisma.product.delete({ where: { id: productId } });
+    await this.prisma.product.delete({ where: { id: productId, storeId } });
   }
 
   countByStoreId(storeId: string): Promise<number> {

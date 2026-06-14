@@ -108,8 +108,11 @@ export class LocalReviewRepository {
     };
   }
 
-  async getOrderReviewStatus(paymentRef: string): Promise<OrderReviewStatus> {
-    const order = await orderRepository.getByPaymentRef(paymentRef);
+  async getOrderReviewStatus(
+    paymentRef: string,
+    phoneLastFour: string,
+  ): Promise<OrderReviewStatus> {
+    const order = await orderRepository.getByPaymentRef(paymentRef, phoneLastFour);
     if (!order) {
       throw new Error("Order not found.");
     }
@@ -136,7 +139,10 @@ export class LocalReviewRepository {
     paymentRef: string,
     input: CreateReviewInput,
   ): Promise<StoreReview> {
-    const order = await orderRepository.getByPaymentRef(paymentRef);
+    const order = await orderRepository.getByPaymentRef(
+      paymentRef,
+      input.customerPhone.replace(/\D/g, "").slice(-4),
+    );
     if (!order) {
       throw new Error("Order not found.");
     }

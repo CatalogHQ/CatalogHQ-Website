@@ -8,13 +8,24 @@ import {
   User,
   VendorVerificationStatus,
 } from '@prisma/client';
-import { maskNin } from '../common/mask.util';
+import { decryptNIN, isEncryptedNIN, maskNIN } from '../lib/encryption';
+
+function maskStoredNin(nin: string): string {
+  try {
+    const plain = isEncryptedNIN(nin) ? decryptNIN(nin) : nin;
+    return maskNIN(plain);
+  } catch {
+    return '****';
+  }
+}
 
 export type AdminVendorDto = {
   id: string;
   email: string;
   phone: string;
   planTier: PlanTier;
+  subscriptionStatus?: string;
+  subscriptionExempt: boolean;
   createdAt: string;
   businessName: string;
   slug: string;
@@ -116,7 +127,9 @@ export type AdminBadgesDto = {
   openTickets: number;
 };
 
-type StoreWithVendor = Store & { vendor: User };
+type StoreWithVendor = Store & {
+  vendor: User & { subscription?: { status: string } | null };
+};
 
 export function toAdminVendorDto(
   store: StoreWithVendor,
@@ -128,6 +141,8 @@ export function toAdminVendorDto(
     email: store.vendor.email,
     phone: store.whatsapp,
     planTier: store.vendor.planTier,
+    subscriptionStatus: store.vendor.subscription?.status,
+    subscriptionExempt: store.vendor.subscriptionExempt,
     createdAt: store.vendor.createdAt.toISOString(),
     businessName: store.businessName,
     slug: store.slug,
@@ -192,7 +207,7 @@ export function toAdminVerificationDto(store: Store): AdminVerificationRequestDt
     vendorId: store.vendorId,
     businessName: store.businessName,
     slug: store.slug,
-    ninMasked: maskNin(store.nin),
+    ninMasked: maskStoredNin(store.nin),
     legalFirstName: store.legalFirstName ?? undefined,
     legalLastName: store.legalLastName ?? undefined,
     submittedAt: store.verificationSubmittedAt?.toISOString() ?? new Date().toISOString(),

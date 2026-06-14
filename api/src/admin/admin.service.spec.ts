@@ -29,6 +29,9 @@ describe('AdminService', () => {
       count: jest.fn(),
       groupBy: jest.fn(),
     },
+    vendorSubscription: {
+      findMany: jest.fn(),
+    },
   };
 
   const eventEmitter = { emit: jest.fn() };
@@ -73,9 +76,10 @@ describe('AdminService', () => {
       { id: 'starter', monthlyPriceKobo: 300_000 },
       { id: 'pro', monthlyPriceKobo: 500_000 },
     ]);
-    prisma.user.groupBy.mockResolvedValue([
-      { planTier: 'starter', _count: { _all: 2 } },
-      { planTier: 'pro', _count: { _all: 1 } },
+    prisma.vendorSubscription.findMany.mockResolvedValue([
+      { planTier: 'starter', vendor: { subscriptionExempt: false } },
+      { planTier: 'starter', vendor: { subscriptionExempt: false } },
+      { planTier: 'pro', vendor: { subscriptionExempt: false } },
     ]);
 
     const stats = await service.getStats();

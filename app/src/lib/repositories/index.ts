@@ -8,7 +8,9 @@ import { apiProductRepository } from "@/lib/repositories/api-product-repository"
 import { apiReviewRepository } from "@/lib/repositories/api-review-repository";
 import { apiStoreRepository } from "@/lib/repositories/api-store-repository";
 import { apiPayoutRepository } from "@/lib/repositories/api-payout-repository";
+import { apiSubscriptionRepository } from "@/lib/repositories/api-subscription-repository";
 import { localPayoutRepository } from "@/lib/repositories/local-payout-repository";
+import { localSubscriptionRepository } from "@/lib/repositories/local-subscription-repository";
 import { localAdminRepository } from "@/lib/repositories/local-admin-repository";
 import { authRepository as localAuthRepository } from "@/lib/repositories/local-auth-repository";
 import { orderRepository as localOrderRepository } from "@/lib/repositories/local-order-repository";
@@ -36,3 +38,6 @@ export const ticketRepository = useApi
 export const payoutRepository = useApi
   ? apiPayoutRepository
   : localPayoutRepository;
+export const subscriptionRepository = useApi
+  ? apiSubscriptionRepository
+  : localSubscriptionRepository;
