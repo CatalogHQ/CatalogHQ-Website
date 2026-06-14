@@ -19,7 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import OrderStatusBadge from "@/components/vendor/OrderStatusBadge";
-import FlutterwaveFeeBreakdown from "@/components/vendor/FlutterwaveFeeBreakdown";
+import { OrderFeeBreakdown } from "@/components/vendor/FlutterwaveFeeBreakdown";
 import { useAuth } from "@/contexts/AuthContext";
 import { hasFeature } from "@/data/plans";
 import { getDeliveryLabel } from "@/lib/delivery-types";
@@ -207,7 +207,7 @@ export default function OrderDetailSheet({
               </div>
             )}
             <div>
-              <p className="text-gray-500">Total paid</p>
+              <p className="text-gray-500">Customer paid</p>
               <p className="font-semibold text-gray-900">
                 {formatNaira(order.totalPaid)}
               </p>
@@ -215,7 +215,7 @@ export default function OrderDetailSheet({
           </div>
 
           {order.paymentStatus === "paid" && (
-            <FlutterwaveFeeBreakdown amountNgn={order.totalPaid} />
+            <OrderFeeBreakdown order={order} />
           )}
 
           <div className="space-y-3 rounded-lg border p-4 text-sm">

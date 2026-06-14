@@ -58,7 +58,7 @@ describe('OrdersService', () => {
     deliveryFee: 0,
     discountAmount: 0,
     discountCode: null,
-    totalPaid: 5000,
+    totalPaid: 5102,
     customerName: 'Ada',
     customerPhone: '08012345678',
     deliveryAddress: null,
@@ -130,7 +130,7 @@ describe('OrdersService', () => {
       paymentMethod: 'opay',
     });
 
-    expect(result.totalPaid).toBe(5000);
+    expect(result.totalPaid).toBe(5102);
     expect(result.unitPrice).toBe(2500);
     expect(paymentsService.confirmPayment).toHaveBeenCalled();
   });

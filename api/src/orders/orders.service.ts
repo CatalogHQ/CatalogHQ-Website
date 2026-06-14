@@ -14,6 +14,7 @@ import { DELIVERY_TYPE_IDS } from '../common/constants/delivery-types';
 import { deliveryRequiresAddress } from '../common/delivery.util';
 import { normalizePhone } from '../common/phone.util';
 import { FlutterwaveService } from '../payments/flutterwave.service';
+import { computeCheckoutPricing } from '../payments/flutterwave-fees.util';
 import { buildFlutterwaveReference } from '../payments/flutterwave-reference.util';
 import { PaymentsService } from '../payments/payments.service';
 import { PrismaService } from '../prisma/prisma.service';
@@ -400,9 +401,10 @@ export class OrdersService {
 
     const deliveryFee = this.resolveDeliveryFee(store.deliveryZones, dto.deliveryZoneId);
     const unitPrice = product.price;
-    let subtotal = unitPrice * dto.quantity + deliveryFee;
+    let vendorSubtotal = unitPrice * dto.quantity + deliveryFee;
     let discountAmount = 0;
     let discountCode: string | null = null;
+    let discountRecordId: string | undefined;
 
     if (dto.discountCode?.trim()) {
       const discount = await this.prisma.discountCode.findFirst({
@@ -431,28 +433,22 @@ export class OrdersService {
 
       discountAmount =
         discount.type === 'percent'
-          ? Math.floor((subtotal * discount.value) / 100)
+          ? Math.floor((vendorSubtotal * discount.value) / 100)
           : discount.value;
-      subtotal = Math.max(0, subtotal - discountAmount);
       discountCode = discount.code;
-
-      return {
-        unitPrice,
-        deliveryFee,
-        discountAmount,
-        discountCode,
-        totalPaid: subtotal,
-        discountRecordId: discount.id,
-      };
+      discountRecordId = discount.id;
     }
+
+    vendorSubtotal = Math.max(0, vendorSubtotal - discountAmount);
+    const { customerTotal } = computeCheckoutPricing(vendorSubtotal);
 
     return {
       unitPrice,
       deliveryFee,
       discountAmount,
       discountCode,
-      totalPaid: subtotal,
-      discountRecordId: undefined,
+      totalPaid: customerTotal,
+      discountRecordId,
     };
   }
 

@@ -40,6 +40,7 @@ import {
   type FlutterwavePaymentMethodId,
 } from "@/lib/flutterwave-payment-methods";
 import { formatNaira } from "@/lib/format";
+import { computeCheckoutPricing } from "@/lib/flutterwave-fees";
 import { orderRepository } from "@/lib/repositories";
 import { isApiMode } from "@/lib/use-api";
 import type { DeliveryTypeId } from "@/lib/delivery-types";
@@ -120,8 +121,9 @@ export default function FlutterwaveCheckout({
   onReserve,
 }: FlutterwaveCheckoutProps) {
   const [processing, setProcessing] = useState(false);
-  const subtotal = unitPrice * selection.quantity;
-  const total = subtotal + deliveryFee - discountAmount;
+  const vendorNet =
+    unitPrice * selection.quantity + deliveryFee - discountAmount;
+  const { processingFee, customerTotal } = computeCheckoutPricing(vendorNet);
   const isDelivery = deliveryRequiresAddress(selection.deliveryType);
   const checkoutSchema = createCheckoutSchema(selection.deliveryType);
 
@@ -248,7 +250,7 @@ export default function FlutterwaveCheckout({
         <div className="rounded-xl border bg-gray-50 p-4">
           <p className="text-sm text-gray-600">Amount to pay</p>
           <p className="text-2xl font-bold text-gray-900">
-            {formatNaira(total)}
+            {formatNaira(customerTotal)}
           </p>
           <div className="mt-1 space-y-0.5 text-xs text-gray-500">
             <p>
@@ -261,6 +263,7 @@ export default function FlutterwaveCheckout({
                 Discount: −{formatNaira(discountAmount)}
               </p>
             )}
+            <p>Payment processing: {formatNaira(processingFee)}</p>
           </div>
         </div>
 
@@ -411,7 +414,7 @@ export default function FlutterwaveCheckout({
                   Processing payment...
                 </>
               ) : (
-                <>Pay {formatNaira(total)}</>
+                <>Pay {formatNaira(customerTotal)}</>
               )}
             </Button>
 

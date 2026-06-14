@@ -18,6 +18,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { TICKET_RESOLVED_EVENT } from '../tickets/events/ticket.events';
 import { TicketResolvedEvent } from '../tickets/events/ticket-resolved.event';
 import { PingramEmailService } from './pingram-email.service';
+import { vendorNetFromOrderLine } from '../payments/flutterwave-fees.util';
 import { SmsService } from './sms.service';
 
 const STATUS_LABELS: Record<string, string> = {
@@ -67,8 +68,10 @@ export class NotificationsListener {
     const { store } = order;
     const dashboardUrl = `${this.appOrigin}/dashboard/orders`;
 
+    const vendorReceive = vendorNetFromOrderLine(order);
+
     if (store.whatsapp) {
-      const message = `New CatalogHQ order ${order.paymentRef}: ${order.productName} x${order.quantity} (${order.totalPaid} NGN) from ${order.customerName}. Check your dashboard.`;
+      const message = `New CatalogHQ order ${order.paymentRef}: ${order.productName} x${order.quantity} (you receive ${vendorReceive} NGN) from ${order.customerName}. Check your dashboard.`;
       await this.smsService.sendSms(store.whatsapp, message);
     }
 
@@ -82,7 +85,7 @@ export class NotificationsListener {
 
     const storeName = store.businessName;
     const subject = `New order ${order.paymentRef} at ${storeName}`;
-    const htmlBody = `<p>Hi,</p><p>You have a new paid order at <strong>${storeName}</strong>.</p><ul><li><strong>Reference:</strong> ${order.paymentRef}</li><li><strong>Customer:</strong> ${order.customerName}</li><li><strong>Product:</strong> ${order.productName} x${order.quantity}</li><li><strong>Total:</strong> ${order.totalPaid} NGN</li></ul><p><a href="${dashboardUrl}">View orders in your dashboard</a></p><p>CatalogHQ Team</p>`;
+    const htmlBody = `<p>Hi,</p><p>You have a new paid order at <strong>${storeName}</strong>.</p><ul><li><strong>Reference:</strong> ${order.paymentRef}</li><li><strong>Customer:</strong> ${order.customerName}</li><li><strong>Product:</strong> ${order.productName} x${order.quantity}</li><li><strong>You receive:</strong> ${vendorReceive} NGN</li><li><strong>Customer paid:</strong> ${order.totalPaid} NGN</li></ul><p><a href="${dashboardUrl}">View orders in your dashboard</a></p><p>CatalogHQ Team</p>`;
 
     try {
       await this.emailService.sendEmail(

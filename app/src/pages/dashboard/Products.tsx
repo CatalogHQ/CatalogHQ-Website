@@ -167,7 +167,7 @@ export default function Products() {
             <TableHeader>
               <TableRow>
                 <TableHead>Product</TableHead>
-                <TableHead>Listed price</TableHead>
+                <TableHead>Your price</TableHead>
                 <TableHead>Stock</TableHead>
                 <TableHead>Delivery</TableHead>
                 <TableHead>Status</TableHead>
@@ -216,7 +216,7 @@ export default function Products() {
                   <TableCell>
                     <p>{formatNaira(product.price)}</p>
                     <FlutterwaveFeeBreakdown
-                      amountNgn={product.price}
+                      vendorNetNgn={product.price}
                       compact
                       className="mt-0.5"
                     />

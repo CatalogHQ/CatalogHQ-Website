@@ -7,12 +7,11 @@ export default function FlutterwaveFeeNotice() {
       <div className="flex gap-2">
         <Info className="mt-0.5 h-4 w-4 shrink-0 text-blue-700" />
         <div>
-          <p className="font-medium">Factor Flutterwave fees into your prices</p>
+          <p className="font-medium">You receive your listed price</p>
           <p className="mt-1 text-blue-900/90">
-            The price you list is what customers pay. Flutterwave deducts{" "}
-            {FLUTTERWAVE_FEE_SUMMARY} from each successful checkout before
-            settlement. Set your product prices high enough to cover this
-            processing cost and keep your margin.
+            Set the amount you want to receive per product. Customers pay your
+            price plus a {FLUTTERWAVE_FEE_SUMMARY} processing fee at checkout.
+            You keep the full listed amount after each successful payment.
           </p>
         </div>
       </div>

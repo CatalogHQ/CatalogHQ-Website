@@ -1,4 +1,5 @@
 import { readJson, writeJson } from "@/lib/local-storage";
+import { computeCheckoutPricing } from "@/lib/flutterwave-fees";
 import { STORAGE_KEYS } from "@/lib/storage-keys";
 import type { OrderRepository } from "@/lib/repositories/order-repository";
 import type {
@@ -33,8 +34,12 @@ function buildOrder(
   const unitPrice = product?.price ?? 0;
   const deliveryFee = overrides?.deliveryFee ?? 0;
   const discountAmount = overrides?.discountAmount ?? 0;
+  const vendorNet = Math.max(
+    0,
+    unitPrice * input.quantity + deliveryFee - discountAmount,
+  );
   const totalPaid =
-    overrides?.totalPaid ?? unitPrice * input.quantity + deliveryFee - discountAmount;
+    overrides?.totalPaid ?? computeCheckoutPricing(vendorNet).customerTotal;
   const paymentRef = overrides?.paymentRef ?? generatePaymentRef();
 
   return {

@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ProductSizeBadges } from "@/components/storefront/ProductSizeDisplay";
 import { formatNaira } from "@/lib/format";
+import { customerUnitDisplayPrice } from "@/lib/flutterwave-fees";
+import CheckoutPricingSummary from "@/components/storefront/CheckoutPricingSummary";
 import { getProductPrimaryImage } from "@/lib/product-utils";
 import type { Product } from "@/types/domain";
 
@@ -72,8 +74,13 @@ export default function ProductGrid({ products, storeSlug }: ProductGridProps) {
                 sizes={product.sizes}
               />
               <p className="mt-2 text-base font-bold text-whatsapp-dark sm:text-lg">
-                {formatNaira(product.price)}
+                {formatNaira(customerUnitDisplayPrice(product.price))}
               </p>
+              <CheckoutPricingSummary
+                vendorNetNgn={product.price}
+                compact
+                className="mt-0.5"
+              />
               <Button
                 asChild
                 size="sm"

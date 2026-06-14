@@ -33,6 +33,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useVendor } from "@/contexts/VendorContext";
 import { hasFeature } from "@/data/plans";
 import { formatNaira } from "@/lib/format";
+import { vendorNetFromOrderLine } from "@/lib/flutterwave-fees";
 import { orderRepository } from "@/lib/repositories";
 import {
   ORDER_STATUS_LABELS,
@@ -213,7 +214,7 @@ export default function Orders() {
                 <TableHead>Order ref</TableHead>
                 <TableHead>Product</TableHead>
                 <TableHead>Customer</TableHead>
-                <TableHead>Total</TableHead>
+                <TableHead>You receive</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="hidden sm:table-cell">Date</TableHead>
               </TableRow>
@@ -237,7 +238,9 @@ export default function Orders() {
                   <TableCell className="font-medium">{order.paymentRef}</TableCell>
                   <TableCell>{order.productName}</TableCell>
                   <TableCell>{order.customerName}</TableCell>
-                  <TableCell>{formatNaira(order.totalPaid)}</TableCell>
+                  <TableCell>
+                    {formatNaira(vendorNetFromOrderLine(order))}
+                  </TableCell>
                   <TableCell>
                     <OrderStatusBadge status={order.status} />
                   </TableCell>

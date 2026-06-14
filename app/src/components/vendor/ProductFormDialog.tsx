@@ -327,7 +327,7 @@ export default function ProductFormDialog({
                 name="price"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Listed price (₦)</FormLabel>
+                    <FormLabel>Your price (you receive)</FormLabel>
                     <FormControl>
                       <NumericFormInput
                         key={`price-${numericFieldKey}`}
@@ -398,8 +398,8 @@ export default function ProductFormDialog({
 
             {listPrice > 0 && (
               <FlutterwaveFeeBreakdown
-                amountNgn={listPrice}
-                label="Listed price (per item)"
+                vendorNetNgn={listPrice}
+                label="You receive (per item)"
               />
             )}
 

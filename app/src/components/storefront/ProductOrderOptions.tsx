@@ -8,6 +8,8 @@ import {
 } from "@/lib/delivery-types";
 import { Input } from "@/components/ui/input";
 import { formatNaira } from "@/lib/format";
+import { computeCheckoutPricing } from "@/lib/flutterwave-fees";
+import CheckoutPricingSummary from "@/components/storefront/CheckoutPricingSummary";
 import {
   getDeliveryFee,
   getSelectionHint,
@@ -97,7 +99,9 @@ export default function ProductOrderOptions({
     selection.deliveryType,
     selection.deliveryZoneId,
   );
-  const total = product.price * Math.max(selection.quantity, 1) + deliveryFee;
+  const quantity = Math.max(selection.quantity, 1);
+  const vendorNet = product.price * quantity + deliveryFee;
+  const { customerTotal } = computeCheckoutPricing(vendorNet);
   const availableDeliveryTypes = DELIVERY_TYPES.filter((type) =>
     product.deliveryOptions.includes(type.id),
   );
@@ -299,27 +303,15 @@ export default function ProductOrderOptions({
       )}
 
       <div className="border-t border-gray-200 bg-gray-50 px-4 py-4 sm:px-5 lg:flex lg:items-center lg:justify-between lg:gap-8">
-        <div className="mb-4 space-y-1.5 text-sm lg:mb-0 lg:flex-1">
-          <div className="flex items-center justify-between text-gray-600">
-            <span>Unit price</span>
-            <span>{formatNaira(product.price)}</span>
-          </div>
-          <div className="flex items-center justify-between text-gray-600">
-            <span>Quantity</span>
-            <span>× {selection.quantity}</span>
-          </div>
-          {deliveryFee > 0 && (
-            <div className="flex items-center justify-between text-gray-600">
-              <span>Delivery</span>
-              <span>{formatNaira(deliveryFee)}</span>
-            </div>
-          )}
-          <div className="flex items-center justify-between border-t border-gray-200 pt-2 text-base font-semibold text-gray-900">
-            <span>Total</span>
-            <span className="text-lg text-whatsapp-dark">
-              {formatNaira(total)}
-            </span>
-          </div>
+        <div className="mb-4 lg:mb-0 lg:flex-1">
+          <CheckoutPricingSummary
+            vendorNetNgn={vendorNet}
+            showSubtotalLines={{
+              unitPrice: product.price,
+              quantity,
+              deliveryFee,
+            }}
+          />
         </div>
 
         <div className="lg:w-72 lg:shrink-0">
@@ -329,7 +321,7 @@ export default function ProductOrderOptions({
           className="h-11 w-full bg-whatsapp-green text-sm hover:bg-whatsapp-green/90 sm:h-12 sm:text-base"
           onClick={onPayClick}
         >
-          Pay now · {formatNaira(total)}
+          Pay now · {formatNaira(customerTotal)}
         </Button>
 
         {hint && !selectionValid && (

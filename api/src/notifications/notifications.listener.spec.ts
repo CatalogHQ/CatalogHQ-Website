@@ -18,7 +18,10 @@ describe('NotificationsListener', () => {
     paymentRef: 'SHP-ABC123',
     productName: 'Blue Gown',
     quantity: 2,
-    totalPaid: 15000,
+    unitPrice: 7500,
+    deliveryFee: 0,
+    discountAmount: 0,
+    totalPaid: 15306,
     customerName: 'Ada Okonkwo',
     store: {
       businessName: 'Ada Fashion',
@@ -72,7 +75,7 @@ describe('NotificationsListener', () => {
     });
     expect(smsService.sendSms).toHaveBeenCalledWith(
       '2348012345678',
-      expect.stringContaining('SHP-ABC123'),
+      expect.stringContaining('you receive 15000 NGN'),
     );
     expect(emailService.sendEmail).toHaveBeenCalledWith(
       'vendor@example.com',
