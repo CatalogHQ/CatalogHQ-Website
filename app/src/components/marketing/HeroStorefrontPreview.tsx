@@ -48,9 +48,9 @@ export default function HeroStorefrontPreview({
           aspectRatio: `${OUTER_WIDTH} / ${OUTER_HEIGHT}`,
         }}
       >
-        {/* Jet Black body */}
+        {/* Device body */}
         <div
-          className="absolute inset-0 bg-gradient-to-b from-[#3a3a3c] via-[#1c1c1e] to-[#0a0a0a] shadow-2xl shadow-black/30 ring-1 ring-black/20"
+          className="absolute inset-0 bg-[#000000] shadow-2xl shadow-black/30 ring-1 ring-black/40"
           style={{ borderRadius: `${FRAME.outerRadiusMm}mm` }}
         />
 
@@ -87,39 +87,37 @@ export default function HeroStorefrontPreview({
 
         {/* Home button */}
         <div
-          className="pointer-events-none absolute left-1/2 z-20 flex -translate-x-1/2 items-center justify-center"
+          className="pointer-events-none absolute left-1/2 z-20 aspect-square w-[11%] -translate-x-1/2"
           style={{
             bottom: `${(FRAME.bottomBezel / 2 / OUTER_HEIGHT) * 100}%`,
-            width: "11%",
-            height: `${(FRAME.bottomBezel * 0.42 / OUTER_HEIGHT) * 100}%`,
             transform: "translate(-50%, 50%)",
           }}
           aria-hidden
         >
-          <div className="size-full rounded-full border-[0.35mm] border-[#48484a] bg-gradient-to-b from-[#3a3a3c] to-[#1c1c1e] shadow-[inset_0_0.5px_1px_rgba(255,255,255,0.12),inset_0_-0.5px_1px_rgba(0,0,0,0.4)]" />
+          <div className="size-full rounded-full border-[0.35mm] border-[#3a3a3a] bg-[#0a0a0a] shadow-[inset_0_0.5px_1px_rgba(255,255,255,0.1),inset_0_-0.5px_1px_rgba(0,0,0,0.5)]" />
         </div>
 
         {/* Mute switch */}
         <div
-          className="absolute left-0 top-[14%] w-[0.55mm] rounded-l-sm bg-gradient-to-r from-[#0a0a0a] to-[#3a3a3c]"
+          className="absolute left-0 top-[14%] w-[0.55mm] rounded-l-sm bg-[#1a1a1a]"
           style={{ height: "4%" }}
           aria-hidden
         />
         {/* Volume up */}
         <div
-          className="absolute left-0 top-[20%] w-[0.55mm] rounded-l-sm bg-gradient-to-r from-[#0a0a0a] to-[#3a3a3c]"
+          className="absolute left-0 top-[20%] w-[0.55mm] rounded-l-sm bg-[#1a1a1a]"
           style={{ height: "7.5%" }}
           aria-hidden
         />
         {/* Volume down */}
         <div
-          className="absolute left-0 top-[29%] w-[0.55mm] rounded-l-sm bg-gradient-to-r from-[#0a0a0a] to-[#3a3a3c]"
+          className="absolute left-0 top-[29%] w-[0.55mm] rounded-l-sm bg-[#1a1a1a]"
           style={{ height: "7.5%" }}
           aria-hidden
         />
         {/* Power / sleep */}
         <div
-          className="absolute right-0 top-[22%] w-[0.55mm] rounded-r-sm bg-gradient-to-l from-[#0a0a0a] to-[#3a3a3c]"
+          className="absolute right-0 top-[22%] w-[0.55mm] rounded-r-sm bg-[#1a1a1a]"
           style={{ height: "10%" }}
           aria-hidden
         />
