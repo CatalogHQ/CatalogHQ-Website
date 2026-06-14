@@ -44,8 +44,10 @@ export default function FlutterwaveFeeBreakdown({
     >
       <p className="font-medium text-gray-900">Checkout pricing</p>
       <p className="mt-1 text-xs text-gray-500">
-        Your listed price is what you receive. A {FLUTTERWAVE_FEE_SUMMARY}{" "}
-        processing fee is added at checkout so customers cover payment costs.
+        Your listed price is what you receive in full. Flutterwave adds a{" "}
+        {FLUTTERWAVE_FEE_SUMMARY} fee at checkout for secure card, transfer,
+        and wallet payments. Customers pay it, not you, so your payout is never
+        reduced and every sale stays confirmed on record.
       </p>
       <dl className="mt-3 space-y-1.5 text-sm">
         <div className="flex items-center justify-between gap-3">
