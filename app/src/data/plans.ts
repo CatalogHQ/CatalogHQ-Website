@@ -38,7 +38,7 @@ export const PLAN_TIER_LABELS: Record<PlanTier, string> = {
   business: "Business",
 };
 
-const PRODUCT_LIMITS: Record<PlanTier, number> = {
+export const PRODUCT_LIMITS: Record<PlanTier, number> = {
   starter: 15,
   pro: 30,
   growth: 50,

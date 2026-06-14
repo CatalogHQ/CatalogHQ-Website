@@ -8,8 +8,11 @@ import {
   Post,
   Query,
   UseGuards,
+  BadRequestException,
 } from '@nestjs/common';
+import { PlanTier } from '@prisma/client';
 import { AdminGuard } from '../common/guards/admin.guard';
+import { PlanCatalogService } from '../plans/plan-catalog.service';
 import { AdminService } from './admin.service';
 import {
   RevenueAnalyticsQueryDto,
@@ -20,6 +23,14 @@ import { UpdateTicketDto } from '../tickets/dto/update-ticket.dto';
 import { TicketsService } from '../tickets/tickets.service';
 import { UpdateVendorDto } from './dto/update-vendor.dto';
 import { AdminUpdateOrderStatusDto } from './dto/update-order-status.dto';
+import { UpdatePlanCatalogDto } from './dto/update-plan-catalog.dto';
+
+function parsePlanTier(tier: string): PlanTier {
+  if (!Object.values(PlanTier).includes(tier as PlanTier)) {
+    throw new BadRequestException('Invalid plan tier.');
+  }
+  return tier as PlanTier;
+}
 
 @Controller('admin')
 @UseGuards(AdminGuard)
@@ -27,6 +38,7 @@ export class AdminController {
   constructor(
     private readonly adminService: AdminService,
     private readonly ticketsService: TicketsService,
+    private readonly planCatalogService: PlanCatalogService,
   ) {}
 
   @Get('badges')
@@ -124,5 +136,23 @@ export class AdminController {
   @Post('orders/:orderId/confirm-payment')
   confirmOrderPayment(@Param('orderId', ParseUUIDPipe) orderId: string) {
     return this.adminService.confirmOrderPayment(orderId);
+  }
+
+  @Get('plans')
+  listPlans() {
+    return this.planCatalogService.listAdminCatalog();
+  }
+
+  @Patch('plans/:tier')
+  updatePlan(
+    @Param('tier') tier: string,
+    @Body() dto: UpdatePlanCatalogDto,
+  ) {
+    return this.planCatalogService.updatePlan(parsePlanTier(tier), dto);
+  }
+
+  @Post('plans/:tier/reset-defaults')
+  resetPlanDefaults(@Param('tier') tier: string) {
+    return this.planCatalogService.resetPlanDefaults(parsePlanTier(tier));
   }
 }

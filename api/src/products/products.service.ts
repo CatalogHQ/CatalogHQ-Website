@@ -5,11 +5,12 @@ import {
 } from '@nestjs/common';
 import { PlanTier } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { PlanCatalogService } from '../plans/plan-catalog.service';
 import { StoresService } from '../stores/stores.service';
 import { ProductInputDto } from './dto/product-input.dto';
 import { ProductDto, toProductDto } from './products.mapper';
 
-const PRODUCT_LIMITS: Record<PlanTier, number> = {
+const FALLBACK_PRODUCT_LIMITS: Record<PlanTier, number> = {
   starter: 15,
   pro: 30,
   growth: 50,
@@ -21,6 +22,7 @@ export class ProductsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly storesService: StoresService,
+    private readonly planCatalogService: PlanCatalogService,
   ) {}
 
   private normalizeInput(input: ProductInputDto) {
@@ -44,7 +46,12 @@ export class ProductsService {
 
   private async assertProductLimit(storeId: string, planTier: PlanTier) {
     const count = await this.prisma.product.count({ where: { storeId } });
-    const limit = PRODUCT_LIMITS[planTier];
+    let limit = FALLBACK_PRODUCT_LIMITS[planTier];
+    try {
+      limit = await this.planCatalogService.getProductLimit(planTier);
+    } catch {
+      // Keep fallback when catalog is unavailable.
+    }
     if (count >= limit) {
       throw new ForbiddenException(
         `Your plan allows up to ${limit} products. Upgrade to add more.`,

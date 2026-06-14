@@ -2,12 +2,11 @@ import { Link } from "react-router";
 import { Button } from "@/components/ui/button";
 import SupportFab from "@/components/support/SupportFab";
 import { Printer, ArrowLeft, FileDown } from "lucide-react";
+import { usePlanCatalog } from "@/contexts/PlanCatalogContext";
 import {
-  PLANS,
   FEATURES,
   CATEGORY_LABELS,
   PLAN_TIER_LABELS,
-  getPricingFeaturesForTier,
   type FeatureCategory,
 } from "@/data/plans";
 
@@ -21,6 +20,7 @@ const CATEGORIES: FeatureCategory[] = [
 ];
 
 export default function FeatureGuide() {
+  const { plans, getFeatureBullets } = usePlanCatalog();
   const handlePrint = () => window.print();
 
   return (
@@ -77,7 +77,7 @@ export default function FeatureGuide() {
         <section className="mb-10">
           <h2 className="text-xl font-bold text-gray-900 mb-4">Pricing tiers</h2>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {PLANS.map((plan) => (
+            {plans.map((plan) => (
               <div
                 key={plan.id}
                 className="rounded-xl border border-gray-200 p-5"
@@ -95,13 +95,13 @@ export default function FeatureGuide() {
           </div>
         </section>
 
-        {PLANS.map((plan) => (
+        {plans.map((plan) => (
           <section key={plan.id} className="mb-10 break-inside-avoid">
             <h2 className="text-xl font-bold text-gray-900 mb-3">
               {plan.name}: {plan.price}/month
             </h2>
             <ul className="space-y-2">
-              {getPricingFeaturesForTier(plan.id).map((feature, i) => (
+              {getFeatureBullets(plan.id).map((feature, i) => (
                 <li key={i} className="text-sm text-gray-700 flex gap-2">
                   <span className="text-whatsapp-green">✓</span>
                   {feature}

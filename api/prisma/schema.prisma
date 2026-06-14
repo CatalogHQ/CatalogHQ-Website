@@ -276,6 +276,21 @@ model ActivityLog {
   @@index([storeId])
 }
 
+model PlanCatalogEntry {
+  tier             PlanTier @id
+  name             String
+  monthlyPriceKobo Int
+  priceSubtext     String
+  tagline          String
+  cta              String
+  popular          Boolean  @default(false)
+  productLimit     Int
+  active           Boolean  @default(true)
+  featureBullets   Json     @default("[]")
+  sortOrder        Int      @default(0)
+  updatedAt        DateTime @updatedAt
+}
+
 model Order {
   id                  String        @id @default(uuid())
   paymentRef          String        @unique

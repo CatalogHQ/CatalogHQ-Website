@@ -24,6 +24,7 @@ import AdminOrders from './pages/admin/Orders'
 import AdminTickets from './pages/admin/Tickets'
 import AdminVerification from './pages/admin/Verification'
 import AdminAnalytics from './pages/admin/Analytics'
+import AdminPlans from './pages/admin/Plans'
 import PublicStore from './pages/storefront/PublicStore'
 import PublicProduct from './pages/storefront/PublicProduct'
 import PublicStoreReviews from './pages/storefront/PublicStoreReviews'
@@ -121,6 +122,7 @@ export default function App() {
         <Route path="tickets" element={<AdminTickets />} />
         <Route path="verification" element={<AdminVerification />} />
         <Route path="analytics" element={<AdminAnalytics />} />
+        <Route path="plans" element={<AdminPlans />} />
       </Route>
 
       <Route path="*" element={<NotFound />} />

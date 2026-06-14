@@ -10,6 +10,7 @@ import {
   BadgeCheck,
   BarChart3,
   Home,
+  CreditCard,
 } from "lucide-react";
 import {
   Sidebar,
@@ -51,6 +52,7 @@ const navItems = [
     badgeKey: "verification" as const,
   },
   { title: "Analytics", href: "/admin/analytics", icon: BarChart3 },
+  { title: "Plans", href: "/admin/plans", icon: CreditCard },
 ];
 
 export default function AdminLayout() {

@@ -6,6 +6,7 @@ import './index.css'
 import App from './App.tsx'
 import { Toaster } from '@/components/ui/sonner'
 import { AuthProvider } from '@/contexts/AuthContext'
+import { PlanCatalogProvider } from '@/contexts/PlanCatalogContext'
 import { VendorProvider } from '@/contexts/VendorContext'
 
 createRoot(document.getElementById('root')!).render(
@@ -13,10 +14,12 @@ createRoot(document.getElementById('root')!).render(
     <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
       <BrowserRouter>
         <AuthProvider>
-          <VendorProvider>
-            <App />
-            <Toaster />
-          </VendorProvider>
+          <PlanCatalogProvider>
+            <VendorProvider>
+              <App />
+              <Toaster />
+            </VendorProvider>
+          </PlanCatalogProvider>
         </AuthProvider>
       </BrowserRouter>
     </ThemeProvider>

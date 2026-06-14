@@ -4,10 +4,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Check } from "lucide-react";
-import { PLANS, getPricingFeaturesForTier } from "@/data/plans";
+import { usePlanCatalog } from "@/contexts/PlanCatalogContext";
 
 export default function Pricing() {
   const navigate = useNavigate();
+  const { plans, getFeatureBullets, isLoading } = usePlanCatalog();
+
+  const lowestPrice = plans[0]?.price ?? "₦3,000";
 
   return (
     <section id="pricing" className="bg-white section-padding">
@@ -23,13 +26,13 @@ export default function Pricing() {
             Simple, honest pricing.
           </h2>
           <p className="section-subheading">
-            Plans from ₦3,000/month. Upgrade as your catalog grows.
+            Plans from {lowestPrice}/month. Upgrade as your catalog grows.
           </p>
         </motion.div>
 
         <div className="mx-auto mt-8 grid max-w-6xl grid-cols-1 gap-4 sm:mt-12 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3 lg:gap-6">
-          {PLANS.map((plan, index) => {
-            const features = getPricingFeaturesForTier(plan.id);
+          {plans.map((plan, index) => {
+            const features = getFeatureBullets(plan.id);
             const isPopular = plan.popular;
 
             return (
@@ -40,7 +43,7 @@ export default function Pricing() {
                 viewport={{ once: true, amount: 0.1 }}
                 transition={{ duration: 0.5, delay: index * 0.08 }}
                 className={
-                  index === PLANS.length - 1 && PLANS.length % 2 === 1
+                  index === plans.length - 1 && plans.length % 2 === 1
                     ? "sm:col-span-2 sm:max-w-md sm:justify-self-center lg:col-span-1 lg:max-w-none"
                     : undefined
                 }
@@ -106,6 +109,7 @@ export default function Pricing() {
                     <Button
                       onClick={() => navigate("/sign-up")}
                       variant={isPopular ? "default" : "outline"}
+                      disabled={isLoading}
                       className={`mt-6 h-auto w-full rounded-lg py-3 font-semibold sm:mt-8 ${
                         isPopular
                           ? "bg-whatsapp-green text-white transition-all hover:scale-[1.02] hover:bg-whatsapp-green/90"

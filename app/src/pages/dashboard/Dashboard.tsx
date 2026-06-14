@@ -19,7 +19,8 @@ import StoreLinkCard from "@/components/vendor/StoreLinkCard";
 import VendorVerificationCard from "@/components/vendor/VendorVerificationCard";
 import { useAuth } from "@/contexts/AuthContext";
 import { useVendor } from "@/contexts/VendorContext";
-import { getProductLimit, hasFeature, PLAN_TIER_LABELS } from "@/data/plans";
+import { usePlanCatalog } from "@/contexts/PlanCatalogContext";
+import { hasFeature, PLAN_TIER_LABELS } from "@/data/plans";
 import { formatNaira } from "@/lib/format";
 import {
   computeSalesMetrics,
@@ -29,6 +30,7 @@ import {
 export default function Dashboard() {
   const { user } = useAuth();
   const { store, products, orders, unreadOrderCount } = useVendor();
+  const { getProductLimit } = usePlanCatalog();
   const planTier = user?.planTier ?? "starter";
 
   if (!store?.setupComplete) {

@@ -12,6 +12,7 @@ import { HealthModule } from './health/health.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { OrdersModule } from './orders/orders.module';
 import { PaymentsModule } from './payments/payments.module';
+import { PlansModule } from './plans/plans.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { ProductsModule } from './products/products.module';
 import { ReviewsModule } from './reviews/reviews.module';
@@ -53,6 +54,7 @@ import { UploadsModule } from './uploads/uploads.module';
     ReviewsModule,
     UploadsModule,
     TicketsModule,
+    PlansModule,
     AdminModule,
     HealthModule,
   ],

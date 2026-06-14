@@ -36,7 +36,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useVendor } from "@/contexts/VendorContext";
 import { formatDeliverySummary } from "@/lib/delivery-types";
 import { formatSizesSummary } from "@/lib/sizing-types";
-import { getProductLimit, PLAN_TIER_LABELS } from "@/data/plans";
+import { usePlanCatalog } from "@/contexts/PlanCatalogContext";
+import { PLAN_TIER_LABELS } from "@/data/plans";
 import { formatNaira } from "@/lib/format";
 import { getProductPrimaryImage, parseColorsInput } from "@/lib/product-utils";
 import type { Product } from "@/types/domain";
@@ -50,6 +51,7 @@ export default function Products() {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Product | null>(null);
 
+  const { getProductLimit } = usePlanCatalog();
   const productLimit = getProductLimit(user?.planTier ?? "starter");
   const atLimit = products.length >= productLimit;
 
