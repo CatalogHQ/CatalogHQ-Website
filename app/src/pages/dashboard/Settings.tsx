@@ -39,6 +39,7 @@ export default function Settings() {
   const { store, completeSetup, isSlugAvailable } = useVendor();
   const [loading, setLoading] = useState(false);
   const [slugEdited, setSlugEdited] = useState(true);
+  const isVerified = store?.verificationStatus === "verified";
 
   const form = useForm<StoreSetupFormValues>({
     resolver: zodResolver(storeSetupSchema),
@@ -260,11 +261,17 @@ export default function Settings() {
                   <FormItem>
                     <FormLabel>NIN</FormLabel>
                     <FormControl>
-                      <Input inputMode="numeric" maxLength={11} {...field} />
+                      <Input
+                        inputMode="numeric"
+                        maxLength={11}
+                        disabled={isVerified}
+                        {...field}
+                      />
                     </FormControl>
                     <FormDescription>
-                      Used for vendor verification. Changing your legal name or
-                      NIN triggers a new review.
+                      {isVerified
+                        ? "Your NIN is locked after verification. Contact support if you need to update it."
+                        : "Used for vendor verification. Changing your legal name or NIN triggers a new review."}
                     </FormDescription>
                     <FormMessage />
                   </FormItem>

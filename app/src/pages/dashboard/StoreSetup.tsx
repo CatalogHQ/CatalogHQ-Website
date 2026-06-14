@@ -91,6 +91,7 @@ export default function StoreSetup() {
   const businessName = form.watch("businessName");
   const slug = form.watch("slug");
   const currentStep = STORE_SETUP_STEPS[step];
+  const isVerified = store?.verificationStatus === "verified";
 
   useEffect(() => {
     if (!slugEdited && businessName) {
@@ -440,12 +441,14 @@ export default function StoreSetup() {
                             inputMode="numeric"
                             placeholder="12345678901"
                             maxLength={11}
+                            disabled={isVerified}
                             {...field}
                           />
                         </FormControl>
                         <FormDescription>
-                          We verify your NIN against your legal name when you
-                          finish setup.
+                          {isVerified
+                            ? "Your NIN is locked after verification. Contact support if you need to update it."
+                            : "We verify your NIN against your legal name when you finish setup."}
                         </FormDescription>
                         <FormMessage />
                       </FormItem>

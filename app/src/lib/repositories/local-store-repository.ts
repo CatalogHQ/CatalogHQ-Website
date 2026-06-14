@@ -61,6 +61,12 @@ export class LocalStoreRepository implements StoreRepository {
     const existing =
       existingIndex >= 0 ? stores[existingIndex] : undefined;
     const nin = input.nin.replace(/\D/g, "");
+    if (
+      existing?.verificationStatus === "verified" &&
+      existing.nin !== nin
+    ) {
+      throw new Error("NIN cannot be changed after verification.");
+    }
     const legalFirstName = input.legalFirstName?.trim() ?? "";
     const legalLastName = input.legalLastName?.trim() ?? "";
     const identityChanged = existing

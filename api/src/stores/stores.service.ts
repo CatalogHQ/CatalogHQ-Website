@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   HttpException,
   HttpStatus,
@@ -98,6 +99,13 @@ export class StoresService {
 
   private buildStoreData(vendorId: string, dto: StoreSetupDto, existing: Store | null) {
     const nin = dto.nin.replace(/\D/g, '');
+    if (
+      existing?.verificationStatus === VendorVerificationStatus.verified &&
+      existing.nin !== nin
+    ) {
+      throw new BadRequestException('NIN cannot be changed after verification.');
+    }
+
     const legalFirstName = dto.legalFirstName.trim();
     const legalLastName = dto.legalLastName.trim();
     const verification = this.applyVerificationOnIdentityChange(existing, {
