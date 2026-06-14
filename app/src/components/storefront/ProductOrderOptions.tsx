@@ -30,6 +30,8 @@ type ProductOrderOptionsProps = {
   onPayClick: () => void;
   deliveryZones?: DeliveryZone[];
   showDiscountCode?: boolean;
+  paymentsDisabled?: boolean;
+  paymentsDisabledMessage?: string;
 };
 
 function OptionSection({
@@ -93,6 +95,8 @@ export default function ProductOrderOptions({
   onPayClick,
   deliveryZones = [],
   showDiscountCode = false,
+  paymentsDisabled = false,
+  paymentsDisabledMessage,
 }: ProductOrderOptionsProps) {
   const deliveryFee = getDeliveryFee(
     deliveryZones,
@@ -317,14 +321,20 @@ export default function ProductOrderOptions({
         <div className="lg:w-72 lg:shrink-0">
         <Button
           size="lg"
-          disabled={!selectionValid}
+          disabled={!selectionValid || paymentsDisabled}
           className="h-11 w-full bg-whatsapp-green text-sm hover:bg-whatsapp-green/90 sm:h-12 sm:text-base"
           onClick={onPayClick}
         >
           Pay now · {formatNaira(customerTotal)}
         </Button>
 
-        {hint && !selectionValid && (
+        {paymentsDisabled && paymentsDisabledMessage ? (
+          <p className="mt-2 text-center text-xs text-amber-700">
+            {paymentsDisabledMessage}
+          </p>
+        ) : null}
+
+        {hint && !selectionValid && !paymentsDisabled && (
           <p className="mt-2 text-center text-xs text-gray-500">{hint}</p>
         )}
         </div>

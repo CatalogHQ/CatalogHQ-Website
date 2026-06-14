@@ -53,6 +53,14 @@ export class PaymentsController {
       });
     }
 
+    if (
+      (body.type === 'transfer.completed' ||
+        body.type === 'settlement.completed') &&
+      body.data?.reference
+    ) {
+      await this.paymentsService.markPayoutSettled(body.data.reference);
+    }
+
     return { received: true };
   }
 }

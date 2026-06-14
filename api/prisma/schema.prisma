@@ -106,6 +106,13 @@ enum PaymentStatus {
   failed
 }
 
+enum PayoutStatus {
+  pending
+  split
+  settled
+  failed
+}
+
 model Store {
   vendorId                String                   @id
   vendor                  User                     @relation(fields: [vendorId], references: [id], onDelete: Cascade)
@@ -129,6 +136,13 @@ model Store {
   verificationSubmittedAt DateTime?
   verifiedAt              DateTime?
   rejectionReason         String?
+  payoutBankCode          String?
+  payoutBankName          String?
+  payoutAccountNumber     String?
+  payoutAccountName       String?
+  flutterwaveSubaccountId String?
+  payoutSetupComplete     Boolean                  @default(false)
+  payoutSetupAt           DateTime?
   quickReplyTemplates     Json                     @default("[]")
   deliveryZones           Json                     @default("[]")
   products                Product[]
@@ -307,6 +321,9 @@ model Order {
   discountAmount      Int           @default(0)
   discountCode        String?
   totalPaid           Int
+  vendorNet           Int           @default(0)
+  platformFee         Int           @default(0)
+  payoutStatus        PayoutStatus  @default(pending)
   customerName        String
   customerPhone       String
   deliveryAddress     String?

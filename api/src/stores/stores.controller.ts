@@ -19,9 +19,11 @@ import { CreateDiscountCodeDto } from './dto/create-discount-code.dto';
 import { DeliveryZoneDto } from './dto/delivery-zone.dto';
 import { QuickReplyDto } from './dto/quick-reply.dto';
 import { StoreSetupDto } from './dto/store-setup.dto';
+import { UpdatePayoutDto } from './dto/update-payout.dto';
 import { UpsertStockLocationDto } from './dto/upsert-stock-location.dto';
 import { StoreStaffService } from './store-staff.service';
 import { StoresService } from './stores.service';
+import { VendorPayoutService } from './vendor-payout.service';
 import { VendorToolsService } from './vendor-tools.service';
 
 @Controller('stores')
@@ -31,6 +33,7 @@ export class StoresController {
     private readonly vendorToolsService: VendorToolsService,
     private readonly storeStaffService: StoreStaffService,
     private readonly paymentsService: PaymentsService,
+    private readonly vendorPayoutService: VendorPayoutService,
   ) {}
 
   @Get('me')
@@ -144,6 +147,29 @@ export class StoresController {
   @Get('me/activity')
   listActivity(@CurrentUser() user: User) {
     return this.storeStaffService.listActivity(user.id);
+  }
+
+  @Get('me/payout/banks')
+  listPayoutBanks() {
+    return this.vendorPayoutService.listBanks();
+  }
+
+  @Get('me/payout')
+  getPayoutAccount(@CurrentUser() user: User) {
+    return this.vendorPayoutService.getPayoutAccount(user.id);
+  }
+
+  @Put('me/payout')
+  updatePayoutAccount(
+    @CurrentUser() user: User,
+    @Body() dto: UpdatePayoutDto,
+  ) {
+    return this.vendorPayoutService.updatePayoutAccount(user.id, dto);
+  }
+
+  @Get('me/payouts')
+  listPayoutHistory(@CurrentUser() user: User) {
+    return this.vendorPayoutService.listPayoutHistory(user.id);
   }
 
   @Post('me/orders/:orderId/payment-link')

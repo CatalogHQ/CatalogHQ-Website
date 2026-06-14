@@ -38,9 +38,16 @@ export class LocalStoreRepository implements StoreRepository {
     if (!store?.setupComplete) return null;
 
     const vendor = authRepository.getUserById(store.vendorId);
+    const payouts = readJson<Array<{ vendorId: string; payoutSetupComplete: boolean }>>(
+      STORAGE_KEYS.payouts,
+      [],
+    );
+    const payout = payouts.find((entry) => entry.vendorId === store.vendorId);
+
     return {
       ...store,
       planTier: vendor?.planTier ?? "starter",
+      payoutSetupComplete: payout?.payoutSetupComplete ?? true,
     };
   }
 

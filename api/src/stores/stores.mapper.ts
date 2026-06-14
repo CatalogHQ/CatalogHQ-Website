@@ -22,6 +22,11 @@ export type StoreDto = {
   verificationSubmittedAt?: string;
   verifiedAt?: string;
   rejectionReason?: string;
+  payoutSetupComplete: boolean;
+  payoutSetupAt?: string;
+  payoutBankName?: string;
+  payoutAccountName?: string;
+  payoutAccountNumber?: string;
 };
 
 export type PublicStoreDto = Omit<
@@ -55,7 +60,21 @@ export function toStoreDto(store: Store): StoreDto {
     verificationSubmittedAt: store.verificationSubmittedAt?.toISOString(),
     verifiedAt: store.verifiedAt?.toISOString(),
     rejectionReason: store.rejectionReason ?? undefined,
+    payoutSetupComplete: store.payoutSetupComplete,
+    payoutSetupAt: store.payoutSetupAt?.toISOString(),
+    payoutBankName: store.payoutBankName ?? undefined,
+    payoutAccountName: store.payoutAccountName ?? undefined,
+    payoutAccountNumber: store.payoutAccountNumber
+      ? maskAccountNumber(store.payoutAccountNumber)
+      : undefined,
   };
+}
+
+function maskAccountNumber(accountNumber: string): string {
+  if (accountNumber.length <= 4) {
+    return accountNumber;
+  }
+  return `${'*'.repeat(accountNumber.length - 4)}${accountNumber.slice(-4)}`;
 }
 
 export function toPublicStoreDto(
@@ -73,5 +92,6 @@ export function toPublicStoreDto(
     ...publicFields,
     planTier,
     deliveryZones: store.deliveryZones,
+    payoutSetupComplete: store.payoutSetupComplete,
   };
 }

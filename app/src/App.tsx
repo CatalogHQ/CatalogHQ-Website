@@ -17,6 +17,7 @@ import Settings from './pages/dashboard/Settings'
 import Orders from './pages/dashboard/Orders'
 import Inventory from './pages/dashboard/Inventory'
 import Analytics from './pages/dashboard/Analytics'
+import Payouts from './pages/dashboard/Payouts'
 import AdminOverview from './pages/admin/Overview'
 import AdminVendors from './pages/admin/Vendors'
 import AdminCustomers from './pages/admin/Customers'
@@ -102,6 +103,14 @@ export default function App() {
           element={
             <SetupRequired>
               <Analytics />
+            </SetupRequired>
+          }
+        />
+        <Route
+          path="payouts"
+          element={
+            <SetupRequired>
+              <Payouts />
             </SetupRequired>
           }
         />

@@ -1,9 +1,10 @@
-import { BadRequestException } from '@nestjs/common';
+import { BadRequestException, UnprocessableEntityException } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Test, TestingModule } from '@nestjs/testing';
 import {
   OrderStatus,
   PaymentStatus,
+  PayoutStatus,
   PlanTier,
 } from '@prisma/client';
 import { FlutterwaveService } from '../payments/flutterwave.service';
@@ -59,6 +60,9 @@ describe('OrdersService', () => {
     discountAmount: 0,
     discountCode: null,
     totalPaid: 5102,
+    vendorNet: 5000,
+    platformFee: 102,
+    payoutStatus: PayoutStatus.split,
     customerName: 'Ada',
     customerPhone: '08012345678',
     deliveryAddress: null,
@@ -164,6 +168,38 @@ describe('OrdersService', () => {
         paymentMethod: 'opay',
       }),
     ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it('blocks checkout when payout setup is incomplete and Flutterwave is configured', async () => {
+    flutterwave.isConfigured.mockReturnValue(true);
+    prisma.store.findUnique.mockResolvedValue({
+      vendorId: 'store-1',
+      slug: 'test-store',
+      setupComplete: true,
+      payoutSetupComplete: false,
+      deliveryZones: [],
+      vendor: { planTier: PlanTier.starter },
+    });
+    prisma.product.findFirst.mockResolvedValue({
+      id: 'product-1',
+      price: 2500,
+      stock: 10,
+      deliveryOptions: ['pickup'],
+      published: true,
+    });
+
+    await expect(
+      service.create({
+        storeId: 'store-1',
+        productId: 'product-1',
+        productName: 'Shirt',
+        quantity: 1,
+        deliveryType: 'pickup',
+        customerName: 'Ada',
+        customerPhone: '08012345678',
+        paymentMethod: 'opay',
+      }),
+    ).rejects.toBeInstanceOf(UnprocessableEntityException);
   });
 
   it('emits delivered event when status changes to delivered', async () => {

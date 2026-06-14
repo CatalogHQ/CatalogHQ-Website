@@ -1,4 +1,4 @@
-import { Order, OrderStatus, PaymentStatus } from '@prisma/client';
+import { Order, OrderStatus, PaymentStatus, PayoutStatus } from '@prisma/client';
 
 export type OrderDto = {
   id: string;
@@ -15,6 +15,9 @@ export type OrderDto = {
   discountAmount: number;
   discountCode?: string;
   totalPaid: number;
+  vendorNet: number;
+  platformFee: number;
+  payoutStatus: PayoutStatus;
   customerName: string;
   customerPhone: string;
   deliveryAddress?: string;
@@ -47,6 +50,9 @@ export function toOrderDto(order: Order): OrderDto {
     discountAmount: order.discountAmount,
     discountCode: order.discountCode ?? undefined,
     totalPaid: order.totalPaid,
+    vendorNet: order.vendorNet,
+    platformFee: order.platformFee,
+    payoutStatus: order.payoutStatus,
     customerName: order.customerName,
     customerPhone: order.customerPhone,
     deliveryAddress: order.deliveryAddress ?? undefined,

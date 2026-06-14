@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Injectable,
   NotFoundException,
+  UnprocessableEntityException,
 } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import {
@@ -15,6 +16,7 @@ import { deliveryRequiresAddress } from '../common/delivery.util';
 import { normalizePhone } from '../common/phone.util';
 import { FlutterwaveService } from '../payments/flutterwave.service';
 import { computeCheckoutPricing } from '../payments/flutterwave-fees.util';
+import { buildCheckoutSplitPayload } from '../payments/flutterwave-split.util';
 import { buildFlutterwaveReference } from '../payments/flutterwave-reference.util';
 import { PaymentsService } from '../payments/payments.service';
 import { PrismaService } from '../prisma/prisma.service';
@@ -59,6 +61,9 @@ export class OrdersService {
     const pricing = await this.resolvePricing(dto);
     const paymentRef = generatePaymentRef();
     const gatewayReference = buildFlutterwaveReference(paymentRef);
+    const store = await this.prisma.store.findUnique({
+      where: { vendorId: dto.storeId },
+    });
 
     const order = await this.prisma.$transaction(async (tx) => {
       if (pricing.discountRecordId) {
@@ -80,6 +85,8 @@ export class OrdersService {
           discountAmount: pricing.discountAmount,
           discountCode: pricing.discountCode,
           totalPaid: pricing.totalPaid,
+          vendorNet: pricing.vendorNet,
+          platformFee: pricing.platformFee,
           customerName: dto.customerName.trim(),
           customerPhone: normalizePhone(dto.customerPhone),
           deliveryAddress: dto.deliveryAddress?.trim() || null,
@@ -91,6 +98,13 @@ export class OrdersService {
     });
 
     if (this.flutterwave.isConfigured()) {
+      const subaccounts = store?.flutterwaveSubaccountId
+        ? buildCheckoutSplitPayload(
+            store.flutterwaveSubaccountId,
+            pricing.platformFee,
+          )
+        : [];
+
       const init = await this.flutterwave.initializeTransaction({
         email: `${order.customerPhone}@cataloghq.ng`,
         phone: order.customerPhone,
@@ -101,6 +115,7 @@ export class OrdersService {
         paymentMethod: dto.paymentMethod,
         ussdBankCode: dto.ussdBankCode,
         metadata: { paymentRef: order.paymentRef, orderId: order.id },
+        subaccounts,
       });
 
       return {
@@ -148,6 +163,8 @@ export class OrdersService {
           discountAmount: pricing.discountAmount,
           discountCode: pricing.discountCode,
           totalPaid: pricing.totalPaid,
+          vendorNet: pricing.vendorNet,
+          platformFee: pricing.platformFee,
           customerName: dto.customerName.trim(),
           customerPhone: normalizePhone(dto.customerPhone),
           deliveryAddress: dto.deliveryAddress?.trim() || null,
@@ -375,6 +392,12 @@ export class OrdersService {
       throw new NotFoundException('Store not found.');
     }
 
+    if (this.flutterwave.isConfigured() && !store.payoutSetupComplete) {
+      throw new UnprocessableEntityException(
+        'This store is not ready to accept payments. The vendor must link a settlement bank account first.',
+      );
+    }
+
     const product = await this.prisma.product.findFirst({
       where: {
         id: dto.productId,
@@ -441,7 +464,8 @@ export class OrdersService {
     }
 
     vendorSubtotal = Math.max(0, vendorSubtotal - discountAmount);
-    const { customerTotal } = computeCheckoutPricing(vendorSubtotal);
+    const { customerTotal, vendorNet, processingFee } =
+      computeCheckoutPricing(vendorSubtotal);
 
     return {
       unitPrice,
@@ -449,6 +473,8 @@ export class OrdersService {
       discountAmount,
       discountCode,
       totalPaid: customerTotal,
+      vendorNet,
+      platformFee: processingFee,
       discountRecordId,
     };
   }

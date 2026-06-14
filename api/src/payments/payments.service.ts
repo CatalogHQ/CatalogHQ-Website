@@ -1,12 +1,13 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { OrderStatus, PaymentStatus } from '@prisma/client';
+import { OrderStatus, PaymentStatus, PayoutStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { ORDER_CREATED_EVENT, LOW_STOCK_EVENT } from '../orders/events/order.events';
 import { OrderCreatedEvent } from '../orders/events/order-created.event';
 import { LowStockEvent } from '../orders/events/low-stock.event';
 import { buildFlutterwaveReference } from './flutterwave-reference.util';
+import { buildCheckoutSplitPayload } from './flutterwave-split.util';
 import { FlutterwaveService } from './flutterwave.service';
 
 @Injectable()
@@ -64,6 +65,10 @@ export class PaymentsService {
           paymentStatus: PaymentStatus.paid,
           status: OrderStatus.paid,
           reservedUntil: null,
+          payoutStatus:
+            order.store.payoutSetupComplete && order.vendorNet > 0
+              ? PayoutStatus.split
+              : order.payoutStatus,
         },
       });
 
@@ -106,6 +111,21 @@ export class PaymentsService {
     }
   }
 
+  async markPayoutSettled(gatewayReference: string): Promise<void> {
+    const order = await this.prisma.order.findUnique({
+      where: { gatewayReference },
+    });
+
+    if (!order || order.payoutStatus === PayoutStatus.settled) {
+      return;
+    }
+
+    await this.prisma.order.update({
+      where: { id: order.id },
+      data: { payoutStatus: PayoutStatus.settled },
+    });
+  }
+
   async getPaymentLink(orderId: string, vendorId: string): Promise<string> {
     const order = await this.prisma.order.findFirst({
       where: { id: orderId, storeId: vendorId },
@@ -118,6 +138,12 @@ export class PaymentsService {
 
     const reference =
       order.gatewayReference ?? buildFlutterwaveReference(order.paymentRef);
+    const subaccounts = order.store.flutterwaveSubaccountId
+      ? buildCheckoutSplitPayload(
+          order.store.flutterwaveSubaccountId,
+          order.platformFee,
+        )
+      : [];
     const init = await this.flutterwave.initializeTransaction({
       email: `${order.customerPhone}@cataloghq.ng`,
       phone: order.customerPhone,
@@ -127,6 +153,7 @@ export class PaymentsService {
       callbackPath: `/s/${order.store.slug}/order/${order.paymentRef}?paid=1`,
       paymentMethod: 'opay',
       metadata: { paymentRef: order.paymentRef, orderId: order.id },
+      subaccounts,
     });
 
     if (init.authorizationUrl) {

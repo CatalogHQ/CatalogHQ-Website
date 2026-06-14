@@ -96,6 +96,25 @@ export default function Dashboard() {
 
       <VendorVerificationCard store={store} variant="banner" />
 
+      {store.verificationStatus === "verified" && !store.payoutSetupComplete && (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-sm font-medium text-amber-900">
+                Link your payout bank account
+              </p>
+              <p className="text-sm text-amber-800">
+                Customers cannot pay until Flutterwave can settle order funds
+                to your bank.
+              </p>
+            </div>
+            <Button variant="outline" size="sm" asChild>
+              <Link to="/dashboard/payouts">Set up payouts</Link>
+            </Button>
+          </div>
+        </div>
+      )}
+
       {unreadOrderCount > 0 && (
         <div className="rounded-lg border border-whatsapp-green/30 bg-whatsapp-green/5 px-4 py-3">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

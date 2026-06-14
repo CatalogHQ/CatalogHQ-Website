@@ -9,6 +9,7 @@ import {
   Warehouse,
   BarChart3,
   Shield,
+  Wallet,
 } from "lucide-react";
 import {
   Sidebar,
@@ -40,6 +41,7 @@ const navItems = [
   { title: "Products", href: "/dashboard/products", icon: Package },
   { title: "Inventory", href: "/dashboard/inventory", icon: Warehouse },
   { title: "Analytics", href: "/dashboard/analytics", icon: BarChart3 },
+  { title: "Payouts", href: "/dashboard/payouts", icon: Wallet },
   { title: "Settings", href: "/dashboard/settings", icon: Settings },
 ];
 

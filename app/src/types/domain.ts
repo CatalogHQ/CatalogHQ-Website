@@ -49,11 +49,17 @@ export type Store = {
   verificationSubmittedAt?: string;
   verifiedAt?: string;
   rejectionReason?: string;
+  payoutSetupComplete?: boolean;
+  payoutSetupAt?: string;
+  payoutBankName?: string;
+  payoutAccountName?: string;
+  payoutAccountNumber?: string;
 };
 
 export type PublicStoreView = Store & {
   planTier: PlanTier;
   deliveryZones?: DeliveryZone[];
+  payoutSetupComplete: boolean;
 };
 
 export const DEFAULT_LOW_STOCK_THRESHOLD = 5;

@@ -2,6 +2,8 @@ import type { DeliveryTypeId } from "@/lib/delivery-types";
 
 export type PaymentStatus = "pending" | "paid" | "failed";
 
+export type PayoutStatus = "pending" | "split" | "settled" | "failed";
+
 export type OrderStatus =
   | "reserved"
   | "paid"
@@ -25,6 +27,9 @@ export type CustomerOrder = {
   discountAmount?: number;
   discountCode?: string;
   totalPaid: number;
+  vendorNet?: number;
+  platformFee?: number;
+  payoutStatus?: PayoutStatus;
   customerName: string;
   customerPhone: string;
   deliveryAddress?: string;

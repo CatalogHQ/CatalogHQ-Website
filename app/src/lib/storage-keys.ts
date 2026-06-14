@@ -5,4 +5,5 @@ export const STORAGE_KEYS = {
   session: "cataloghq:session",
   reviews: "cataloghq:reviews",
   orders: "cataloghq:orders",
+  payouts: "cataloghq:payouts",
 } as const;

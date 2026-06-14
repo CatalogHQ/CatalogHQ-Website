@@ -333,6 +333,8 @@ export default function PublicProduct() {
             onPayClick={() => setCheckoutOpen(true)}
             deliveryZones={store.deliveryZones}
             showDiscountCode={showDiscountCodes}
+            paymentsDisabled={!store.payoutSetupComplete}
+            paymentsDisabledMessage="This store is not ready to accept payments yet."
           />
         </div>
       </div>

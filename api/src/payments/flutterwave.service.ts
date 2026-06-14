@@ -17,6 +17,7 @@ import {
   normalizeNigerianPhoneForFlutterwave,
   splitCustomerName,
 } from './flutterwave-payment-methods';
+import { FlutterwaveSplitSubaccount } from './flutterwave-split.util';
 
 const FLUTTERWAVE_POST_MAX_ATTEMPTS = 3;
 const FLUTTERWAVE_RETRY_BASE_MS = 300;
@@ -120,6 +121,7 @@ export class FlutterwaveService {
     paymentMethod: FlutterwavePaymentMethod;
     ussdBankCode?: string;
     metadata?: Record<string, unknown>;
+    subaccounts?: FlutterwaveSplitSubaccount[];
   }): Promise<FlutterwaveInitResult> {
     if (!this.auth.isConfigured()) {
       return { authorizationUrl: null, reference: params.reference };
@@ -157,6 +159,9 @@ export class FlutterwaveService {
             ussdBankCode: params.ussdBankCode,
           }),
           meta: params.metadata,
+          ...(params.subaccounts?.length
+            ? { subaccounts: params.subaccounts }
+            : {}),
         },
       },
     );
@@ -171,6 +176,7 @@ export class FlutterwaveService {
     amountNaira: number;
     reference: string;
     metadata?: Record<string, unknown>;
+    subaccounts?: FlutterwaveSplitSubaccount[];
   }): Promise<FlutterwaveInitResult> {
     const nameParts = splitCustomerName(params.name);
     const phoneNumber = normalizeNigerianPhoneForFlutterwave(params.phone);
@@ -209,6 +215,9 @@ export class FlutterwaveService {
           expiry: 3600,
           narration: params.name,
           meta: params.metadata,
+          ...(params.subaccounts?.length
+            ? { subaccounts: params.subaccounts }
+            : {}),
         },
       },
     );
