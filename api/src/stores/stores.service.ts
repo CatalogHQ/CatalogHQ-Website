@@ -360,6 +360,8 @@ export class StoresService {
   }
 
   async completeSetup(vendorId: string, dto: StoreSetupDto): Promise<StoreDto> {
+    await this.assertSubscriptionForNinVerification(vendorId);
+
     const existing = await this.prisma.store.findUnique({ where: { vendorId } });
     const data = this.buildStoreData(vendorId, dto, existing);
 
@@ -408,6 +410,12 @@ export class StoresService {
     });
 
     return toStoreDto(store);
+  }
+
+  private async assertSubscriptionForNinVerification(
+    vendorId: string,
+  ): Promise<void> {
+    await this.planEntitlementService.assertActiveSubscription(vendorId);
   }
 
   async getBySlugForVendor(slug: string): Promise<StoreDto> {

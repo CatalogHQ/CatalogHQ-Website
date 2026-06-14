@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
@@ -23,7 +23,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { useAuth } from "@/contexts/AuthContext";
 import { useVendor } from "@/contexts/VendorContext";
+import { vendorHasActiveSubscription } from "@/lib/vendor-onboarding";
 import {
   createSlugFromName,
   STORE_SETUP_STEPS,
@@ -39,7 +41,9 @@ const TOTAL_STEPS = STORE_SETUP_STEPS.length;
 
 export default function StoreSetup() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { store, completeSetup, isSlugAvailable } = useVendor();
+  const canVerifyNin = vendorHasActiveSubscription(user);
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [slugEdited, setSlugEdited] = useState(false);
@@ -120,10 +124,22 @@ export default function StoreSetup() {
       }
     }
 
+    if (currentStep.id === "location" && !canVerifyNin) {
+      toast.error("Subscribe to a plan before NIN verification.");
+      navigate("/dashboard/billing");
+      return;
+    }
+
     setStep((current) => Math.min(TOTAL_STEPS - 1, current + 1));
   };
 
   const onSubmit = async (data: StoreSetupFormValues) => {
+    if (!canVerifyNin) {
+      toast.error("Subscribe to a plan before completing NIN verification.");
+      navigate("/dashboard/billing");
+      return;
+    }
+
     if (!(await isSlugAvailable(data.slug))) {
       form.setError("slug", {
         message: "This store link is already taken. Try another.",
@@ -386,6 +402,23 @@ export default function StoreSetup() {
 
               {currentStep.id === "identity" && (
                 <>
+                  {!canVerifyNin ? (
+                    <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                      <p className="font-medium">Subscription required</p>
+                      <p className="mt-1">
+                        Choose a paid plan before submitting your NIN for
+                        verification.
+                      </p>
+                      <Button
+                        asChild
+                        size="sm"
+                        className="mt-3 bg-whatsapp-green hover:bg-whatsapp-green/90"
+                      >
+                        <Link to="/dashboard/billing">Go to billing</Link>
+                      </Button>
+                    </div>
+                  ) : (
+                    <>
                   <div className="grid gap-4 sm:grid-cols-2">
                     <FormField
                       control={form.control}
@@ -454,6 +487,8 @@ export default function StoreSetup() {
                       </FormItem>
                     )}
                   />
+                    </>
+                  )}
                 </>
               )}
 
@@ -484,7 +519,7 @@ export default function StoreSetup() {
                 ) : (
                   <Button
                     type="submit"
-                    disabled={loading}
+                    disabled={loading || (currentStep.id === "identity" && !canVerifyNin)}
                     className="w-full bg-whatsapp-green hover:bg-whatsapp-green/90 sm:ml-auto sm:w-auto"
                   >
                     {loading ? "Saving..." : "Complete setup"}

@@ -12,7 +12,7 @@ import {
 import { User } from '@prisma/client';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { Public } from '../common/decorators/public.decorator';
-import { RequireFeature } from '../common/decorators/plan-access.decorator';
+import { RequireFeature, SkipSubscriptionGuard } from '../common/decorators/plan-access.decorator';
 import { ValidateBodyArrayPipe } from '../common/pipes/validate-body-array.pipe';
 import { PaymentsService } from '../payments/payments.service';
 import { AddTeamMemberDto } from './dto/add-team-member.dto';
@@ -38,6 +38,7 @@ export class StoresController {
   ) {}
 
   @Get('me')
+  @SkipSubscriptionGuard()
   async getMyStore(@CurrentUser() user: User) {
     const store = await this.storesService.getByVendorId(user.id);
     return { store };

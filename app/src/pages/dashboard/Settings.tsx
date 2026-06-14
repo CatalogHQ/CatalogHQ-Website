@@ -24,8 +24,11 @@ import {
 import StoreLinkCard from "@/components/vendor/StoreLinkCard";
 import VendorSupportCard from "@/components/vendor/VendorSupportCard";
 import VendorToolsCard from "@/components/vendor/VendorToolsCard";
+import { Link } from "react-router";
 import VendorVerificationCard from "@/components/vendor/VendorVerificationCard";
+import { useAuth } from "@/contexts/AuthContext";
 import { useVendor } from "@/contexts/VendorContext";
+import { vendorHasActiveSubscription } from "@/lib/vendor-onboarding";
 import {
   createSlugFromName,
   storeSetupSchema,
@@ -36,7 +39,9 @@ import { getStoreUrl } from "@/lib/slug";
 import SocialHandleFields from "@/components/vendor/SocialHandleFields";
 
 export default function Settings() {
+  const { user } = useAuth();
   const { store, completeSetup, isSlugAvailable } = useVendor();
+  const canVerifyNin = vendorHasActiveSubscription(user);
   const [loading, setLoading] = useState(false);
   const [slugEdited, setSlugEdited] = useState(true);
   const isVerified = store?.verificationStatus === "verified";
@@ -96,6 +101,11 @@ export default function Settings() {
   }, [businessName, slugEdited, form]);
 
   const onSubmit = async (data: StoreSetupFormValues) => {
+    if (!canVerifyNin && !isVerified) {
+      toast.error("Subscribe to a plan before submitting NIN verification.");
+      return;
+    }
+
     if (!(await isSlugAvailable(data.slug))) {
       form.setError("slug", {
         message: "This store link is already taken. Try another.",
@@ -218,6 +228,22 @@ export default function Settings() {
 
               <SocialHandleFields control={form.control} />
 
+              {!canVerifyNin && !isVerified ? (
+                <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                  <p className="font-medium">Subscription required for NIN verification</p>
+                  <p className="mt-1">
+                    Choose a paid plan before you can submit or update your NIN.
+                  </p>
+                  <Button
+                    asChild
+                    size="sm"
+                    className="mt-3 bg-whatsapp-green hover:bg-whatsapp-green/90"
+                  >
+                    <Link to="/dashboard/billing">Go to billing</Link>
+                  </Button>
+                </div>
+              ) : null}
+
               <div className="grid gap-4 sm:grid-cols-2">
                 <FormField
                   control={form.control}
@@ -226,7 +252,11 @@ export default function Settings() {
                     <FormItem>
                       <FormLabel>Legal first name</FormLabel>
                       <FormControl>
-                        <Input autoComplete="given-name" {...field} />
+                        <Input
+                          autoComplete="given-name"
+                          disabled={!canVerifyNin && !isVerified}
+                          {...field}
+                        />
                       </FormControl>
                       <FormDescription>
                         Must match the first name on your NIN.
@@ -243,7 +273,11 @@ export default function Settings() {
                     <FormItem>
                       <FormLabel>Legal last name</FormLabel>
                       <FormControl>
-                        <Input autoComplete="family-name" {...field} />
+                        <Input
+                          autoComplete="family-name"
+                          disabled={!canVerifyNin && !isVerified}
+                          {...field}
+                        />
                       </FormControl>
                       <FormDescription>
                         Must match the last name on your NIN.
@@ -264,7 +298,7 @@ export default function Settings() {
                       <Input
                         inputMode="numeric"
                         maxLength={11}
-                        disabled={isVerified}
+                        disabled={isVerified || (!canVerifyNin && !isVerified)}
                         {...field}
                       />
                     </FormControl>

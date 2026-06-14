@@ -13,6 +13,7 @@ import {
   storeRepository,
 } from "@/lib/repositories";
 import { useAuth } from "@/contexts/AuthContext";
+import { isSubscriptionBlocked } from "@/lib/api-error";
 import type { Product, ProductInput, Store, StoreSetupInput } from "@/types/domain";
 import type { CustomerOrder, OrderStatus } from "@/types/orders";
 
@@ -98,9 +99,19 @@ export function VendorProvider({ children }: { children: ReactNode }) {
         if (cancelled) return;
 
         setStore(nextStore);
-        setProducts(await productRepository.listByStoreId(user.id));
-        setOrders(await orderRepository.listByStoreId(user.id));
-        setUnreadOrderCount(await orderRepository.getUnreadCount(user.id));
+
+        try {
+          setProducts(await productRepository.listByStoreId(user.id));
+          setOrders(await orderRepository.listByStoreId(user.id));
+          setUnreadOrderCount(await orderRepository.getUnreadCount(user.id));
+        } catch (error) {
+          if (!isSubscriptionBlocked(error)) {
+            throw error;
+          }
+          setProducts([]);
+          setOrders([]);
+          setUnreadOrderCount(0);
+        }
       } finally {
         if (!cancelled) {
           setIsLoading(false);

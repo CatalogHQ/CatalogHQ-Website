@@ -204,6 +204,22 @@ export default function PublicProduct() {
     );
   }
 
+  if (store.storeUnavailable) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center bg-gray-50 px-4 text-center">
+        <h1 className="text-xl font-bold text-gray-900 sm:text-2xl">
+          Store temporarily closed
+        </h1>
+        <p className="mt-2 max-w-md text-gray-600">
+          {store.businessName} is not accepting orders right now.
+        </p>
+        <Button asChild className="mt-6">
+          <Link to="/">Go to CatalogHQ</Link>
+        </Button>
+      </div>
+    );
+  }
+
   if (!product || !product.published) {
     return (
       <StorefrontLayout store={store}>

@@ -52,9 +52,10 @@ const navItems = [
 export default function DashboardLayout() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { signOut, isAdmin } = useAuth();
+  const { signOut, isAdmin, user } = useAuth();
   const { store, unreadOrderCount } = useVendor();
   const { isHardBlocked, subscriptionExempt } = useVendorEntitlements();
+  const subscriptionPending = user?.subscription?.status === "pending";
 
   const billingOnly =
     isHardBlocked &&
@@ -179,11 +180,12 @@ export default function DashboardLayout() {
           {billingOnly ? (
             <div className="mx-auto max-w-lg rounded-xl border border-red-200 bg-white p-6 text-center shadow-sm">
               <h2 className="text-lg font-semibold text-gray-900">
-                Subscription required
+                {subscriptionPending ? "Subscribe to sell" : "Subscription required"}
               </h2>
               <p className="mt-2 text-sm text-gray-600">
-                Your subscription has expired. Renew to access your dashboard
-                and accept orders again.
+                {subscriptionPending
+                  ? "Subscribe to a plan to unlock your dashboard, verify your NIN, and start selling."
+                  : "Your subscription has expired. Renew to access your dashboard and accept orders again."}
               </p>
               <Button className="mt-4 bg-whatsapp-green hover:bg-whatsapp-green/90" asChild>
                 <Link to="/dashboard/billing">Go to billing</Link>

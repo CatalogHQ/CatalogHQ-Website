@@ -80,7 +80,7 @@ export class ProductsService {
 
   async listPublicBySlug(slug: string): Promise<{ products: ProductDto[] }> {
     const store = await this.storesService.getPublicBySlug(slug);
-    if (!store) {
+    if (!store || store.storeUnavailable) {
       return { products: [] };
     }
 
@@ -102,7 +102,7 @@ export class ProductsService {
     productId: string,
   ): Promise<ProductDto> {
     const store = await this.storesService.getPublicBySlug(slug);
-    if (!store) {
+    if (!store || store.storeUnavailable) {
       throw new NotFoundException('Store not found');
     }
 

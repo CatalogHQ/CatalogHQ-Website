@@ -101,8 +101,8 @@ export default function SignUp() {
     setLoading(true);
     try {
       await verifySignUp(pendingEmail, data.code);
-      toast.success("Account verified! Let's set up your store.");
-      navigate("/dashboard/setup");
+      toast.success("Account created. Choose a plan to start selling.");
+      navigate("/dashboard/billing");
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Could not verify your code.",

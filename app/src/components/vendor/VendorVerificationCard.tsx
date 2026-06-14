@@ -14,7 +14,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { useAuth } from "@/contexts/AuthContext";
 import { maskNin } from "@/lib/format";
+import { vendorHasActiveSubscription } from "@/lib/vendor-onboarding";
 import {
   getVerificationStatusDescription,
   resolveVerificationStatus,
@@ -59,10 +61,14 @@ export default function VendorVerificationCard({
   store,
   variant = "card",
 }: VendorVerificationCardProps) {
+  const { user } = useAuth();
+  const canVerifyNin = vendorHasActiveSubscription(user);
   const status = resolveVerificationStatus(store);
   const meta = STATUS_STYLES[status];
   const Icon = meta.icon;
-  const description = getVerificationStatusDescription(status);
+  const description = !canVerifyNin
+    ? "Subscribe to a plan before you can submit your NIN for verification."
+    : getVerificationStatusDescription(status);
 
   if (variant === "banner") {
     return (
@@ -89,8 +95,12 @@ export default function VendorVerificationCard({
           </div>
           {status !== "verified" && (
             <Button variant="outline" size="sm" asChild className="shrink-0">
-              <Link to="/dashboard/settings">
-                {status === "unsubmitted" ? "Complete setup" : "View details"}
+              <Link to={canVerifyNin ? "/dashboard/settings" : "/dashboard/billing"}>
+                {!canVerifyNin
+                  ? "Subscribe first"
+                  : status === "unsubmitted"
+                    ? "Complete setup"
+                    : "View details"}
               </Link>
             </Button>
           )}
@@ -163,11 +173,16 @@ export default function VendorVerificationCard({
           </p>
         )}
 
-        {status === "unsubmitted" && !store.setupComplete && (
+        {status === "unsubmitted" && !store.setupComplete && canVerifyNin && (
           <Button asChild className="bg-whatsapp-green hover:bg-whatsapp-green/90">
             <Link to="/dashboard/setup">Complete store setup</Link>
           </Button>
         )}
+        {!canVerifyNin && status !== "verified" ? (
+          <Button asChild className="bg-whatsapp-green hover:bg-whatsapp-green/90">
+            <Link to="/dashboard/billing">Subscribe to verify</Link>
+          </Button>
+        ) : null}
       </CardContent>
     </Card>
   );

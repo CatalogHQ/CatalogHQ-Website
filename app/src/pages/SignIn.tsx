@@ -27,6 +27,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import { isSignupVerificationPending } from "@/lib/api-error";
 import { storeRepository } from "@/lib/repositories";
 import {
+  getPostAuthDashboardPath,
+} from "@/lib/vendor-onboarding";
+import {
   signInSchema,
   verifySignUpCodeSchema,
   type SignInFormValues,
@@ -72,10 +75,16 @@ export default function SignIn() {
       return;
     }
 
-    const store = storeRepository.getMyStore
-      ? await storeRepository.getMyStore()
-      : await storeRepository.getByVendorId(user.id);
-    navigate(store?.setupComplete ? "/dashboard" : "/dashboard/setup");
+    let store = null;
+    try {
+      store = storeRepository.getMyStore
+        ? await storeRepository.getMyStore()
+        : await storeRepository.getByVendorId(user.id);
+    } catch {
+      store = null;
+    }
+
+    navigate(getPostAuthDashboardPath(user, store));
   };
 
   const onSubmit = async (data: SignInFormValues) => {

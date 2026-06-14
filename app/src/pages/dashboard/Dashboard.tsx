@@ -62,7 +62,7 @@ export default function Dashboard() {
           <CardHeader>
             <CardTitle>Finish setting up your store</CardTitle>
             <CardDescription>
-              Add your business details and NIN to unlock your storefront link.
+              Add your business details, then verify your NIN after you subscribe.
             </CardDescription>
           </CardHeader>
           <CardContent>
