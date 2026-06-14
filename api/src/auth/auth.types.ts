@@ -10,6 +10,7 @@ export type SafeUser = {
   subscription?: {
     status: string;
     planTier: string;
+    paidPlanTier?: 'starter' | 'pro' | 'growth' | 'business';
     currentPeriodEnd?: string;
     graceEndsAt?: string;
     isHardBlocked: boolean;
