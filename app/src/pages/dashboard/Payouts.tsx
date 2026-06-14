@@ -21,13 +21,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import BankSearchSelect from "@/components/vendor/BankSearchSelect";
 import {
   Table,
   TableBody,
@@ -211,23 +205,14 @@ export default function Payouts() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Bank</FormLabel>
-                      <Select
-                        value={field.value}
-                        onValueChange={field.onChange}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select bank" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {banks.map((bank) => (
-                            <SelectItem key={bank.code} value={bank.code}>
-                              {bank.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <FormControl>
+                        <BankSearchSelect
+                          banks={banks}
+                          value={field.value}
+                          onValueChange={field.onChange}
+                          placeholder="Select bank"
+                        />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
