@@ -1,3 +1,4 @@
+import { useMemo, useState } from "react";
 import { Link } from "react-router";
 import {
   ArrowRight,
@@ -23,15 +24,18 @@ import { usePlanCatalog } from "@/contexts/PlanCatalogContext";
 import { hasFeature, PLAN_TIER_LABELS } from "@/data/plans";
 import { formatNaira } from "@/lib/format";
 import {
-  computeSalesMetrics,
+  computeVendorNetMetrics,
   getLowStockProducts,
+  getPresetDateRange,
 } from "@/lib/sales-analytics";
+import { cn } from "@/lib/utils";
 
 export default function Dashboard() {
   const { user } = useAuth();
   const { store, products, orders, unreadOrderCount } = useVendor();
   const { getProductLimit } = usePlanCatalog();
   const planTier = user?.planTier ?? "starter";
+  const [salesPeriod, setSalesPeriod] = useState<"month" | "all">("month");
 
   if (!store?.setupComplete) {
     return (
@@ -66,7 +70,15 @@ export default function Dashboard() {
   }
 
   const productLimit = getProductLimit(planTier);
-  const metrics = computeSalesMetrics(orders);
+  const salesRange = useMemo(
+    () =>
+      salesPeriod === "month"
+        ? getPresetDateRange("month")
+        : getPresetDateRange("all"),
+    [salesPeriod],
+  );
+  const salesMetrics = computeVendorNetMetrics(orders, salesRange);
+  const allTimeSales = computeVendorNetMetrics(orders);
   const hasAnalytics = hasFeature(planTier, "analytics-dashboard");
   const hasLowStockAlerts = hasFeature(planTier, "low-stock-alerts");
   const lowStockCount = hasLowStockAlerts
@@ -167,36 +179,46 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        {hasAnalytics ? (
-          <Card>
-            <CardHeader className="pb-2">
-              <CardDescription>Revenue</CardDescription>
-              <CardTitle className="text-xl">
-                {formatNaira(metrics.totalRevenue)}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardDescription>Sales (you receive)</CardDescription>
+            <CardTitle className="text-xl">
+              {formatNaira(salesMetrics.totalRevenue)}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="flex flex-wrap gap-2">
+              {(["month", "all"] as const).map((period) => (
+                <button
+                  key={period}
+                  type="button"
+                  onClick={() => setSalesPeriod(period)}
+                  className={cn(
+                    "rounded-md border px-2.5 py-1 text-xs transition-colors",
+                    salesPeriod === period
+                      ? "border-whatsapp-green bg-whatsapp-green/10 text-whatsapp-dark"
+                      : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50",
+                  )}
+                >
+                  {period === "month" ? "This month" : "All time"}
+                </button>
+              ))}
+            </div>
+            <p className="text-xs text-gray-500">
+              {salesPeriod === "month"
+                ? `${salesMetrics.orderCount} order${salesMetrics.orderCount === 1 ? "" : "s"} this month`
+                : `${allTimeSales.orderCount} order${allTimeSales.orderCount === 1 ? "" : "s"} all time`}
+            </p>
+            {hasAnalytics ? (
               <Button variant="outline" size="sm" asChild>
                 <Link to="/dashboard/analytics">
                   <BarChart3 className="mr-2 h-4 w-4" />
                   View analytics
                 </Link>
               </Button>
-            </CardContent>
-          </Card>
-        ) : (
-          <Card>
-            <CardHeader className="pb-2">
-              <CardDescription>Store status</CardDescription>
-              <CardTitle className="text-xl text-whatsapp-green">Live</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-gray-600">
-                Your storefront is ready to share.
-              </p>
-            </CardContent>
-          </Card>
-        )}
+            ) : null}
+          </CardContent>
+        </Card>
       </div>
 
       <StoreLinkCard slug={store.slug} />

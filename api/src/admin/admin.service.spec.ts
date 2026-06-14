@@ -4,6 +4,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { VendorVerificationStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { PaymentsService } from '../payments/payments.service';
+import { PlanCatalogService } from '../plans/plan-catalog.service';
 import { AdminService } from './admin.service';
 
 describe('AdminService', () => {
@@ -26,11 +27,15 @@ describe('AdminService', () => {
     },
     user: {
       count: jest.fn(),
+      groupBy: jest.fn(),
     },
   };
 
   const eventEmitter = { emit: jest.fn() };
   const paymentsService = { confirmPayment: jest.fn() };
+  const planCatalogService = {
+    listAdminCatalog: jest.fn(),
+  };
 
   let service: AdminService;
 
@@ -43,6 +48,7 @@ describe('AdminService', () => {
         { provide: PrismaService, useValue: prisma },
         { provide: EventEmitter2, useValue: eventEmitter },
         { provide: PaymentsService, useValue: paymentsService },
+        { provide: PlanCatalogService, useValue: planCatalogService },
       ],
     }).compile();
 
@@ -63,12 +69,21 @@ describe('AdminService', () => {
     prisma.order.count
       .mockResolvedValueOnce(3)
       .mockResolvedValueOnce(1);
+    planCatalogService.listAdminCatalog.mockResolvedValue([
+      { id: 'starter', monthlyPriceKobo: 300_000 },
+      { id: 'pro', monthlyPriceKobo: 500_000 },
+    ]);
+    prisma.user.groupBy.mockResolvedValue([
+      { planTier: 'starter', _count: { _all: 2 } },
+      { planTier: 'pro', _count: { _all: 1 } },
+    ]);
 
     const stats = await service.getStats();
 
     expect(stats.totalVendors).toBe(4);
     expect(stats.totalOrders).toBe(10);
     expect(stats.platformGmv).toBe(50000);
+    expect(stats.subscriptionMrr).toBe(11000);
     expect(stats.pendingPayments).toBe(3);
     expect(stats.failedPayments).toBe(1);
   });

@@ -93,6 +93,7 @@ export type AdminPlatformStatsDto = {
   totalCustomers: number;
   totalOrders: number;
   platformGmv: number;
+  subscriptionMrr: number;
   openTickets: number;
   pendingVerifications: number;
   pendingPayments: number;

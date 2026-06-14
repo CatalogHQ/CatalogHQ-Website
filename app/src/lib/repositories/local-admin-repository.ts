@@ -83,7 +83,7 @@ export class LocalAdminRepository implements ApiAdminRepository {
   }
 
   getRevenueAnalytics(preset: DatePreset): Promise<AdminRevenueByDay[]> {
-    if (preset === "7d") {
+    if (preset === "7d" || preset === "month") {
       return Promise.resolve(ADMIN_MOCK_REVENUE_BY_DAY);
     }
 

@@ -1,3 +1,4 @@
+import { vendorNetFromOrderLine } from "@/lib/flutterwave-fees";
 import type { Product } from "@/types/domain";
 import { getProductLowStockThreshold } from "@/types/domain";
 import type { CustomerOrder } from "@/types/orders";
@@ -13,7 +14,7 @@ export type AnalyticsDateRange = {
   to: Date;
 };
 
-export type DateRangePreset = "7d" | "30d" | "90d" | "all" | "custom";
+export type DateRangePreset = "7d" | "30d" | "90d" | "month" | "all" | "custom";
 
 export type RevenueByDay = {
   date: string;
@@ -74,6 +75,12 @@ export function getPresetDateRange(preset: Exclude<DateRangePreset, "custom">): 
     return { from: new Date(0), to };
   }
 
+  if (preset === "month") {
+    const from = startOfDay(new Date());
+    from.setDate(1);
+    return { from, to };
+  }
+
   const days = preset === "7d" ? 7 : preset === "30d" ? 30 : 90;
   const from = startOfDay(new Date());
   from.setDate(from.getDate() - (days - 1));
@@ -114,6 +121,8 @@ export function getDateRangePresetLabel(preset: DateRangePreset): string {
       return "Last 30 days";
     case "90d":
       return "Last 90 days";
+    case "month":
+      return "This month";
     case "all":
       return "All time";
     case "custom":
@@ -143,6 +152,29 @@ export function computeSalesMetrics(
     : getActiveOrders(orders);
   const totalRevenue = activeOrders.reduce(
     (sum, order) => sum + order.totalPaid,
+    0,
+  );
+  const unitsSold = activeOrders.reduce(
+    (sum, order) => sum + order.quantity,
+    0,
+  );
+
+  return {
+    totalRevenue,
+    orderCount: activeOrders.length,
+    unitsSold,
+  };
+}
+
+export function computeVendorNetMetrics(
+  orders: CustomerOrder[],
+  range?: AnalyticsDateRange,
+): SalesMetrics {
+  const activeOrders = range
+    ? filterOrdersByDateRange(orders, range)
+    : getActiveOrders(orders);
+  const totalRevenue = activeOrders.reduce(
+    (sum, order) => sum + vendorNetFromOrderLine(order),
     0,
   );
   const unitsSold = activeOrders.reduce(

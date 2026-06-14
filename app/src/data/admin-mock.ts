@@ -89,6 +89,7 @@ export type AdminPlatformStats = {
   totalCustomers: number;
   totalOrders: number;
   platformGmv: number;
+  subscriptionMrr: number;
   openTickets: number;
   pendingVerifications: number;
   pendingPayments: number;
@@ -481,6 +482,17 @@ export const ADMIN_MOCK_STATS: AdminPlatformStats = {
     (sum, o) => sum + o.totalPaid,
     0,
   ),
+  subscriptionMrr: ADMIN_MOCK_VENDORS.reduce((sum, vendor) => {
+    const monthlyPrice =
+      vendor.planTier === "starter"
+        ? 3_000
+        : vendor.planTier === "pro"
+          ? 5_000
+          : vendor.planTier === "growth"
+            ? 8_000
+            : 15_000;
+    return sum + monthlyPrice;
+  }, 0),
   openTickets: ADMIN_MOCK_TICKETS.filter((t) => t.status === "open").length,
   pendingVerifications: ADMIN_MOCK_VERIFICATION_QUEUE.length,
   pendingPayments: ADMIN_MOCK_ORDERS.filter((o) => o.paymentStatus === "pending")

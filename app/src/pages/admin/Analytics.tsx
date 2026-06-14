@@ -46,13 +46,14 @@ const chartConfig = {
 } satisfies ChartConfig;
 
 const PRESET_LABELS: Record<DatePreset, string> = {
+  month: "This month",
   "7d": "Last 7 days",
   "30d": "Last 30 days",
   "90d": "Last 90 days",
 };
 
 export default function AdminAnalytics() {
-  const [preset, setPreset] = useState<DatePreset>("7d");
+  const [preset, setPreset] = useState<DatePreset>("month");
   const [stats, setStats] = useState<AdminPlatformStats | null>(null);
   const [chartData, setChartData] = useState<AdminRevenueByDay[]>([]);
   const [topVendors, setTopVendors] = useState<AdminVendor[]>([]);
@@ -150,6 +151,11 @@ export default function AdminAnalytics() {
         <AdminStatCard
           label="All-time GMV"
           value={formatNaira(stats.platformGmv)}
+        />
+        <AdminStatCard
+          label="Subscription MRR"
+          value={formatNaira(stats.subscriptionMrr)}
+          description="Estimated monthly revenue from vendor plans"
         />
         <AdminStatCard label="Total orders" value={stats.totalOrders} />
         <AdminStatCard label="Active stores" value={stats.activeStores} />

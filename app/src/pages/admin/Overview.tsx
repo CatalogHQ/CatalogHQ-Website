@@ -187,6 +187,11 @@ export default function AdminOverview() {
           value={formatNaira(stats.platformGmv)}
         />
         <AdminStatCard
+          label="Subscription MRR"
+          value={formatNaira(stats.subscriptionMrr)}
+          description="Estimated monthly revenue from vendor plans"
+        />
+        <AdminStatCard
           label="Open tickets"
           value={stats.openTickets}
           description={`${stats.pendingVerifications} pending verifications`}

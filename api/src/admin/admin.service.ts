@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { OrderStatus, PaymentStatus, PlanTier, VendorVerificationStatus } from '@prisma/client';
+import { PlanCatalogService } from '../plans/plan-catalog.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { PaymentsService } from '../payments/payments.service';
 import { VENDOR_VERIFICATION_DECIDED_EVENT } from './events/admin.events';
@@ -25,7 +26,7 @@ import {
   toAdminVerificationDto,
 } from './admin.mapper';
 
-type DatePreset = '7d' | '30d' | '90d';
+type DatePreset = '7d' | '30d' | '90d' | 'month';
 
 @Injectable()
 export class AdminService {
@@ -33,6 +34,7 @@ export class AdminService {
     private readonly prisma: PrismaService,
     private readonly eventEmitter: EventEmitter2,
     private readonly paymentsService: PaymentsService,
+    private readonly planCatalogService: PlanCatalogService,
   ) {}
 
   private async getOrderAggregatesByStore(): Promise<
@@ -69,10 +71,40 @@ export class AdminService {
     return { pendingVerifications, openTickets };
   }
 
+  private async computeSubscriptionMrr(): Promise<number> {
+    const [catalog, grouped] = await Promise.all([
+      this.planCatalogService.listAdminCatalog(),
+      this.prisma.user.groupBy({
+        by: ['planTier'],
+        where: { role: 'vendor' },
+        _count: { _all: true },
+      }),
+    ]);
+
+    const priceByTier = new Map(
+      catalog.map((plan) => [plan.id, plan.monthlyPriceKobo]),
+    );
+
+    let mrrKobo = 0;
+    for (const entry of grouped) {
+      const priceKobo = priceByTier.get(entry.planTier) ?? 0;
+      mrrKobo += priceKobo * entry._count._all;
+    }
+
+    return Math.round(mrrKobo / 100);
+  }
+
   async getStats(): Promise<AdminPlatformStatsDto> {
     const badges = await this.getBadges();
-    const [totalVendors, orderStats, customers, activeStores, pendingPayments, failedPayments] =
-      await Promise.all([
+    const [
+      totalVendors,
+      orderStats,
+      customers,
+      activeStores,
+      pendingPayments,
+      failedPayments,
+      subscriptionMrr,
+    ] = await Promise.all([
       this.prisma.user.count({ where: { role: 'vendor' } }),
       this.prisma.order.aggregate({
         _count: { _all: true },
@@ -93,6 +125,7 @@ export class AdminService {
       this.prisma.order.count({
         where: { paymentStatus: PaymentStatus.failed },
       }),
+      this.computeSubscriptionMrr(),
     ]);
 
     return {
@@ -101,6 +134,7 @@ export class AdminService {
       totalCustomers: customers.length,
       totalOrders: orderStats._count._all,
       platformGmv: orderStats._sum.totalPaid ?? 0,
+      subscriptionMrr,
       openTickets: badges.openTickets,
       pendingVerifications: badges.pendingVerifications,
       pendingPayments,
@@ -252,10 +286,15 @@ export class AdminService {
   }
 
   async getRevenueAnalytics(preset: DatePreset): Promise<AdminRevenueByDayDto[]> {
-    const days = preset === '7d' ? 7 : preset === '30d' ? 30 : 90;
     const start = new Date();
     start.setHours(0, 0, 0, 0);
-    start.setDate(start.getDate() - (days - 1));
+
+    if (preset === 'month') {
+      start.setDate(1);
+    } else {
+      const days = preset === '7d' ? 7 : preset === '30d' ? 30 : 90;
+      start.setDate(start.getDate() - (days - 1));
+    }
 
     const orders = await this.prisma.order.findMany({
       where: {
@@ -265,8 +304,8 @@ export class AdminService {
       select: { createdAt: true, totalPaid: true },
     });
 
-    if (preset === '7d') {
-      return this.bucketDaily(orders, days);
+    if (preset === '7d' || preset === 'month') {
+      return this.bucketDailyInRange(orders, start, new Date());
     }
 
     if (preset === '30d') {
@@ -406,17 +445,20 @@ export class AdminService {
     return toAdminPlatformOrderDto(refreshed, refreshed.store);
   }
 
-  private bucketDaily(
+  private bucketDailyInRange(
     orders: { createdAt: Date; totalPaid: number }[],
-    days: number,
+    start: Date,
+    end: Date,
   ): AdminRevenueByDayDto[] {
     const buckets = new Map<string, number>();
+    const cursor = new Date(start);
+    cursor.setHours(0, 0, 0, 0);
+    const endDay = new Date(end);
+    endDay.setHours(0, 0, 0, 0);
 
-    for (let index = days - 1; index >= 0; index -= 1) {
-      const date = new Date();
-      date.setHours(0, 0, 0, 0);
-      date.setDate(date.getDate() - index);
-      buckets.set(date.toISOString().slice(0, 10), 0);
+    while (cursor <= endDay) {
+      buckets.set(cursor.toISOString().slice(0, 10), 0);
+      cursor.setDate(cursor.getDate() + 1);
     }
 
     for (const order of orders) {

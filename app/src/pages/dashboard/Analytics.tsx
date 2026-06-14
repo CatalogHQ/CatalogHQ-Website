@@ -65,6 +65,7 @@ const chartConfig = {
 } satisfies ChartConfig;
 
 const PRESET_OPTIONS: Exclude<DateRangePreset, "custom">[] = [
+  "month",
   "7d",
   "30d",
   "90d",
@@ -97,7 +98,7 @@ export default function Analytics() {
   const planTier = user?.planTier ?? "starter";
   const hasAnalytics = hasFeature(planTier, "analytics-dashboard");
 
-  const [preset, setPreset] = useState<DateRangePreset>("7d");
+  const [preset, setPreset] = useState<DateRangePreset>("month");
   const [customPickerOpen, setCustomPickerOpen] = useState(false);
   const [draftRange, setDraftRange] = useState<DateRange | undefined>();
   const [customRange, setCustomRange] = useState<AnalyticsDateRange | null>(

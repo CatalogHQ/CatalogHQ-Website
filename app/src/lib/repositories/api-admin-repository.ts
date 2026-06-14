@@ -17,7 +17,7 @@ export type AdminBadges = {
   openTickets: number;
 };
 
-export type DatePreset = "7d" | "30d" | "90d";
+export type DatePreset = "7d" | "30d" | "90d" | "month";
 
 export class ApiAdminRepository {
   getBadges(): Promise<AdminBadges> {
