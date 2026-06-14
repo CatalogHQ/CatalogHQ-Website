@@ -18,9 +18,9 @@ import {
 } from "@/components/ui/card";
 import StoreLinkCard from "@/components/vendor/StoreLinkCard";
 import VendorVerificationCard from "@/components/vendor/VendorVerificationCard";
-import { useAuth } from "@/contexts/AuthContext";
 import { useVendor } from "@/contexts/VendorContext";
 import { usePlanCatalog } from "@/contexts/PlanCatalogContext";
+import { useVendorEntitlements } from "@/hooks/use-vendor-entitlements";
 import { hasFeature, PLAN_TIER_LABELS } from "@/data/plans";
 import { formatNaira } from "@/lib/format";
 import {
@@ -31,10 +31,10 @@ import {
 import { cn } from "@/lib/utils";
 
 export default function Dashboard() {
-  const { user } = useAuth();
   const { store, products, orders, unreadOrderCount } = useVendor();
+  const { paidPlanTier } = useVendorEntitlements();
   const { getProductLimit } = usePlanCatalog();
-  const planTier = user?.planTier ?? "starter";
+  const planTier = paidPlanTier;
   const [salesPeriod, setSalesPeriod] = useState<"month" | "all">("month");
   const salesRange = useMemo(
     () =>
@@ -78,9 +78,11 @@ export default function Dashboard() {
     );
   }
 
-  const productLimit = getProductLimit(planTier);
-  const hasAnalytics = hasFeature(planTier, "analytics-dashboard");
-  const hasLowStockAlerts = hasFeature(planTier, "low-stock-alerts");
+  const productLimit = planTier ? getProductLimit(planTier) : 0;
+  const hasAnalytics = planTier ? hasFeature(planTier, "analytics-dashboard") : false;
+  const hasLowStockAlerts = planTier
+    ? hasFeature(planTier, "low-stock-alerts")
+    : false;
   const lowStockCount = hasLowStockAlerts
     ? getLowStockProducts(products).length
     : 0;
@@ -164,13 +166,19 @@ export default function Dashboard() {
           <CardHeader className="pb-2">
             <CardDescription>Plan</CardDescription>
             <CardTitle className="text-xl">
-              {PLAN_TIER_LABELS[planTier]}
+              {planTier ? PLAN_TIER_LABELS[planTier] : "No active plan"}
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-gray-600">
-              {products.length} of {productLimit} products used
-            </p>
+            {planTier ? (
+              <p className="text-sm text-gray-600">
+                {products.length} of {productLimit} products used
+              </p>
+            ) : (
+              <Button variant="outline" size="sm" asChild>
+                <Link to="/dashboard/billing">Choose a plan</Link>
+              </Button>
+            )}
           </CardContent>
         </Card>
 

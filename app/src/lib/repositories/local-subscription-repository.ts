@@ -21,19 +21,14 @@ function saveSubscriptions(subscriptions: StoredSubscription[]): void {
 }
 
 function defaultSubscription(vendorId: string, planTier: PlanTier): StoredSubscription {
-  const periodEnd = new Date();
-  periodEnd.setDate(periodEnd.getDate() + 30);
-
   return {
     vendorId,
-    status: "active",
+    status: "pending",
     planTier,
     subscriptionExempt: false,
-    currentPeriodStart: new Date().toISOString(),
-    currentPeriodEnd: periodEnd.toISOString(),
     cancelAtPeriodEnd: false,
-    isHardBlocked: false,
-    hasActiveAccess: true,
+    isHardBlocked: true,
+    hasActiveAccess: false,
   };
 }
 
@@ -89,6 +84,7 @@ export class LocalSubscriptionRepository implements SubscriptionRepository {
       vendorId: session.userId,
       status: "active",
       planTier: input.planTier,
+      paidPlanTier: input.planTier,
       subscriptionExempt: false,
       currentPeriodStart: new Date().toISOString(),
       currentPeriodEnd: periodEnd.toISOString(),

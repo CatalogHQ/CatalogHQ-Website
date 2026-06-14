@@ -43,6 +43,7 @@ export class AuthService {
         subscription: {
           status: subscription.status,
           planTier: subscription.planTier,
+          paidPlanTier: subscription.paidPlanTier,
           currentPeriodEnd: subscription.currentPeriodEnd,
           graceEndsAt: subscription.graceEndsAt,
           isHardBlocked: subscription.isHardBlocked,

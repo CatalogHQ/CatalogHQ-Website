@@ -147,11 +147,10 @@ export default function Billing() {
     );
   }
 
-  const currentTier = subscription.planTier;
-  const hasPaidPlan =
-    subscription.hasActiveAccess &&
-    subscription.status !== "pending" &&
-    !subscription.subscriptionExempt;
+  const paidPlanTier = subscription.subscriptionExempt
+    ? subscription.planTier
+    : subscription.paidPlanTier;
+  const hasPaidPlan = Boolean(paidPlanTier);
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
@@ -165,20 +164,22 @@ export default function Billing() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Current subscription</CardTitle>
+          <CardTitle className="text-base">
+            {hasPaidPlan ? "Current subscription" : "Subscription"}
+          </CardTitle>
           <CardDescription>
             {subscription.subscriptionExempt
               ? "This account is comped by CatalogHQ admin."
               : hasPaidPlan
                 ? "Monthly billing through Flutterwave."
-                : "Choose a plan below to activate your store."}
+                : "All plans are paid monthly. Choose one below to activate your store."}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="flex flex-wrap items-center gap-2">
-            {hasPaidPlan ? (
+            {hasPaidPlan && paidPlanTier ? (
               <Badge variant="secondary">
-                {PLAN_TIER_LABELS[currentTier]}
+                {PLAN_TIER_LABELS[paidPlanTier]}
               </Badge>
             ) : null}
             <Badge
@@ -219,7 +220,7 @@ export default function Billing() {
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {plans.map((plan) => {
-          const isCurrent = hasPaidPlan && plan.id === currentTier;
+          const isCurrent = hasPaidPlan && paidPlanTier && plan.id === paidPlanTier;
           const bullets = getFeatureBullets(plan.id);
 
           return (

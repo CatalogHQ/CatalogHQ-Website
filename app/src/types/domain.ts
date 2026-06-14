@@ -29,6 +29,7 @@ export type StoredUser = {
     VendorSubscription,
     | "status"
     | "planTier"
+    | "paidPlanTier"
     | "currentPeriodEnd"
     | "graceEndsAt"
     | "isHardBlocked"

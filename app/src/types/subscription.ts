@@ -11,6 +11,7 @@ export type SubscriptionStatus =
 export type VendorSubscription = {
   status: SubscriptionStatus;
   planTier: PlanTier;
+  paidPlanTier?: PlanTier;
   subscriptionExempt: boolean;
   currentPeriodStart?: string;
   currentPeriodEnd?: string;

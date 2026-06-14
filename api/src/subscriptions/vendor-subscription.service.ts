@@ -114,7 +114,6 @@ export class VendorSubscriptionService {
     await this.prisma.vendorSubscription.update({
       where: { vendorId },
       data: {
-        planTier: dto.planTier,
         flutterwaveSubscriptionId: checkout.flutterwaveSubscriptionId,
       },
     });

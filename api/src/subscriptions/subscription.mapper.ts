@@ -8,7 +8,10 @@ import {
 
 export type VendorSubscriptionDto = {
   status: SubscriptionStatus;
+  /** Internal/checkout tier hint. Not the paid plan until payment succeeds. */
   planTier: PlanTier;
+  /** Set only after a successful subscription payment (or admin comp). */
+  paidPlanTier?: PlanTier;
   subscriptionExempt: boolean;
   currentPeriodStart?: string;
   currentPeriodEnd?: string;
@@ -53,9 +56,14 @@ export function toVendorSubscriptionDto(
     subscription.status === SubscriptionStatus.grace ||
     subscription.status === SubscriptionStatus.past_due;
 
+  const paidPlanTier = hasActiveAccess
+    ? subscription.planTier
+    : undefined;
+
   return {
     status: subscription.status,
     planTier: subscription.planTier,
+    paidPlanTier,
     subscriptionExempt: user.subscriptionExempt,
     currentPeriodStart: subscription.currentPeriodStart?.toISOString(),
     currentPeriodEnd: subscription.currentPeriodEnd?.toISOString(),

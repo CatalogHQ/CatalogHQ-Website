@@ -7,26 +7,28 @@ export function useVendorEntitlements() {
   const { user } = useAuth();
 
   return useMemo(() => {
-    const planTier = user?.planTier ?? "starter";
     const subscription = user?.subscription;
     const subscriptionExempt = user?.subscriptionExempt ?? false;
     const hasActiveAccess =
-      subscriptionExempt ||
-      subscription?.hasActiveAccess !== false;
+      subscriptionExempt || (subscription?.hasActiveAccess ?? false);
+    const paidPlanTier =
+      subscription?.paidPlanTier ??
+      (hasActiveAccess ? (user?.planTier as PlanTier) : undefined);
     const isHardBlocked =
       !subscriptionExempt && (subscription?.isHardBlocked ?? false);
     const isGracePeriod = subscription?.status === "grace";
     const graceEndsAt = subscription?.graceEndsAt;
 
     const canUseFeature = (featureId: string) => {
-      if (!hasActiveAccess || isHardBlocked) {
+      if (!hasActiveAccess || isHardBlocked || !paidPlanTier) {
         return false;
       }
-      return hasFeature(planTier, featureId);
+      return hasFeature(paidPlanTier, featureId);
     };
 
     return {
-      planTier: planTier as PlanTier,
+      planTier: (paidPlanTier ?? "starter") as PlanTier,
+      paidPlanTier,
       subscription,
       subscriptionExempt,
       hasActiveAccess,
