@@ -9,14 +9,6 @@ export default function FinalCTA() {
   return (
     <section id="final-cta" className="bg-whatsapp-dark py-16 sm:py-24 lg:py-28">
       <div className="max-w-2xl mx-auto px-5 sm:px-6 lg:px-8 text-center">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.2 }}
-          transition={{ duration: 0.5 }}
-        >
-        </motion.div>
-
         <motion.h2
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
