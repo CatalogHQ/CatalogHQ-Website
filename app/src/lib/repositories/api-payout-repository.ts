@@ -2,14 +2,14 @@ import { apiClient } from "@/lib/api-client";
 import type { PayoutRepository } from "@/lib/repositories/payout-repository";
 import type { CustomerOrder } from "@/types/orders";
 import type {
-  PayoutBank,
+  PayoutBanksResponse,
   UpdatePayoutInput,
   VendorPayoutAccount,
 } from "@/types/payout";
 
 export class ApiPayoutRepository implements PayoutRepository {
-  listBanks(): Promise<PayoutBank[]> {
-    return apiClient<PayoutBank[]>("/stores/me/payout/banks");
+  listBanks(): Promise<PayoutBanksResponse> {
+    return apiClient<PayoutBanksResponse>("/stores/me/payout/banks");
   }
 
   getAccount(): Promise<VendorPayoutAccount> {

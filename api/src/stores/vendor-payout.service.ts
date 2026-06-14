@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { VendorVerificationStatus } from '@prisma/client';
 import { FlutterwaveSubaccountService } from '../payments/flutterwave-subaccount.service';
+import { normalizeNigerianBankCode } from '../payments/flutterwave-bank.util';
 import { PrismaService } from '../prisma/prisma.service';
 import { UpdatePayoutDto } from './dto/update-payout.dto';
 import { OrderDto, toOrderDto } from '../orders/orders.mapper';
@@ -57,10 +58,17 @@ export class VendorPayoutService {
       );
     }
 
-    const banks = await this.subaccountService.listBanks();
-    const bank = banks.find((entry) => entry.code === dto.bankCode.trim());
+    const banksResponse = await this.subaccountService.listBanks();
+    const normalizedBankCode = dto.bankCode.trim();
+    const bank = banksResponse.banks.find(
+      (entry) => entry.code === normalizeNigerianBankCode(normalizedBankCode),
+    );
     if (!bank) {
-      throw new BadRequestException('Select a valid bank.');
+      throw new BadRequestException(
+        banksResponse.sandboxMode
+          ? 'Flutterwave test mode only supports Access Bank (044) for payout setup.'
+          : 'Select a valid bank.',
+      );
     }
 
     const accountNumber = dto.accountNumber.trim();

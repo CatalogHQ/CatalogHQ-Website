@@ -52,6 +52,9 @@ const PAYOUT_STATUS_LABELS: Record<
 export default function Payouts() {
   const { store } = useVendor();
   const [banks, setBanks] = useState<PayoutBank[]>([]);
+  const [sandboxMode, setSandboxMode] = useState(false);
+  const [sandboxHint, setSandboxHint] = useState<string | null>(null);
+  const [testAccountNumbers, setTestAccountNumbers] = useState<string[]>([]);
   const [account, setAccount] = useState<VendorPayoutAccount | null>(null);
   const [history, setHistory] = useState<CustomerOrder[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -77,7 +80,10 @@ export default function Payouts() {
           payoutRepository.listHistory(),
         ]);
         if (!cancelled) {
-          setBanks(bankList);
+          setBanks(bankList.banks);
+          setSandboxMode(bankList.sandboxMode);
+          setSandboxHint(bankList.sandboxHint ?? null);
+          setTestAccountNumbers(bankList.testAccountNumbers ?? []);
           setAccount(payoutAccount);
           setHistory(payoutHistory);
           form.reset({
@@ -194,7 +200,21 @@ export default function Payouts() {
               </Link>
             </div>
           ) : (
-            <Form {...form}>
+            <>
+              {sandboxMode && sandboxHint ? (
+                <div className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900">
+                  <p className="font-medium">Flutterwave test mode</p>
+                  <p className="mt-1">{sandboxHint}</p>
+                  {testAccountNumbers.length > 0 ? (
+                    <p className="mt-2 text-xs text-blue-800">
+                      Test account numbers:{" "}
+                      {testAccountNumbers.join(", ")}
+                    </p>
+                  ) : null}
+                </div>
+              ) : null}
+
+              <Form {...form}>
               <form
                 onSubmit={form.handleSubmit(onSubmit)}
                 className="grid gap-4 sm:grid-cols-2"
@@ -227,7 +247,11 @@ export default function Payouts() {
                       <FormControl>
                         <Input
                           inputMode="numeric"
-                          placeholder="0123456789"
+                          placeholder={
+                            sandboxMode
+                              ? "0690000032"
+                              : "0123456789"
+                          }
                           {...field}
                         />
                       </FormControl>
@@ -249,6 +273,7 @@ export default function Payouts() {
                 </div>
               </form>
             </Form>
+            </>
           )}
         </CardContent>
       </Card>

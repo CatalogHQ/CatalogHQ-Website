@@ -62,9 +62,10 @@ describe('VendorPayoutService', () => {
       whatsapp: '08012345678',
       flutterwaveSubaccountId: null,
     });
-    subaccountService.listBanks.mockResolvedValue([
-      { code: '044', name: 'Access Bank' },
-    ]);
+    subaccountService.listBanks.mockResolvedValue({
+      banks: [{ code: '044', name: 'Access Bank' }],
+      sandboxMode: false,
+    });
     subaccountService.resolveAccount.mockResolvedValue({
       accountNumber: '0123456789',
       accountName: 'Ada Lovelace',

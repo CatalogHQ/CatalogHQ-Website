@@ -1,15 +1,30 @@
 import {
   Injectable,
+  BadRequestException,
   InternalServerErrorException,
   Logger,
   ServiceUnavailableException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Store } from '@prisma/client';
+import {
+  FLUTTERWAVE_SANDBOX_BANK_CODE,
+  FLUTTERWAVE_SANDBOX_TEST_ACCOUNT_NUMBERS,
+  isFlutterwaveSandbox,
+  isFlutterwaveSandboxBankRestrictionMessage,
+  normalizeNigerianBankCode,
+} from './flutterwave-bank.util';
 
 export type FlutterwaveBank = {
   code: string;
   name: string;
+};
+
+export type PayoutBanksResponse = {
+  banks: FlutterwaveBank[];
+  sandboxMode: boolean;
+  sandboxHint?: string;
+  testAccountNumbers?: string[];
 };
 
 export type ResolvedBankAccount = {
@@ -48,18 +63,36 @@ const FLUTTERWAVE_V3_BASE_URL = 'https://api.flutterwave.com/v3';
 export class FlutterwaveSubaccountService {
   private readonly logger = new Logger(FlutterwaveSubaccountService.name);
   private readonly secretKey: string | undefined;
+  private readonly env: string | undefined;
   private banksCache: FlutterwaveBank[] | null = null;
   private banksCacheExpiresAt = 0;
 
   constructor(private readonly configService: ConfigService) {
     this.secretKey = this.configService.get<string>('FLUTTERWAVE_SECRET_KEY');
+    this.env = this.configService.get<string>('FLUTTERWAVE_ENV', 'sandbox');
   }
 
-  isConfigured(): boolean {
-    return Boolean(this.secretKey?.trim());
+  isSandboxMode(): boolean {
+    return isFlutterwaveSandbox(this.env);
   }
 
-  async listBanks(): Promise<FlutterwaveBank[]> {
+  async listBanks(): Promise<PayoutBanksResponse> {
+    const banks = await this.fetchBanks();
+
+    if (this.isSandboxMode()) {
+      return {
+        banks: banks.filter((bank) => bank.code === FLUTTERWAVE_SANDBOX_BANK_CODE),
+        sandboxMode: true,
+        sandboxHint:
+          'Flutterwave test mode only supports Access Bank (044). Use a Flutterwave sandbox test account number.',
+        testAccountNumbers: [...FLUTTERWAVE_SANDBOX_TEST_ACCOUNT_NUMBERS],
+      };
+    }
+
+    return { banks, sandboxMode: false };
+  }
+
+  private async fetchBanks(): Promise<FlutterwaveBank[]> {
     if (!this.isConfigured()) {
       return this.getFallbackBanks();
     }
@@ -71,8 +104,11 @@ export class FlutterwaveSubaccountService {
 
     const payload = await this.request<V3Bank[]>('/banks/NG', { method: 'GET' });
     const banks = (payload ?? [])
+      .map((bank) => ({
+        code: normalizeNigerianBankCode(bank.code),
+        name: bank.name?.trim() ?? '',
+      }))
       .filter((bank) => bank.code && bank.name)
-      .map((bank) => ({ code: bank.code, name: bank.name }))
       .sort((a, b) => a.name.localeCompare(b.name));
 
     this.banksCache = banks.length > 0 ? banks : this.getFallbackBanks();
@@ -80,13 +116,30 @@ export class FlutterwaveSubaccountService {
     return this.banksCache;
   }
 
+  isConfigured(): boolean {
+    return Boolean(this.secretKey?.trim());
+  }
+
   async resolveAccount(
     bankCode: string,
     accountNumber: string,
   ): Promise<ResolvedBankAccount> {
+    const normalizedBankCode = normalizeNigerianBankCode(bankCode);
+    const normalizedAccountNumber = accountNumber.replace(/\D/g, '');
+
+    if (!normalizedBankCode) {
+      throw new BadRequestException('Select a valid bank.');
+    }
+
+    if (this.isSandboxMode() && normalizedBankCode !== FLUTTERWAVE_SANDBOX_BANK_CODE) {
+      throw new BadRequestException(
+        'Flutterwave test mode only supports Access Bank (044) for payout setup.',
+      );
+    }
+
     if (!this.isConfigured()) {
       return {
-        accountNumber,
+        accountNumber: normalizedAccountNumber,
         accountName: 'Demo Account Name',
       };
     }
@@ -94,8 +147,8 @@ export class FlutterwaveSubaccountService {
     const payload = await this.request<V3ResolveAccount>('/accounts/resolve', {
       method: 'POST',
       body: {
-        account_number: accountNumber,
-        account_bank: bankCode,
+        account_number: normalizedAccountNumber,
+        account_bank: normalizedBankCode,
       },
     });
 
@@ -104,7 +157,7 @@ export class FlutterwaveSubaccountService {
     }
 
     return {
-      accountNumber: payload.account_number ?? accountNumber,
+      accountNumber: payload.account_number ?? normalizedAccountNumber,
       accountName: payload.account_name,
     };
   }
@@ -119,14 +172,23 @@ export class FlutterwaveSubaccountService {
       throw new InternalServerErrorException('Payout bank details are incomplete.');
     }
 
+    const accountBank = normalizeNigerianBankCode(store.payoutBankCode);
+    const accountNumber = store.payoutAccountNumber.replace(/\D/g, '');
+
+    if (this.isSandboxMode() && accountBank !== FLUTTERWAVE_SANDBOX_BANK_CODE) {
+      throw new BadRequestException(
+        'Flutterwave test mode only supports Access Bank (044) for payout setup.',
+      );
+    }
+
     if (!this.isConfigured()) {
       const mockId = store.flutterwaveSubaccountId ?? `RS_MOCK_${store.vendorId.slice(0, 8)}`;
       return mockId;
     }
 
     const body = {
-      account_bank: store.payoutBankCode,
-      account_number: store.payoutAccountNumber,
+      account_bank: accountBank,
+      account_number: accountNumber,
       business_name: store.businessName.slice(0, 100),
       business_email: `${store.vendorId}@cataloghq.ng`,
       business_mobile: store.whatsapp.replace(/\D/g, '').slice(-11),
@@ -162,6 +224,10 @@ export class FlutterwaveSubaccountService {
   }
 
   private getFallbackBanks(): FlutterwaveBank[] {
+    if (this.isSandboxMode()) {
+      return [{ code: FLUTTERWAVE_SANDBOX_BANK_CODE, name: 'Access Bank' }];
+    }
+
     return [
       { code: '044', name: 'Access Bank' },
       { code: '058', name: 'GTBank' },
@@ -205,6 +271,13 @@ export class FlutterwaveSubaccountService {
       this.logger.error(
         `Flutterwave v3 ${options.method} ${path} failed: ${json.message ?? response.status}`,
       );
+
+      if (isFlutterwaveSandboxBankRestrictionMessage(json.message)) {
+        throw new BadRequestException(
+          'Flutterwave test mode only supports Access Bank (044) with Flutterwave sandbox test account numbers.',
+        );
+      }
+
       throw new InternalServerErrorException(
         json.message ?? 'Could not complete payout request.',
       );

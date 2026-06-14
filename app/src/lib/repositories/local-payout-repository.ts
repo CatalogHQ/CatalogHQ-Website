@@ -7,6 +7,7 @@ import { STORAGE_KEYS } from "@/lib/storage-keys";
 import type { CustomerOrder } from "@/types/orders";
 import type {
   PayoutBank,
+  PayoutBanksResponse,
   UpdatePayoutInput,
   VendorPayoutAccount,
 } from "@/types/payout";
@@ -37,8 +38,11 @@ function savePayouts(payouts: StoredPayout[]): void {
 }
 
 export class LocalPayoutRepository implements PayoutRepository {
-  async listBanks(): Promise<PayoutBank[]> {
-    return MOCK_BANKS;
+  async listBanks(): Promise<PayoutBanksResponse> {
+    return {
+      banks: MOCK_BANKS,
+      sandboxMode: false,
+    };
   }
 
   async getAccount(): Promise<VendorPayoutAccount> {

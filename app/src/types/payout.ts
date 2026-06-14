@@ -6,6 +6,13 @@ export type PayoutBank = {
   name: string;
 };
 
+export type PayoutBanksResponse = {
+  banks: PayoutBank[];
+  sandboxMode: boolean;
+  sandboxHint?: string;
+  testAccountNumbers?: string[];
+};
+
 export type VendorPayoutAccount = {
   bankCode?: string;
   bankName?: string;
