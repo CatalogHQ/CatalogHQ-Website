@@ -291,28 +291,27 @@ export default function PublicProduct() {
 
           <div className="flex min-w-0 flex-col text-center md:max-w-xl md:text-left lg:max-w-2xl">
             <div className="flex flex-col items-center gap-2 md:items-start">
-              <div className="flex flex-col items-center gap-2 sm:flex-row sm:flex-wrap sm:justify-center md:justify-start">
-                <h2 className="text-xl font-bold leading-snug text-gray-900 sm:text-2xl">
-                  {product.name}
-                </h2>
-                {product.stock <= 0 ? (
-                  <Badge variant="secondary" className="shrink-0 text-xs">
-                    Sold out
-                  </Badge>
-                ) : lowStock ? (
-                  <Badge variant="destructive" className="shrink-0 text-xs">
-                    Only {product.stock} left
-                  </Badge>
-                ) : (
-                  <Badge className="shrink-0 bg-whatsapp-green text-xs hover:bg-whatsapp-green">
-                    In stock
-                  </Badge>
-                )}
-              </div>
+              <h2 className="text-xl font-bold leading-snug text-gray-900 sm:text-2xl">
+                {product.name}
+              </h2>
 
               <p className="text-2xl font-bold text-whatsapp-dark sm:text-3xl">
                 {formatNaira(customerUnitDisplayPrice(product.price))}
               </p>
+
+              {product.stock <= 0 ? (
+                <Badge variant="secondary" className="shrink-0 text-xs">
+                  Sold out
+                </Badge>
+              ) : lowStock ? (
+                <Badge variant="destructive" className="shrink-0 text-xs">
+                  Only {product.stock} left
+                </Badge>
+              ) : (
+                <Badge className="shrink-0 bg-whatsapp-green text-xs hover:bg-whatsapp-green">
+                  In stock
+                </Badge>
+              )}
 
               {product.description && (
                 <p className="max-w-prose text-sm leading-relaxed text-gray-600">

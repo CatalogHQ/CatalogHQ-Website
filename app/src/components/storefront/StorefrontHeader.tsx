@@ -1,6 +1,8 @@
+import { useState } from "react";
 import { Link } from "react-router";
 import {
   BadgeCheck,
+  ChevronDown,
   ChevronRight,
   MapPin,
   Share2,
@@ -12,6 +14,7 @@ import StoreContactLinks from "@/components/storefront/StoreContactLinks";
 import { usePublicReviews } from "@/hooks/use-public-reviews";
 import { hasFeature } from "@/data/plans";
 import { buildStoreShareMessage, shareToWhatsAppStatus } from "@/lib/whatsapp-share";
+import { cn } from "@/lib/utils";
 import type { PublicStoreView } from "@/types/domain";
 
 type StorefrontHeaderProps = {
@@ -19,6 +22,7 @@ type StorefrontHeaderProps = {
 };
 
 export default function StorefrontHeader({ store }: StorefrontHeaderProps) {
+  const [mobileInfoOpen, setMobileInfoOpen] = useState(false);
   const locationLabel = [store.city, store.state].filter(Boolean).join(", ");
   const { summary } = usePublicReviews(store);
   const reviewsUrl = `/s/${store.slug}/reviews`;
@@ -41,31 +45,61 @@ export default function StorefrontHeader({ store }: StorefrontHeaderProps) {
         <div className="overflow-hidden rounded-xl border border-gray-200/80 bg-white p-4 shadow-sm sm:rounded-2xl sm:p-5 lg:p-6">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:gap-6">
             {/* Store identity */}
-            <div className="flex min-w-0 flex-1 items-start gap-3 sm:gap-4">
-              <div className="relative shrink-0">
-                <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br from-whatsapp-green to-whatsapp-dark text-xl font-bold text-white shadow-md sm:h-16 sm:w-16 sm:rounded-2xl sm:text-2xl">
-                  {store.businessName.charAt(0).toUpperCase()}
-                </div>
-                {isVerified && (
-                  <div className="absolute -bottom-1 -right-1 rounded-full bg-white p-0.5 shadow-sm">
-                    <BadgeCheck className="h-4 w-4 text-whatsapp-green sm:h-5 sm:w-5" />
+            <div className="min-w-0 flex-1">
+              <div className="flex items-start gap-3 sm:gap-4">
+                <div className="relative shrink-0">
+                  <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br from-whatsapp-green to-whatsapp-dark text-xl font-bold text-white shadow-md sm:h-16 sm:w-16 sm:rounded-2xl sm:text-2xl">
+                    {store.businessName.charAt(0).toUpperCase()}
                   </div>
-                )}
-              </div>
-
-              <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
-                  <h1 className="text-lg font-bold leading-tight text-gray-900 sm:text-2xl">
-                    {store.businessName}
-                  </h1>
                   {isVerified && (
-                    <Badge className="bg-whatsapp-green/10 text-[11px] text-whatsapp-dark hover:bg-whatsapp-green/10 sm:text-xs">
-                      Verified vendor
-                    </Badge>
+                    <div className="absolute -bottom-1 -right-1 rounded-full bg-white p-0.5 shadow-sm">
+                      <BadgeCheck className="h-4 w-4 text-whatsapp-green sm:h-5 sm:w-5" />
+                    </div>
                   )}
                 </div>
 
-                <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1">
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-start gap-2">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
+                        <h1 className="text-lg font-bold leading-tight text-gray-900 sm:text-2xl">
+                          {store.businessName}
+                        </h1>
+                        {isVerified && (
+                          <Badge className="bg-whatsapp-green/10 text-[11px] text-whatsapp-dark hover:bg-whatsapp-green/10 sm:text-xs">
+                            Verified vendor
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-gray-50 text-gray-700 transition-colors hover:bg-gray-100 md:hidden"
+                      onClick={() => setMobileInfoOpen((open) => !open)}
+                      aria-expanded={mobileInfoOpen}
+                      aria-label={
+                        mobileInfoOpen ? "Hide store info" : "Show store info"
+                      }
+                    >
+                      <ChevronDown
+                        className={cn(
+                          "h-5 w-5 transition-transform duration-200",
+                          mobileInfoOpen && "rotate-180",
+                        )}
+                      />
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div
+                className={cn(
+                  "mt-3 space-y-2 md:mt-2 md:block",
+                  mobileInfoOpen ? "block" : "hidden md:block",
+                )}
+              >
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                   {store.category && (
                     <Badge variant="outline" className="text-[11px] sm:text-xs">
                       {store.category}
@@ -79,7 +113,7 @@ export default function StorefrontHeader({ store }: StorefrontHeaderProps) {
                   )}
                 </div>
 
-                <p className="mt-2 text-sm leading-relaxed text-gray-600">
+                <p className="text-sm leading-relaxed text-gray-600">
                   {store.bio}
                 </p>
 
@@ -91,22 +125,16 @@ export default function StorefrontHeader({ store }: StorefrontHeaderProps) {
                   facebookHandle={store.facebookHandle}
                   xHandle={store.xHandle}
                 />
-
-                {/* <div className="mt-3 flex flex-wrap gap-1.5">
-                  <span className="inline-flex items-center gap-1 rounded-full bg-gray-50 px-2 py-1 text-[10px] text-gray-500 sm:text-[11px]">
-                    <ShieldCheck className="h-3 w-3 text-whatsapp-green sm:h-3.5 sm:w-3.5" />
-                    CatalogHQ verified
-                  </span>
-                  <span className="inline-flex items-center gap-1 rounded-full bg-gray-50 px-2 py-1 text-[10px] text-gray-500 sm:text-[11px]">
-                    <Store className="h-3 w-3 text-gray-400 sm:h-3.5 sm:w-3.5" />
-                    Trusted storefront
-                  </span>
-                </div> */}
               </div>
             </div>
 
-            {/* Ratings — full width on mobile, side panel on desktop */}
-            <div className="w-full shrink-0 rounded-xl border border-gray-100 bg-gray-50/90 p-3 sm:p-4 lg:w-56 xl:w-64">
+            {/* Ratings — collapsible on mobile, side panel on desktop */}
+            <div
+              className={cn(
+                "w-full shrink-0 rounded-xl border border-gray-100 bg-gray-50/90 p-3 sm:p-4 lg:w-56 lg:block xl:w-64",
+                mobileInfoOpen ? "block" : "hidden md:block",
+              )}
+            >
               <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-500 sm:text-[11px]">
                 Customer rating
               </p>
