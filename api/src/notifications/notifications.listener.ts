@@ -87,7 +87,7 @@ export class NotificationsListener {
 
     const storeName = store.businessName;
     const subject = `New order ${order.paymentRef} at ${storeName}`;
-    const htmlBody = `<p>Hi,</p><p>You have a new paid order at <strong>${storeName}</strong>.</p><ul><li><strong>Reference:</strong> ${order.paymentRef}</li><li><strong>Customer:</strong> ${order.customerName}</li><li><strong>Product:</strong> ${order.productName} x${order.quantity}</li><li><strong>You receive:</strong> ${vendorReceive} NGN</li><li><strong>Customer paid:</strong> ${order.totalPaid} NGN</li></ul><p><a href="${dashboardUrl}">View orders in your dashboard</a></p><p>CatalogHQ Team</p>`;
+    const htmlBody = `<p>Hi,</p><p>You have a new paid order at <strong>${storeName}</strong>.</p><ul><li><strong>Reference:</strong> ${order.paymentRef}</li><li><strong>Customer:</strong> ${order.customerName}</li><li><strong>Product:</strong> ${order.productName} x${order.quantity}</li><li><strong>You receive:</strong> ${vendorReceive} NGN</li></ul><p><a href="${dashboardUrl}">View orders in your dashboard</a></p><p>CatalogHQ Team</p>`;
 
     try {
       await this.emailService.sendEmail(

@@ -89,6 +89,9 @@ describe('NotificationsListener', () => {
       'Ada Fashion',
       { type: 'order_created' },
     );
+    const emailBody = emailService.sendEmail.mock.calls[0][2] as string;
+    expect(emailBody).toContain('You receive:</strong> 15000 NGN');
+    expect(emailBody).not.toContain('Customer paid');
   });
 
   it('sends email but skips SMS when whatsapp is missing', async () => {

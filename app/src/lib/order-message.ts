@@ -1,5 +1,6 @@
 import { getDeliveryLabel } from "@/lib/delivery-types";
 import { formatNaira } from "@/lib/format";
+import { vendorNetFromOrderLine } from "@/lib/flutterwave-fees";
 import {
   ORDER_STATUS_LABELS,
   type CustomerOrder,
@@ -41,6 +42,19 @@ function buildTrackOrderUrl(
   }
   const origin = options.appOrigin.replace(/\/$/, "");
   return `${origin}/s/${options.storeSlug}/order/${encodeURIComponent(paymentRef)}`;
+}
+
+function resolveVendorOrderTotal(order: CustomerOrder): number {
+  if (order.vendorNet != null && order.vendorNet >= 0) {
+    return order.vendorNet;
+  }
+
+  return vendorNetFromOrderLine({
+    unitPrice: order.unitPrice,
+    quantity: order.quantity,
+    deliveryFee: order.deliveryFee,
+    discountAmount: order.discountAmount,
+  });
 }
 
 export function buildOrderWhatsAppMessage(
@@ -87,7 +101,7 @@ export function buildOrderWhatsAppMessage(
     lines.push(`Delivery address: ${order.deliveryAddress}`);
   }
 
-  lines.push(`Total: ${formatNaira(order.totalPaid)}`);
+  lines.push(`Total: ${formatNaira(resolveVendorOrderTotal(order))}`);
   lines.push(`Ordered: ${formatOrderDate(order.createdAt)}`);
 
   const trackUrl = buildTrackOrderUrl(options, order.paymentRef);
