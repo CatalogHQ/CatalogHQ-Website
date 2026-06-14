@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
-import { AlertTriangle, BadgeCheck, MessageSquare } from "lucide-react";
+import { AlertTriangle, BadgeCheck, CreditCard, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/table";
 import AdminStatCard from "@/components/admin/AdminStatCard";
 import OrderStatusBadge from "@/components/vendor/OrderStatusBadge";
+import PaymentStatusBadge from "@/components/admin/PaymentStatusBadge";
 import type {
   AdminPlatformOrder,
   AdminPlatformStats,
@@ -27,6 +28,7 @@ import type {
 import { adminRepository } from "@/lib/repositories";
 import { formatNaira } from "@/lib/format";
 import { isApiMode } from "@/lib/use-api";
+import { toast } from "sonner";
 
 export default function AdminOverview() {
   const [stats, setStats] = useState<AdminPlatformStats | null>(null);
@@ -46,6 +48,10 @@ export default function AdminOverview() {
         if (!cancelled) {
           setStats(nextStats);
           setRecentOrders(orders.slice(0, 5));
+        }
+      } catch {
+        if (!cancelled) {
+          toast.error("Could not load platform overview.");
         }
       } finally {
         if (!cancelled) {
@@ -127,7 +133,51 @@ export default function AdminOverview() {
         </div>
       )}
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {stats.pendingPayments > 0 && (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-start gap-2">
+              <CreditCard className="mt-0.5 h-4 w-4 shrink-0 text-amber-700" />
+              <div>
+                <p className="text-sm font-medium text-amber-900">
+                  {stats.pendingPayments} order
+                  {stats.pendingPayments === 1 ? "" : "s"} awaiting payment
+                </p>
+                <p className="text-sm text-amber-800">
+                  Review pending or failed checkout attempts across stores.
+                </p>
+              </div>
+            </div>
+            <Button variant="outline" size="sm" asChild>
+              <Link to="/admin/orders">Review payments</Link>
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {stats.failedPayments > 0 && (
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-start gap-2">
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-red-700" />
+              <div>
+                <p className="text-sm font-medium text-red-900">
+                  {stats.failedPayments} failed payment
+                  {stats.failedPayments === 1 ? "" : "s"}
+                </p>
+                <p className="text-sm text-red-800">
+                  Customers may need help completing checkout.
+                </p>
+              </div>
+            </div>
+            <Button variant="outline" size="sm" asChild>
+              <Link to="/admin/orders">View failed orders</Link>
+            </Button>
+          </div>
+        </div>
+      )}
+
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <AdminStatCard label="Total vendors" value={stats.totalVendors} />
         <AdminStatCard label="Active stores" value={stats.activeStores} />
         <AdminStatCard label="Customers" value={stats.totalCustomers} />
@@ -140,6 +190,11 @@ export default function AdminOverview() {
           label="Open tickets"
           value={stats.openTickets}
           description={`${stats.pendingVerifications} pending verifications`}
+        />
+        <AdminStatCard
+          label="Pending payments"
+          value={stats.pendingPayments}
+          description={`${stats.failedPayments} failed`}
         />
       </div>
 
@@ -159,6 +214,7 @@ export default function AdminOverview() {
                   <TableHead>Store</TableHead>
                   <TableHead>Customer</TableHead>
                   <TableHead>Total</TableHead>
+                  <TableHead>Payment</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Date</TableHead>
                 </TableRow>
@@ -172,6 +228,9 @@ export default function AdminOverview() {
                     <TableCell>{order.storeName}</TableCell>
                     <TableCell>{order.customerName}</TableCell>
                     <TableCell>{formatNaira(order.totalPaid)}</TableCell>
+                    <TableCell>
+                      <PaymentStatusBadge status={order.paymentStatus} />
+                    </TableCell>
                     <TableCell>
                       <OrderStatusBadge status={order.status} />
                     </TableCell>

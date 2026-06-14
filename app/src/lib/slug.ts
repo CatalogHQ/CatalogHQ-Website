@@ -11,3 +11,7 @@ export function slugify(value: string): string {
 export function getStoreUrl(slug: string): string {
   return `${window.location.origin}/s/${slug}`;
 }
+
+export function getStoreOrderUrl(slug: string, paymentRef: string): string {
+  return `${window.location.origin}/s/${slug}/order/${paymentRef}`;
+}

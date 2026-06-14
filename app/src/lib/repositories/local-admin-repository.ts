@@ -1,3 +1,4 @@
+import type { PlanTier } from "@/data/plans";
 import {
   ADMIN_MOCK_CUSTOMERS,
   ADMIN_MOCK_ORDERS,
@@ -10,6 +11,7 @@ import {
   getPendingVerificationCount,
   getTopVendorsByRevenue,
   type AdminCustomer,
+  type AdminPlanDistribution,
   type AdminPlatformOrder,
   type AdminPlatformStats,
   type AdminRevenueByDay,
@@ -22,23 +24,12 @@ import type {
   ApiAdminRepository,
   DatePreset,
 } from "@/lib/repositories/api-admin-repository";
+import type { OrderStatus } from "@/types/orders";
 
-export class LocalAdminRepository implements Pick<
-  ApiAdminRepository,
-  | "getBadges"
-  | "getStats"
-  | "listVendors"
-  | "listCustomers"
-  | "listOrders"
-  | "listTickets"
-  | "listVerificationQueue"
-  | "approveVerification"
-  | "rejectVerification"
-  | "getRevenueAnalytics"
-  | "getTopVendors"
-  | "updateTicket"
-> {
+export class LocalAdminRepository implements ApiAdminRepository {
   private verificationQueue = [...ADMIN_MOCK_VERIFICATION_QUEUE];
+  private vendors = [...ADMIN_MOCK_VENDORS];
+  private orders = [...ADMIN_MOCK_ORDERS];
 
   getBadges(): Promise<AdminBadges> {
     return Promise.resolve({
@@ -48,11 +39,17 @@ export class LocalAdminRepository implements Pick<
   }
 
   getStats(): Promise<AdminPlatformStats> {
-    return Promise.resolve(ADMIN_MOCK_STATS);
+    return Promise.resolve({
+      ...ADMIN_MOCK_STATS,
+      pendingPayments: this.orders.filter((o) => o.paymentStatus === "pending")
+        .length,
+      failedPayments: this.orders.filter((o) => o.paymentStatus === "failed")
+        .length,
+    });
   }
 
   listVendors(): Promise<AdminVendor[]> {
-    return Promise.resolve(ADMIN_MOCK_VENDORS);
+    return Promise.resolve(this.vendors);
   }
 
   listCustomers(): Promise<AdminCustomer[]> {
@@ -60,7 +57,7 @@ export class LocalAdminRepository implements Pick<
   }
 
   listOrders(): Promise<AdminPlatformOrder[]> {
-    return Promise.resolve(ADMIN_MOCK_ORDERS);
+    return Promise.resolve(this.orders);
   }
 
   listTickets(): Promise<AdminSupportTicket[]> {
@@ -78,9 +75,9 @@ export class LocalAdminRepository implements Pick<
     return Promise.resolve();
   }
 
-  rejectVerification(vendorId: string): Promise<void> {
+  rejectVerification(_vendorId: string, _reason?: string): Promise<void> {
     this.verificationQueue = this.verificationQueue.filter(
-      (item) => item.vendorId !== vendorId,
+      (item) => item.vendorId !== _vendorId,
     );
     return Promise.resolve();
   }
@@ -113,17 +110,74 @@ export class LocalAdminRepository implements Pick<
     return Promise.resolve(getTopVendorsByRevenue(limit));
   }
 
+  getPlanDistribution(): Promise<AdminPlanDistribution> {
+    const counts = new Map<PlanTier, number>();
+    for (const vendor of this.vendors) {
+      counts.set(vendor.planTier, (counts.get(vendor.planTier) ?? 0) + 1);
+    }
+
+    return Promise.resolve(
+      (["starter", "pro", "growth", "business"] as PlanTier[]).map((tier) => ({
+        tier,
+        count: counts.get(tier) ?? 0,
+      })),
+    );
+  }
+
+  updateVendorPlan(vendorId: string, planTier: PlanTier): Promise<AdminVendor> {
+    const index = this.vendors.findIndex((vendor) => vendor.id === vendorId);
+    if (index === -1) {
+      return Promise.reject(new Error("Vendor not found."));
+    }
+
+    this.vendors[index] = { ...this.vendors[index], planTier };
+    return Promise.resolve(this.vendors[index]);
+  }
+
+  updateOrderStatus(
+    orderId: string,
+    status: OrderStatus,
+  ): Promise<AdminPlatformOrder> {
+    const index = this.orders.findIndex((order) => order.id === orderId);
+    if (index === -1) {
+      return Promise.reject(new Error("Order not found."));
+    }
+
+    this.orders[index] = { ...this.orders[index], status };
+    return Promise.resolve(this.orders[index]);
+  }
+
+  confirmOrderPayment(orderId: string): Promise<AdminPlatformOrder> {
+    const index = this.orders.findIndex((order) => order.id === orderId);
+    if (index === -1) {
+      return Promise.reject(new Error("Order not found."));
+    }
+
+    this.orders[index] = {
+      ...this.orders[index],
+      paymentStatus: "paid",
+      status: "paid",
+    };
+    return Promise.resolve(this.orders[index]);
+  }
+
   updateTicket(
     ticketId: string,
-    data: { status?: AdminSupportTicket["status"] },
+    data: {
+      status?: AdminSupportTicket["status"];
+      priority?: AdminSupportTicket["priority"];
+    },
   ): Promise<AdminSupportTicket> {
     const ticket = ADMIN_MOCK_TICKETS.find((entry) => entry.id === ticketId);
     if (!ticket) {
       return Promise.reject(new Error("Ticket not found."));
     }
+
     return Promise.resolve({
       ...ticket,
       status: data.status ?? ticket.status,
+      priority: data.priority ?? ticket.priority,
+      updatedAt: new Date().toISOString(),
     });
   }
 }

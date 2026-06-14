@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Bar, BarChart, CartesianGrid, XAxis } from "recharts";
+import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
@@ -26,6 +27,7 @@ import {
 import AdminStatCard from "@/components/admin/AdminStatCard";
 import VerificationStatusBadge from "@/components/admin/VerificationStatusBadge";
 import type {
+  AdminPlanDistribution,
   AdminPlatformStats,
   AdminRevenueByDay,
   AdminVendor,
@@ -54,6 +56,9 @@ export default function AdminAnalytics() {
   const [stats, setStats] = useState<AdminPlatformStats | null>(null);
   const [chartData, setChartData] = useState<AdminRevenueByDay[]>([]);
   const [topVendors, setTopVendors] = useState<AdminVendor[]>([]);
+  const [planDistribution, setPlanDistribution] = useState<AdminPlanDistribution>(
+    [],
+  );
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -62,15 +67,21 @@ export default function AdminAnalytics() {
     async function load() {
       setIsLoading(true);
       try {
-        const [nextStats, revenue, vendors] = await Promise.all([
+        const [nextStats, revenue, vendors, plans] = await Promise.all([
           adminRepository.getStats(),
           adminRepository.getRevenueAnalytics(preset),
           adminRepository.getTopVendors(),
+          adminRepository.getPlanDistribution(),
         ]);
         if (!cancelled) {
           setStats(nextStats);
           setChartData(revenue);
           setTopVendors(vendors);
+          setPlanDistribution(plans);
+        }
+      } catch {
+        if (!cancelled) {
+          toast.error("Could not load analytics.");
         }
       } finally {
         if (!cancelled) {
@@ -175,6 +186,32 @@ export default function AdminAnalytics() {
               />
             </BarChart>
           </ChartContainer>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Vendor plans</CardTitle>
+          <CardDescription>
+            How vendors are distributed across subscription tiers.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {planDistribution.map((entry) => (
+              <div
+                key={entry.tier}
+                className="rounded-lg border bg-gray-50 px-4 py-3"
+              >
+                <p className="text-sm text-gray-500">
+                  {PLAN_TIER_LABELS[entry.tier]}
+                </p>
+                <p className="text-2xl font-semibold text-gray-900">
+                  {entry.count}
+                </p>
+              </div>
+            ))}
+          </div>
         </CardContent>
       </Card>
 

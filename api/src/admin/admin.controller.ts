@@ -18,6 +18,8 @@ import {
 import { RejectVerificationDto } from './dto/reject-verification.dto';
 import { UpdateTicketDto } from '../tickets/dto/update-ticket.dto';
 import { TicketsService } from '../tickets/tickets.service';
+import { UpdateVendorDto } from './dto/update-vendor.dto';
+import { AdminUpdateOrderStatusDto } from './dto/update-order-status.dto';
 
 @Controller('admin')
 @UseGuards(AdminGuard)
@@ -58,11 +60,12 @@ export class AdminController {
   }
 
   @Patch('tickets/:id')
-  updateTicket(
+  async updateTicket(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateTicketDto,
   ) {
-    return this.ticketsService.updateByAdmin(id, dto);
+    await this.ticketsService.updateByAdmin(id, dto);
+    return this.adminService.getTicket(id);
   }
 
   @Get('verification')
@@ -95,5 +98,31 @@ export class AdminController {
   @Get('analytics/top-vendors')
   getTopVendors(@Query() query: TopVendorsQueryDto) {
     return this.adminService.getTopVendors(query.limit);
+  }
+
+  @Get('analytics/plans')
+  getPlanDistribution() {
+    return this.adminService.getPlanDistribution();
+  }
+
+  @Patch('vendors/:vendorId')
+  updateVendor(
+    @Param('vendorId', ParseUUIDPipe) vendorId: string,
+    @Body() dto: UpdateVendorDto,
+  ) {
+    return this.adminService.updateVendorPlan(vendorId, dto.planTier);
+  }
+
+  @Patch('orders/:orderId/status')
+  updateOrderStatus(
+    @Param('orderId', ParseUUIDPipe) orderId: string,
+    @Body() dto: AdminUpdateOrderStatusDto,
+  ) {
+    return this.adminService.updateOrderStatus(orderId, dto.status);
+  }
+
+  @Post('orders/:orderId/confirm-payment')
+  confirmOrderPayment(@Param('orderId', ParseUUIDPipe) orderId: string) {
+    return this.adminService.confirmOrderPayment(orderId);
   }
 }

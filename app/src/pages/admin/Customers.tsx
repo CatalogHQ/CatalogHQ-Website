@@ -1,4 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { Search } from "lucide-react";
+import { toast } from "sonner";
+import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import {
   Table,
@@ -14,6 +17,7 @@ import { formatNaira } from "@/lib/format";
 
 export default function AdminCustomers() {
   const [customers, setCustomers] = useState<AdminCustomer[]>([]);
+  const [search, setSearch] = useState("");
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -25,6 +29,12 @@ export default function AdminCustomers() {
         const result = await adminRepository.listCustomers();
         if (!cancelled) {
           setCustomers(result);
+        }
+      } catch (error) {
+        if (!cancelled) {
+          toast.error(
+            error instanceof Error ? error.message : "Could not load customers.",
+          );
         }
       } finally {
         if (!cancelled) {
@@ -39,6 +49,17 @@ export default function AdminCustomers() {
       cancelled = true;
     };
   }, []);
+
+  const filteredCustomers = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    if (!query) return customers;
+
+    return customers.filter(
+      (customer) =>
+        customer.name.toLowerCase().includes(query) ||
+        customer.phone.includes(query),
+    );
+  }, [customers, search]);
 
   if (isLoading) {
     return (
@@ -57,6 +78,16 @@ export default function AdminCustomers() {
         </p>
       </div>
 
+      <div className="relative max-w-sm">
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+        <Input
+          placeholder="Search by name or phone..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="pl-9"
+        />
+      </div>
+
       <div className="rounded-lg border bg-white">
         <Table>
           <TableHeader>
@@ -69,12 +100,19 @@ export default function AdminCustomers() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {customers.map((customer) => (
+            {filteredCustomers.map((customer) => (
               <TableRow key={customer.id}>
                 <TableCell className="font-medium text-gray-900">
                   {customer.name}
                 </TableCell>
-                <TableCell className="text-gray-600">{customer.phone}</TableCell>
+                <TableCell>
+                  <a
+                    href={`tel:${customer.phone}`}
+                    className="text-whatsapp-dark hover:text-whatsapp-green"
+                  >
+                    {customer.phone}
+                  </a>
+                </TableCell>
                 <TableCell>{customer.orderCount}</TableCell>
                 <TableCell>{formatNaira(customer.totalSpent)}</TableCell>
                 <TableCell className="text-gray-600">
@@ -85,6 +123,12 @@ export default function AdminCustomers() {
           </TableBody>
         </Table>
       </div>
+
+      {filteredCustomers.length === 0 && (
+        <p className="text-center text-sm text-gray-500">
+          No customers match your search.
+        </p>
+      )}
     </div>
   );
 }

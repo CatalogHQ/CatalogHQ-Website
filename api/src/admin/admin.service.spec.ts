@@ -3,6 +3,7 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Test, TestingModule } from '@nestjs/testing';
 import { VendorVerificationStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { PaymentsService } from '../payments/payments.service';
 import { AdminService } from './admin.service';
 
 describe('AdminService', () => {
@@ -11,6 +12,7 @@ describe('AdminService', () => {
       groupBy: jest.fn(),
       aggregate: jest.fn(),
       findMany: jest.fn(),
+      count: jest.fn(),
     },
     store: {
       count: jest.fn(),
@@ -28,6 +30,7 @@ describe('AdminService', () => {
   };
 
   const eventEmitter = { emit: jest.fn() };
+  const paymentsService = { confirmPayment: jest.fn() };
 
   let service: AdminService;
 
@@ -39,6 +42,7 @@ describe('AdminService', () => {
         AdminService,
         { provide: PrismaService, useValue: prisma },
         { provide: EventEmitter2, useValue: eventEmitter },
+        { provide: PaymentsService, useValue: paymentsService },
       ],
     }).compile();
 
@@ -56,12 +60,17 @@ describe('AdminService', () => {
     prisma.order.groupBy
       .mockResolvedValueOnce([{ customerPhone: '0801' }, { customerPhone: '0802' }])
       .mockResolvedValueOnce([{ storeId: 'store-1' }, { storeId: 'store-2' }]);
+    prisma.order.count
+      .mockResolvedValueOnce(3)
+      .mockResolvedValueOnce(1);
 
     const stats = await service.getStats();
 
     expect(stats.totalVendors).toBe(4);
     expect(stats.totalOrders).toBe(10);
     expect(stats.platformGmv).toBe(50000);
+    expect(stats.pendingPayments).toBe(3);
+    expect(stats.failedPayments).toBe(1);
   });
 
   it('rejects verification for unknown vendor', async () => {

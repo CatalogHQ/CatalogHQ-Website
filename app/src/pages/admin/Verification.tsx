@@ -1,6 +1,16 @@
 import { useEffect, useState } from "react";
 import { ExternalLink } from "lucide-react";
 import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -16,7 +26,9 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty";
+import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
+import { Textarea } from "@/components/ui/textarea";
 import { BadgeCheck } from "lucide-react";
 import type { AdminVerificationRequest } from "@/data/admin-mock";
 import { adminRepository } from "@/lib/repositories";
@@ -26,11 +38,20 @@ export default function AdminVerification() {
   const [queue, setQueue] = useState<AdminVerificationRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [rejectTarget, setRejectTarget] =
+    useState<AdminVerificationRequest | null>(null);
+  const [rejectReason, setRejectReason] = useState("");
 
   const loadQueue = async () => {
     setIsLoading(true);
     try {
       setQueue(await adminRepository.listVerificationQueue());
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Could not load verification queue.",
+      );
     } finally {
       setIsLoading(false);
     }
@@ -55,12 +76,21 @@ export default function AdminVerification() {
     }
   };
 
-  const handleReject = async (vendorId: string) => {
-    setBusyId(vendorId);
+  const handleReject = async () => {
+    if (!rejectTarget) return;
+
+    setBusyId(rejectTarget.vendorId);
     try {
-      await adminRepository.rejectVerification(vendorId);
-      setQueue((prev) => prev.filter((item) => item.vendorId !== vendorId));
-      toast.error("Verification rejected");
+      await adminRepository.rejectVerification(
+        rejectTarget.vendorId,
+        rejectReason.trim() || undefined,
+      );
+      setQueue((prev) =>
+        prev.filter((item) => item.vendorId !== rejectTarget.vendorId),
+      );
+      toast.success("Verification rejected");
+      setRejectTarget(null);
+      setRejectReason("");
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Could not reject vendor.",
@@ -138,19 +168,34 @@ export default function AdminVerification() {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <p className="text-sm text-gray-500">NIN</p>
-                    <p className="font-mono text-gray-900">
-                      {request.ninMasked}
-                    </p>
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+                  <div className="space-y-3">
+                    {(request.legalFirstName || request.legalLastName) && (
+                      <div>
+                        <p className="text-sm text-gray-500">Legal name</p>
+                        <p className="text-gray-900">
+                          {[request.legalFirstName, request.legalLastName]
+                            .filter(Boolean)
+                            .join(" ")}
+                        </p>
+                      </div>
+                    )}
+                    <div>
+                      <p className="text-sm text-gray-500">NIN</p>
+                      <p className="font-mono text-gray-900">
+                        {request.ninMasked}
+                      </p>
+                    </div>
                   </div>
                   <div className="flex gap-2">
                     <Button
                       variant="outline"
                       size="sm"
                       disabled={busyId === request.vendorId}
-                      onClick={() => handleReject(request.vendorId)}
+                      onClick={() => {
+                        setRejectTarget(request);
+                        setRejectReason("");
+                      }}
                     >
                       Reject
                     </Button>
@@ -158,7 +203,7 @@ export default function AdminVerification() {
                       size="sm"
                       className="bg-whatsapp-green hover:bg-whatsapp-green/90"
                       disabled={busyId === request.vendorId}
-                      onClick={() => handleApprove(request.vendorId)}
+                      onClick={() => void handleApprove(request.vendorId)}
                     >
                       Approve
                     </Button>
@@ -169,6 +214,49 @@ export default function AdminVerification() {
           ))}
         </div>
       )}
+
+      <AlertDialog
+        open={Boolean(rejectTarget)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setRejectTarget(null);
+            setRejectReason("");
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Reject verification</AlertDialogTitle>
+            <AlertDialogDescription>
+              {rejectTarget
+                ? `Tell ${rejectTarget.businessName} why their verification was rejected. This is included in the email notice.`
+                : "Provide a rejection reason for the vendor."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="space-y-2">
+            <Label htmlFor="reject-reason">Reason</Label>
+            <Textarea
+              id="reject-reason"
+              placeholder="NIN details did not match the business name..."
+              value={rejectReason}
+              onChange={(event) => setRejectReason(event.target.value)}
+              rows={4}
+            />
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-red-600 hover:bg-red-700"
+              onClick={(event) => {
+                event.preventDefault();
+                void handleReject();
+              }}
+            >
+              Reject vendor
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

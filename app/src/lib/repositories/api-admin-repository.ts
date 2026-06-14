@@ -1,6 +1,8 @@
 import { apiClient } from "@/lib/api-client";
+import type { PlanTier } from "@/data/plans";
 import type {
   AdminCustomer,
+  AdminPlanDistribution,
   AdminPlatformOrder,
   AdminPlatformStats,
   AdminRevenueByDay,
@@ -8,6 +10,7 @@ import type {
   AdminVendor,
   AdminVerificationRequest,
 } from "@/data/admin-mock";
+import type { OrderStatus } from "@/types/orders";
 
 export type AdminBadges = {
   pendingVerifications: number;
@@ -70,9 +73,40 @@ export class ApiAdminRepository {
     );
   }
 
+  getPlanDistribution(): Promise<AdminPlanDistribution> {
+    return apiClient<AdminPlanDistribution>("/admin/analytics/plans");
+  }
+
+  updateVendorPlan(vendorId: string, planTier: PlanTier): Promise<AdminVendor> {
+    return apiClient<AdminVendor>(`/admin/vendors/${vendorId}`, {
+      method: "PATCH",
+      body: JSON.stringify({ planTier }),
+    });
+  }
+
+  updateOrderStatus(
+    orderId: string,
+    status: OrderStatus,
+  ): Promise<AdminPlatformOrder> {
+    return apiClient<AdminPlatformOrder>(`/admin/orders/${orderId}/status`, {
+      method: "PATCH",
+      body: JSON.stringify({ status }),
+    });
+  }
+
+  confirmOrderPayment(orderId: string): Promise<AdminPlatformOrder> {
+    return apiClient<AdminPlatformOrder>(
+      `/admin/orders/${orderId}/confirm-payment`,
+      { method: "POST" },
+    );
+  }
+
   updateTicket(
     ticketId: string,
-    data: { status?: AdminSupportTicket["status"]; priority?: AdminSupportTicket["priority"] },
+    data: {
+      status?: AdminSupportTicket["status"];
+      priority?: AdminSupportTicket["priority"];
+    },
   ): Promise<AdminSupportTicket> {
     return apiClient<AdminSupportTicket>(`/admin/tickets/${ticketId}`, {
       method: "PATCH",

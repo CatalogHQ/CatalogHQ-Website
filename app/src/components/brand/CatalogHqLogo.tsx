@@ -49,7 +49,7 @@ export default function CatalogHqLogo({
 
   if (onDark) {
     return (
-      <span className="inline-flex rounded-lg bg-white px-3 py-1.5 shadow-sm">
+      <span className="inline-flex w-fit items-center rounded-xl bg-white px-3.5 py-2 shadow-sm">
         {image}
       </span>
     );

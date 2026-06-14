@@ -11,6 +11,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import AdminTicketDetailSheet from "@/components/admin/AdminTicketDetailSheet";
 import TicketPriorityBadge from "@/components/admin/TicketPriorityBadge";
 import TicketStatusBadge from "@/components/admin/TicketStatusBadge";
 import type { AdminSupportTicket } from "@/data/admin-mock";
@@ -24,6 +25,9 @@ export default function AdminTickets() {
   const [filter, setFilter] = useState<FilterTab>("all");
   const [isLoading, setIsLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [selectedTicket, setSelectedTicket] = useState<AdminSupportTicket | null>(
+    null,
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -34,6 +38,12 @@ export default function AdminTickets() {
         const result = await adminRepository.listTickets();
         if (!cancelled) {
           setTickets(result);
+        }
+      } catch (error) {
+        if (!cancelled) {
+          toast.error(
+            error instanceof Error ? error.message : "Could not load tickets.",
+          );
         }
       } finally {
         if (!cancelled) {
@@ -66,21 +76,27 @@ export default function AdminTickets() {
     { id: "resolved", label: "Resolved" },
   ];
 
-  const updateStatus = async (
+  const updateTicket = async (
     ticketId: string,
-    status: AdminSupportTicket["status"],
+    data: {
+      status?: AdminSupportTicket["status"];
+      priority?: AdminSupportTicket["priority"];
+    },
   ) => {
-    if (!adminRepository.updateTicket) return;
-
     setUpdatingId(ticketId);
     try {
-      const updated = await adminRepository.updateTicket(ticketId, { status });
+      const updated = await adminRepository.updateTicket(ticketId, data);
       setTickets((current) =>
-        current.map((ticket) =>
-          ticket.id === ticketId ? { ...ticket, ...updated } : ticket,
-        ),
+        current.map((ticket) => (ticket.id === ticketId ? updated : ticket)),
       );
-      toast.success(`Ticket marked as ${status.replace("_", " ")}.`);
+      setSelectedTicket((current) =>
+        current?.id === ticketId ? updated : current,
+      );
+      if (data.status) {
+        toast.success(`Ticket marked as ${data.status.replace("_", " ")}.`);
+      } else if (data.priority) {
+        toast.success("Ticket priority updated.");
+      }
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Could not update ticket.",
@@ -130,16 +146,20 @@ export default function AdminTickets() {
             <TableRow>
               <TableHead>Subject</TableHead>
               <TableHead>Type</TableHead>
+              <TableHead>Contact</TableHead>
               <TableHead>Priority</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Store / Order</TableHead>
               <TableHead>Created</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filteredTickets.map((ticket) => (
-              <TableRow key={ticket.id}>
+              <TableRow
+                key={ticket.id}
+                className="cursor-pointer hover:bg-gray-50"
+                onClick={() => setSelectedTicket(ticket)}
+              >
                 <TableCell className="font-medium text-gray-900">
                   {ticket.subject}
                 </TableCell>
@@ -147,6 +167,10 @@ export default function AdminTickets() {
                   <Badge variant="outline" className="capitalize">
                     {ticket.type}
                   </Badge>
+                </TableCell>
+                <TableCell className="text-sm text-gray-600">
+                  <p>{ticket.contactName}</p>
+                  <p>{ticket.contactPhone}</p>
                 </TableCell>
                 <TableCell>
                   <TicketPriorityBadge priority={ticket.priority} />
@@ -163,30 +187,6 @@ export default function AdminTickets() {
                 <TableCell className="text-gray-600">
                   {new Date(ticket.createdAt).toLocaleDateString("en-NG")}
                 </TableCell>
-                <TableCell className="text-right">
-                  <div className="flex justify-end gap-2">
-                    {ticket.status === "open" && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        disabled={updatingId === ticket.id}
-                        onClick={() => updateStatus(ticket.id, "in_progress")}
-                      >
-                        Start
-                      </Button>
-                    )}
-                    {ticket.status !== "resolved" && (
-                      <Button
-                        size="sm"
-                        className="bg-whatsapp-green hover:bg-whatsapp-green/90"
-                        disabled={updatingId === ticket.id}
-                        onClick={() => updateStatus(ticket.id, "resolved")}
-                      >
-                        Resolve
-                      </Button>
-                    )}
-                  </div>
-                </TableCell>
               </TableRow>
             ))}
           </TableBody>
@@ -198,6 +198,16 @@ export default function AdminTickets() {
           No tickets in this category.
         </p>
       )}
+
+      <AdminTicketDetailSheet
+        ticket={selectedTicket}
+        open={Boolean(selectedTicket)}
+        onOpenChange={(open) => {
+          if (!open) setSelectedTicket(null);
+        }}
+        onUpdate={updateTicket}
+        isUpdating={updatingId === selectedTicket?.id}
+      />
     </div>
   );
 }

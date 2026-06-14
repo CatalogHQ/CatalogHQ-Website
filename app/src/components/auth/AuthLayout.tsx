@@ -23,30 +23,38 @@ export default function AuthLayout({
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="grid min-h-screen lg:grid-cols-2">
-        <div className="relative hidden flex-col justify-between overflow-hidden bg-gradient-to-br from-whatsapp-dark to-whatsapp-bg p-10 lg:flex">
+        <div className="relative hidden overflow-hidden bg-gradient-to-br from-whatsapp-dark to-whatsapp-bg lg:flex lg:flex-col">
           <div className="pointer-events-none absolute -right-16 -top-16 h-64 w-64 rounded-full bg-whatsapp-green/20 blur-3xl" />
           <div className="pointer-events-none absolute bottom-0 left-0 h-48 w-48 rounded-full bg-whatsapp-green/10 blur-3xl" />
 
-          <Link
-            to="/"
-            className="relative inline-flex items-center gap-2 text-sm text-white/70 transition-colors hover:text-white"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back to home
-          </Link>
+          <div className="relative flex min-h-screen flex-col p-10">
+            <Link
+              to="/"
+              className="inline-flex w-fit items-center gap-2 text-sm text-white/70 transition-colors hover:text-white"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back to home
+            </Link>
 
-          <div className="relative">
-            <CatalogHqLogo variant="wordmark" onDark className="mb-6 h-10 w-[180px] sm:h-11 sm:w-[198px]" />
-            <p className="max-w-sm text-base leading-relaxed text-white/75">
-              Turn social media sales into a real store. Share one link on
-              WhatsApp, Instagram, Facebook, or X, or start selling online for
-              the first time.
+            <div className="flex flex-1 flex-col justify-center py-10">
+              <div className="max-w-sm">
+                <CatalogHqLogo
+                  variant="wordmark"
+                  onDark
+                  className="h-10 w-[180px] sm:h-11 sm:w-[198px]"
+                />
+                <p className="mt-6 text-base leading-relaxed text-white/75">
+                  Turn social media sales into a real store. Share one link on
+                  WhatsApp, Instagram, Facebook, or X, or start selling online
+                  for the first time.
+                </p>
+              </div>
+            </div>
+
+            <p className="text-sm text-white/50">
+              Built for Nigerian vendors online.
             </p>
           </div>
-
-          <p className="relative text-sm text-white/50">
-            Built for Nigerian vendors online.
-          </p>
         </div>
 
         <div className="flex flex-col justify-center px-5 py-10 sm:px-8 lg:px-16">

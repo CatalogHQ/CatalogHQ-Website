@@ -1,15 +1,18 @@
 import {
+  BadRequestException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { OrderStatus, VendorVerificationStatus } from '@prisma/client';
+import { OrderStatus, PaymentStatus, PlanTier, VendorVerificationStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { PaymentsService } from '../payments/payments.service';
 import { VENDOR_VERIFICATION_DECIDED_EVENT } from './events/admin.events';
 import { VendorVerificationDecidedEvent } from './events/vendor-verification-decided.event';
 import {
   AdminBadgesDto,
   AdminCustomerDto,
+  AdminPlanDistributionDto,
   AdminPlatformOrderDto,
   AdminPlatformStatsDto,
   AdminRevenueByDayDto,
@@ -29,6 +32,7 @@ export class AdminService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly eventEmitter: EventEmitter2,
+    private readonly paymentsService: PaymentsService,
   ) {}
 
   private async getOrderAggregatesByStore(): Promise<
@@ -67,7 +71,8 @@ export class AdminService {
 
   async getStats(): Promise<AdminPlatformStatsDto> {
     const badges = await this.getBadges();
-    const [totalVendors, orderStats, customers, activeStores] = await Promise.all([
+    const [totalVendors, orderStats, customers, activeStores, pendingPayments, failedPayments] =
+      await Promise.all([
       this.prisma.user.count({ where: { role: 'vendor' } }),
       this.prisma.order.aggregate({
         _count: { _all: true },
@@ -82,6 +87,12 @@ export class AdminService {
         by: ['storeId'],
         where: { status: { not: OrderStatus.cancelled } },
       }),
+      this.prisma.order.count({
+        where: { paymentStatus: PaymentStatus.pending },
+      }),
+      this.prisma.order.count({
+        where: { paymentStatus: PaymentStatus.failed },
+      }),
     ]);
 
     return {
@@ -92,6 +103,8 @@ export class AdminService {
       platformGmv: orderStats._sum.totalPaid ?? 0,
       openTickets: badges.openTickets,
       pendingVerifications: badges.pendingVerifications,
+      pendingPayments,
+      failedPayments,
     };
   }
 
@@ -169,6 +182,18 @@ export class AdminService {
       orderBy: { createdAt: 'desc' },
     });
     return tickets.map(toAdminTicketDto);
+  }
+
+  async getTicket(ticketId: string): Promise<AdminSupportTicketDto> {
+    const ticket = await this.prisma.supportTicket.findUnique({
+      where: { id: ticketId },
+    });
+
+    if (!ticket) {
+      throw new NotFoundException('Ticket not found.');
+    }
+
+    return toAdminTicketDto(ticket);
   }
 
   async listVerificationQueue(): Promise<AdminVerificationRequestDto[]> {
@@ -285,6 +310,100 @@ export class AdminService {
         );
       })
       .filter((vendor): vendor is AdminVendorDto => vendor !== null);
+  }
+
+  async getPlanDistribution(): Promise<AdminPlanDistributionDto> {
+    const grouped = await this.prisma.user.groupBy({
+      by: ['planTier'],
+      where: { role: 'vendor' },
+      _count: { _all: true },
+    });
+
+    const tiers: PlanTier[] = ['starter', 'pro', 'growth', 'business'];
+    const counts = new Map(grouped.map((entry) => [entry.planTier, entry._count._all]));
+
+    return tiers.map((tier) => ({
+      tier,
+      count: counts.get(tier) ?? 0,
+    }));
+  }
+
+  async updateVendorPlan(vendorId: string, planTier: PlanTier): Promise<AdminVendorDto> {
+    const store = await this.prisma.store.findUnique({
+      where: { vendorId },
+      include: { vendor: true },
+    });
+
+    if (!store) {
+      throw new NotFoundException('Vendor not found.');
+    }
+
+    await this.prisma.user.update({
+      where: { id: vendorId },
+      data: { planTier },
+    });
+
+    const aggregates = await this.getOrderAggregatesByStore();
+    const stats = aggregates.get(vendorId) ?? { orderCount: 0, revenue: 0 };
+
+    return toAdminVendorDto(
+      { ...store, vendor: { ...store.vendor, planTier } },
+      stats.orderCount,
+      stats.revenue,
+    );
+  }
+
+  async updateOrderStatus(orderId: string, status: OrderStatus): Promise<AdminPlatformOrderDto> {
+    const order = await this.prisma.order.findUnique({
+      where: { id: orderId },
+      include: { store: { select: { businessName: true, slug: true } } },
+    });
+
+    if (!order) {
+      throw new NotFoundException('Order not found.');
+    }
+
+    if (
+      status !== OrderStatus.cancelled &&
+      order.paymentStatus !== PaymentStatus.paid
+    ) {
+      throw new BadRequestException('Order must be paid before fulfilment.');
+    }
+
+    const updated = await this.prisma.order.update({
+      where: { id: orderId },
+      data: { status },
+    });
+
+    return toAdminPlatformOrderDto(updated, order.store);
+  }
+
+  async confirmOrderPayment(orderId: string): Promise<AdminPlatformOrderDto> {
+    const order = await this.prisma.order.findUnique({
+      where: { id: orderId },
+      include: { store: { select: { businessName: true, slug: true } } },
+    });
+
+    if (!order) {
+      throw new NotFoundException('Order not found.');
+    }
+
+    if (order.paymentStatus === PaymentStatus.paid) {
+      return toAdminPlatformOrderDto(order, order.store);
+    }
+
+    if (!order.gatewayReference) {
+      throw new BadRequestException('Order has no Flutterwave reference to verify.');
+    }
+
+    await this.paymentsService.confirmPayment(order.gatewayReference);
+
+    const refreshed = await this.prisma.order.findUniqueOrThrow({
+      where: { id: orderId },
+      include: { store: { select: { businessName: true, slug: true } } },
+    });
+
+    return toAdminPlatformOrderDto(refreshed, refreshed.store);
   }
 
   private bucketDaily(
