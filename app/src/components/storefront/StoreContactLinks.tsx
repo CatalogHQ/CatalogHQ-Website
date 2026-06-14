@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
+import { getSocialPlatformButtonClass } from "@/lib/social-platform-styles";
 import {
-  getSocialPlatformButtonClass,
   SocialPlatformIcon,
   WhatsAppIcon,
 } from "@/components/icons/SocialPlatformIcons";
