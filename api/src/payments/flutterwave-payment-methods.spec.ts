@@ -60,25 +60,12 @@ describe('flutterwave-payment-methods', () => {
     expect(isFlutterwaveCustomerExistsMessage('Invalid amount')).toBe(false);
   });
 
-  it('builds opay payment method payload', () => {
+  it('builds bank transfer payment method payload', () => {
     expect(
       buildFlutterwavePaymentMethod({
-        paymentMethod: 'opay',
+        paymentMethod: 'bank_transfer',
         phone: '08012345678',
       }),
-    ).toEqual({ type: 'opay' });
-  });
-
-  it('builds ussd payment method payload', () => {
-    expect(
-      buildFlutterwavePaymentMethod({
-        paymentMethod: 'ussd',
-        phone: '08012345678',
-        ussdBankCode: '044',
-      }),
-    ).toEqual({
-      type: 'ussd',
-      ussd: { account_bank: '044' },
-    });
+    ).toEqual({ type: 'bank_transfer' });
   });
 });

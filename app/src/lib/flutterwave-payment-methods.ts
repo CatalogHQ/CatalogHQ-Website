@@ -1,31 +1,10 @@
-export const FLUTTERWAVE_PAYMENT_METHODS = [
-  {
-    id: "opay",
-    label: "OPay",
-    description: "Log in to your OPay wallet to approve payment",
-  },
-  {
-    id: "mobile_money",
-    label: "Mobile Money (MTN)",
-    description: "Approve on your phone",
-  },
-  { id: "ussd", label: "USSD", description: "Dial a code from your bank" },
-  {
-    id: "bank_transfer",
-    label: "Bank transfer",
-    description: "Transfer to a dedicated account",
-  },
-] as const;
+export const CHECKOUT_PAYMENT_METHOD = {
+  id: "bank_transfer",
+  label: "Bank transfer",
+  description: "Transfer to a dedicated account number",
+} as const;
 
-export type FlutterwavePaymentMethodId =
-  (typeof FLUTTERWAVE_PAYMENT_METHODS)[number]["id"];
-
-export const USSD_BANK_OPTIONS = [
-  { code: "044", label: "Access Bank" },
-  { code: "057", label: "Zenith Bank" },
-  { code: "035", label: "Wema Bank" },
-  { code: "232", label: "Sterling Bank" },
-] as const;
+export type FlutterwavePaymentMethodId = typeof CHECKOUT_PAYMENT_METHOD.id;
 
 export type PendingPaymentDetails = {
   paymentInstruction?: string;

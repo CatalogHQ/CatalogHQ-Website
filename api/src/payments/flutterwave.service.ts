@@ -15,7 +15,6 @@ import {
 import { flutterwaveIdempotencyKey } from './flutterwave-idempotency.util';
 import {
   buildFlutterwaveOrchestratorCustomer,
-  buildFlutterwavePaymentMethod,
   buildFlutterwaveCheckoutEmail,
   isFlutterwaveCustomerExistsMessage,
   FlutterwavePaymentMethod,
@@ -54,10 +53,6 @@ type ChargeData = {
 };
 
 type CustomerData = {
-  id: string;
-};
-
-type PaymentMethodData = {
   id: string;
 };
 
@@ -119,10 +114,6 @@ function toFlutterwaveClientError(detail: string): string {
     return 'This store payout account is not ready for split payments. The vendor should re-link their bank on the Payouts page.';
   }
 
-  if (lower.includes('opay')) {
-    return 'OPay checkout is not available on this Flutterwave account yet. Try bank transfer or ask the vendor to contact Flutterwave to enable OPay.';
-  }
-
   if (detail.length > 180) {
     return 'Payment could not be started. Try another payment method or contact support.';
   }
@@ -167,7 +158,6 @@ export class FlutterwaveService {
     reference: string;
     callbackPath: string;
     paymentMethod: FlutterwavePaymentMethod;
-    ussdBankCode?: string;
     metadata?: Record<string, unknown>;
     subaccounts?: FlutterwaveSplitSubaccount[];
   }): Promise<FlutterwaveInitResult> {
@@ -175,122 +165,11 @@ export class FlutterwaveService {
       return { authorizationUrl: null, reference: params.reference };
     }
 
-    if (params.paymentMethod === 'bank_transfer') {
-      return this.initializeBankTransfer(params);
+    if (params.paymentMethod !== 'bank_transfer') {
+      throw new BadRequestException('Only bank transfer checkout is supported.');
     }
 
-    if (params.paymentMethod === 'opay') {
-      return this.initializeOpayCharge(params);
-    }
-
-    const redirectUrl = `${this.callbackBaseUrl.replace(/\/$/, '')}${params.callbackPath}`;
-
-    const payload = await this.request<ChargeData>(
-      '/orchestration/direct-charges',
-      {
-        method: 'POST',
-        idempotencyKey: flutterwaveIdempotencyKey('charge', params.reference),
-        body: {
-          amount: params.amountNaira,
-          currency: 'NGN',
-          reference: params.reference,
-          redirect_url: redirectUrl,
-          customer: buildFlutterwaveOrchestratorCustomer({
-            email: params.email,
-            name: params.name,
-            phone: params.phone,
-          }),
-          payment_method: buildFlutterwavePaymentMethod({
-            paymentMethod: params.paymentMethod,
-            phone: params.phone,
-            ussdBankCode: params.ussdBankCode,
-          }),
-          meta: stringifyFlutterwaveMeta(params.metadata),
-          ...(params.subaccounts?.length
-            ? { subaccounts: params.subaccounts }
-            : {}),
-        },
-      },
-    );
-
-    return this.parseChargeResponse(payload, params.reference);
-  }
-
-  /** OPay general flow: customer → payment method → charge (Flutterwave OPay docs). */
-  private async initializeOpayCharge(params: {
-    email: string;
-    phone: string;
-    name: string;
-    amountNaira: number;
-    reference: string;
-    callbackPath: string;
-    metadata?: Record<string, unknown>;
-    subaccounts?: FlutterwaveSplitSubaccount[];
-  }): Promise<FlutterwaveInitResult> {
-    const redirectUrl = `${this.callbackBaseUrl.replace(/\/$/, '')}${params.callbackPath}`;
-
-    const customerId = await this.ensureFlutterwaveCustomer({
-      email: params.email,
-      name: params.name,
-      phone: params.phone,
-      reference: params.reference,
-    });
-
-    const paymentMethod = await this.request<PaymentMethodData>(
-      '/payment-methods',
-      {
-        method: 'POST',
-        idempotencyKey: flutterwaveIdempotencyKey(
-          'payment-method',
-          params.reference,
-        ),
-        body: { type: 'opay' },
-      },
-    );
-
-    if (!paymentMethod.id) {
-      throw new InternalServerErrorException('Could not start OPay payment.');
-    }
-
-    const baseChargeBody = {
-      currency: 'NGN',
-      customer_id: customerId,
-      payment_method_id: paymentMethod.id,
-      amount: params.amountNaira,
-      reference: params.reference,
-      redirect_url: redirectUrl,
-      meta: stringifyFlutterwaveMeta(params.metadata),
-    };
-
-    const createCharge = (withSplit: boolean) =>
-      this.request<ChargeData>('/charges', {
-        method: 'POST',
-        idempotencyKey: flutterwaveIdempotencyKey(
-          withSplit ? 'charge' : 'charge-no-split',
-          params.reference,
-        ),
-        body: {
-          ...baseChargeBody,
-          ...(withSplit && params.subaccounts?.length
-            ? { subaccounts: params.subaccounts }
-            : {}),
-        },
-      });
-
-    try {
-      const charge = await createCharge(true);
-      return this.parseChargeResponse(charge, params.reference);
-    } catch (error) {
-      if (!params.subaccounts?.length) {
-        throw error;
-      }
-
-      this.logger.warn(
-        `OPay charge with vendor split failed for ${params.reference}; retrying without split.`,
-      );
-      const charge = await createCharge(false);
-      return this.parseChargeResponse(charge, params.reference);
-    }
+    return this.initializeBankTransfer(params);
   }
 
   private async ensureFlutterwaveCustomer(params: {
@@ -414,36 +293,6 @@ export class FlutterwaveService {
         expiresAt: virtualAccount.account_expiration_datetime,
       },
     };
-  }
-
-  private parseChargeResponse(
-    data: ChargeData,
-    reference: string,
-  ): FlutterwaveInitResult {
-    const nextAction = data.next_action;
-
-    if (nextAction?.type === 'redirect_url' && nextAction.redirect_url?.url) {
-      return {
-        authorizationUrl: nextAction.redirect_url.url,
-        reference: data.reference ?? reference,
-      };
-    }
-
-    if (
-      nextAction?.type === 'payment_instruction' &&
-      nextAction.payment_instruction?.note
-    ) {
-      return {
-        authorizationUrl: null,
-        reference: data.reference ?? reference,
-        paymentInstruction: nextAction.payment_instruction.note,
-      };
-    }
-
-    this.logger.error(
-      `Flutterwave charge missing redirect or instruction: ${nextAction?.type ?? 'none'}`,
-    );
-    throw new InternalServerErrorException('Could not start payment.');
   }
 
   async verifyTransaction(

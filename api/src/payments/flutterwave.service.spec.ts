@@ -38,45 +38,55 @@ describe('FlutterwaveService', () => {
     service = module.get(FlutterwaveService);
   });
 
-  it('parses redirect_url next_action for orchestrator charges', async () => {
-    (global.fetch as jest.Mock).mockResolvedValue({
-      ok: true,
-      headers: { get: () => null },
-      json: async () => ({
-        status: 'success',
-        message: 'Charge created',
-        data: {
-          reference: 'flw-ref-1',
-          next_action: {
-            type: 'redirect_url',
-            redirect_url: { url: 'https://checkout.example/redirect' },
+  it('creates bank transfer checkout via customer search and virtual account APIs', async () => {
+    (global.fetch as jest.Mock)
+      .mockResolvedValueOnce({
+        ok: true,
+        headers: { get: () => null },
+        json: async () => ({
+          status: 'success',
+          data: [{ id: 'cus_existing' }],
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        headers: { get: () => null },
+        json: async () => ({
+          status: 'success',
+          data: {
+            account_number: '0123456789',
+            account_bank_name: 'Wema Bank',
+            note: 'Transfer exactly ₦5,000 to Wema Bank account 0123456789.',
           },
-        },
-      }),
-    });
+        }),
+      });
 
     const result = await service.initializeTransaction({
-      email: 'buyer@example.com',
+      email: 'buyer8012345678@cataloghq.ng',
       phone: '08012345678',
       name: 'Ada Lovelace',
       amountNaira: 5000,
       reference: 'flw-ref-1',
       callbackPath: '/callback',
-      paymentMethod: 'ussd',
-      ussdBankCode: '044',
+      paymentMethod: 'bank_transfer',
     });
 
-    expect(result.authorizationUrl).toBe('https://checkout.example/redirect');
-
-    const [url, init] = (global.fetch as jest.Mock).mock.calls[0] as [
-      string,
-      { headers: Record<string, string> },
-    ];
-    expect(url).toContain('/orchestration/direct-charges');
-    expect(init.headers['X-Idempotency-Key']).toBeDefined();
+    expect(result.authorizationUrl).toBeNull();
+    expect(result.virtualAccount).toEqual({
+      accountNumber: '0123456789',
+      bankName: 'Wema Bank',
+      expiresAt: undefined,
+    });
+    expect(global.fetch).toHaveBeenCalledTimes(2);
+    expect((global.fetch as jest.Mock).mock.calls[0][0]).toContain(
+      '/customers/search',
+    );
+    expect((global.fetch as jest.Mock).mock.calls[1][0]).toContain(
+      '/virtual-accounts',
+    );
   });
 
-  it('creates OPay charges via customer search, create, payment method, and charge APIs', async () => {
+  it('reuses the same idempotency key when retrying after a 5xx', async () => {
     (global.fetch as jest.Mock)
       .mockResolvedValueOnce({
         ok: true,
@@ -95,106 +105,6 @@ describe('FlutterwaveService', () => {
         }),
       })
       .mockResolvedValueOnce({
-        ok: true,
-        headers: { get: () => null },
-        json: async () => ({
-          status: 'success',
-          data: { id: 'pmd_test_1', type: 'opay' },
-        }),
-      })
-      .mockResolvedValueOnce({
-        ok: true,
-        headers: { get: () => null },
-        json: async () => ({
-          status: 'success',
-          data: {
-            reference: 'flw-ref-1',
-            next_action: {
-              type: 'redirect_url',
-              redirect_url: { url: 'https://checkout.example/opay' },
-            },
-          },
-        }),
-      });
-
-    const result = await service.initializeTransaction({
-      email: 'buyer@example.com',
-      phone: '08012345678',
-      name: 'Ada Lovelace',
-      amountNaira: 5000,
-      reference: 'flw-ref-1',
-      callbackPath: '/callback',
-      paymentMethod: 'opay',
-    });
-
-    expect(result.authorizationUrl).toBe('https://checkout.example/opay');
-    expect(global.fetch).toHaveBeenCalledTimes(4);
-    expect((global.fetch as jest.Mock).mock.calls[0][0]).toContain(
-      '/customers/search',
-    );
-    expect((global.fetch as jest.Mock).mock.calls[1][0]).toContain('/customers');
-    expect((global.fetch as jest.Mock).mock.calls[2][0]).toContain(
-      '/payment-methods',
-    );
-    expect((global.fetch as jest.Mock).mock.calls[3][0]).toContain('/charges');
-  });
-
-  it('reuses an existing Flutterwave customer for OPay when search finds one', async () => {
-    (global.fetch as jest.Mock)
-      .mockResolvedValueOnce({
-        ok: true,
-        headers: { get: () => null },
-        json: async () => ({
-          status: 'success',
-          data: [{ id: 'cus_existing' }],
-        }),
-      })
-      .mockResolvedValueOnce({
-        ok: true,
-        headers: { get: () => null },
-        json: async () => ({
-          status: 'success',
-          data: { id: 'pmd_test_1', type: 'opay' },
-        }),
-      })
-      .mockResolvedValueOnce({
-        ok: true,
-        headers: { get: () => null },
-        json: async () => ({
-          status: 'success',
-          data: {
-            reference: 'flw-ref-1',
-            next_action: {
-              type: 'redirect_url',
-              redirect_url: { url: 'https://checkout.example/opay' },
-            },
-          },
-        }),
-      });
-
-    await service.initializeTransaction({
-      email: 'buyer@example.com',
-      phone: '08012345678',
-      name: 'Ada Lovelace',
-      amountNaira: 5000,
-      reference: 'flw-ref-1',
-      callbackPath: '/callback',
-      paymentMethod: 'opay',
-    });
-
-    expect(global.fetch).toHaveBeenCalledTimes(3);
-    expect((global.fetch as jest.Mock).mock.calls[0][0]).toContain(
-      '/customers/search',
-    );
-    expect((global.fetch as jest.Mock).mock.calls[1][0]).toContain(
-      '/payment-methods',
-    );
-    expect((global.fetch as jest.Mock).mock.calls[2][0]).toContain('/charges');
-  });
-
-  it('reuses the same idempotency key when retrying after a 5xx', async () => {
-    (global.fetch as jest.Mock)
-      .mockResolvedValueOnce({
         ok: false,
         status: 502,
         headers: { get: () => null },
@@ -209,33 +119,29 @@ describe('FlutterwaveService', () => {
         json: async () => ({
           status: 'success',
           data: {
-            reference: 'flw-ref-1',
-            next_action: {
-              type: 'redirect_url',
-              redirect_url: { url: 'https://checkout.example/redirect' },
-            },
+            account_number: '0123456789',
+            account_bank_name: 'Wema Bank',
           },
         }),
       });
 
     await service.initializeTransaction({
-      email: 'buyer@example.com',
+      email: 'buyer8012345678@cataloghq.ng',
       phone: '08012345678',
       name: 'Ada Lovelace',
       amountNaira: 5000,
       reference: 'flw-ref-1',
       callbackPath: '/callback',
-      paymentMethod: 'ussd',
-      ussdBankCode: '044',
+      paymentMethod: 'bank_transfer',
     });
 
-    expect(global.fetch).toHaveBeenCalledTimes(2);
-    const firstKey = (global.fetch as jest.Mock).mock.calls[0][1].headers[
-      'X-Idempotency-Key'
-    ];
-    const secondKey = (global.fetch as jest.Mock).mock.calls[1][1].headers[
-      'X-Idempotency-Key'
-    ];
+    expect(global.fetch).toHaveBeenCalledTimes(4);
+    const virtualAccountCalls = (global.fetch as jest.Mock).mock.calls.filter(
+      (call: [string]) => String(call[0]).includes('/virtual-accounts'),
+    );
+    expect(virtualAccountCalls).toHaveLength(2);
+    const firstKey = virtualAccountCalls[0][1].headers['X-Idempotency-Key'];
+    const secondKey = virtualAccountCalls[1][1].headers['X-Idempotency-Key'];
     expect(firstKey).toBe(secondKey);
   });
 

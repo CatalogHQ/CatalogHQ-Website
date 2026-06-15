@@ -21,23 +21,12 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { phoneSchema } from "@/lib/auth-schemas";
 import { deliveryRequiresAddress } from "@/lib/delivery-types";
 import {
-  FLUTTERWAVE_PAYMENT_METHODS,
+  CHECKOUT_PAYMENT_METHOD,
   savePendingPaymentDetails,
-  USSD_BANK_OPTIONS,
-  type FlutterwavePaymentMethodId,
 } from "@/lib/flutterwave-payment-methods";
 import { saveOrderPhoneLastFour } from "@/lib/order-phone-session";
 import { formatNaira } from "@/lib/format";
@@ -75,36 +64,19 @@ type FlutterwaveCheckoutProps = {
 function createCheckoutSchema(deliveryType: DeliveryTypeId) {
   const needsAddress = deliveryRequiresAddress(deliveryType);
 
-  return z
-    .object({
-      customerName: z
-        .string()
-        .min(2, "Enter your full name")
-        .max(80, "Name is too long"),
-      customerPhone: phoneSchema,
-      deliveryAddress: needsAddress
-        ? z
-            .string()
-            .min(10, "Enter the full address where the product should be delivered")
-            .max(300)
-        : z.string().max(300).optional().or(z.literal("")),
-      paymentMethod: z.enum([
-        "opay",
-        "mobile_money",
-        "ussd",
-        "bank_transfer",
-      ]),
-      ussdBankCode: z.string().optional(),
-    })
-    .superRefine((values, ctx) => {
-      if (values.paymentMethod === "ussd" && !values.ussdBankCode) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: "Select your bank for USSD",
-          path: ["ussdBankCode"],
-        });
-      }
-    });
+  return z.object({
+    customerName: z
+      .string()
+      .min(2, "Enter your full name")
+      .max(80, "Name is too long"),
+    customerPhone: phoneSchema,
+    deliveryAddress: needsAddress
+      ? z
+          .string()
+          .min(10, "Enter the full address where the product should be delivered")
+          .max(300)
+      : z.string().max(300).optional().or(z.literal("")),
+  });
 }
 
 export default function FlutterwaveCheckout({
@@ -135,12 +107,8 @@ export default function FlutterwaveCheckout({
       customerName: "",
       customerPhone: "",
       deliveryAddress: "",
-      paymentMethod: "opay",
-      ussdBankCode: "",
     },
   });
-
-  const paymentMethod = form.watch("paymentMethod");
 
   useEffect(() => {
     if (!open || !isApiMode()) return;
@@ -198,19 +166,8 @@ export default function FlutterwaveCheckout({
         deliveryAddress: values.deliveryAddress?.trim() || undefined,
         deliveryZoneId: selection.deliveryZoneId,
         discountCode: selection.discountCode,
-        paymentMethod: values.paymentMethod,
-        ussdBankCode:
-          values.paymentMethod === "ussd" ? values.ussdBankCode : undefined,
+        paymentMethod: CHECKOUT_PAYMENT_METHOD.id,
       });
-
-      if (result.payment.authorizationUrl) {
-        saveOrderPhoneLastFour(
-          result.order.paymentRef,
-          values.customerPhone.trim(),
-        );
-        window.location.href = result.payment.authorizationUrl;
-        return;
-      }
 
       if (
         result.payment.paymentInstruction ||
@@ -279,86 +236,15 @@ export default function FlutterwaveCheckout({
             onSubmit={form.handleSubmit(handleSubmit)}
             className="space-y-4"
           >
-            <FormField
-              control={form.control}
-              name="paymentMethod"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Payment method</FormLabel>
-                  <FormControl>
-                    <RadioGroup
-                      value={field.value}
-                      onValueChange={(value) =>
-                        field.onChange(value as FlutterwavePaymentMethodId)
-                      }
-                      className="space-y-2"
-                    >
-                      {FLUTTERWAVE_PAYMENT_METHODS.map((method) => (
-                        <div
-                          key={method.id}
-                          className="flex items-start gap-3 rounded-lg border p-3"
-                        >
-                          <RadioGroupItem
-                            value={method.id}
-                            id={`pay-${method.id}`}
-                            className="mt-0.5"
-                          />
-                          <Label
-                            htmlFor={`pay-${method.id}`}
-                            className="cursor-pointer space-y-0.5 font-normal"
-                          >
-                            <span className="block text-sm font-medium text-gray-900">
-                              {method.label}
-                            </span>
-                            <span className="block text-xs text-gray-500">
-                              {method.description}
-                            </span>
-                          </Label>
-                        </div>
-                      ))}
-                    </RadioGroup>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {paymentMethod === "opay" && (
-              <p className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs text-blue-900">
-                You will be redirected to OPay to log in and approve this payment
-                in your wallet.
+            <div className="rounded-lg border bg-white p-3">
+              <p className="text-sm font-medium text-gray-900">
+                {CHECKOUT_PAYMENT_METHOD.label}
               </p>
-            )}
-
-            {paymentMethod === "ussd" && (
-              <FormField
-                control={form.control}
-                name="ussdBankCode"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Your bank</FormLabel>
-                    <Select
-                      value={field.value}
-                      onValueChange={field.onChange}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select bank" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {USSD_BANK_OPTIONS.map((bank) => (
-                          <SelectItem key={bank.code} value={bank.code}>
-                            {bank.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
+              <p className="mt-0.5 text-xs text-gray-500">
+                {CHECKOUT_PAYMENT_METHOD.description}. You will get the account
+                details on the next page after you continue.
+              </p>
+            </div>
 
             <FormField
               control={form.control}
@@ -425,10 +311,10 @@ export default function FlutterwaveCheckout({
               {processing ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Processing payment...
+                  Getting account details...
                 </>
               ) : (
-                <>Pay {formatNaira(customerTotal)}</>
+                <>Continue to pay {formatNaira(customerTotal)}</>
               )}
             </Button>
 

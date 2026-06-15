@@ -119,7 +119,6 @@ export class OrdersService {
         reference: gatewayReference,
         callbackPath: `/s/${storeSlug}/order/${order.paymentRef}?paid=1`,
         paymentMethod: dto.paymentMethod,
-        ussdBankCode: dto.ussdBankCode,
         metadata: { paymentRef: order.paymentRef, orderId: order.id },
         subaccounts,
       });

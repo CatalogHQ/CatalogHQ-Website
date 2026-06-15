@@ -138,7 +138,7 @@ describe('OrdersService', () => {
       deliveryType: 'pickup',
       customerName: 'Ada',
       customerPhone: '08012345678',
-      paymentMethod: 'opay',
+      paymentMethod: 'bank_transfer',
     });
 
     expect(result.totalPaid).toBe(5102);
@@ -172,7 +172,7 @@ describe('OrdersService', () => {
         customerName: 'Ada',
         customerPhone: '08012345678',
         deliveryAddress: 'Lagos',
-        paymentMethod: 'opay',
+        paymentMethod: 'bank_transfer',
       }),
     ).rejects.toBeInstanceOf(BadRequestException);
   });
@@ -204,7 +204,7 @@ describe('OrdersService', () => {
         deliveryType: 'pickup',
         customerName: 'Ada',
         customerPhone: '08012345678',
-        paymentMethod: 'opay',
+        paymentMethod: 'bank_transfer',
       }),
     ).rejects.toBeInstanceOf(UnprocessableEntityException);
   });

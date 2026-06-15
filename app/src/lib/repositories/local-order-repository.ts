@@ -73,7 +73,6 @@ export class LocalOrderRepository implements OrderRepository {
   async checkout(input: CheckoutInput): Promise<CheckoutResult> {
     void input.storeSlug;
     void input.paymentMethod;
-    void input.ussdBankCode;
     const order = buildOrder(input, {
       status: "paid",
       paymentStatus: "paid",

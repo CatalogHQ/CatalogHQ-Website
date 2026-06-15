@@ -1,9 +1,4 @@
-export const FLUTTERWAVE_PAYMENT_METHODS = [
-  'opay',
-  'mobile_money',
-  'ussd',
-  'bank_transfer',
-] as const;
+export const FLUTTERWAVE_PAYMENT_METHODS = ['bank_transfer'] as const;
 
 export type FlutterwavePaymentMethod =
   (typeof FLUTTERWAVE_PAYMENT_METHODS)[number];
@@ -11,7 +6,6 @@ export type FlutterwavePaymentMethod =
 export type FlutterwavePaymentMethodInput = {
   paymentMethod: FlutterwavePaymentMethod;
   phone: string;
-  ussdBankCode?: string;
 };
 
 export function sanitizeFlutterwaveNamePart(value: string): string {
@@ -108,31 +102,5 @@ export function buildFlutterwaveOrchestratorCustomer(input: {
 export function buildFlutterwavePaymentMethod(
   input: FlutterwavePaymentMethodInput,
 ): Record<string, unknown> {
-  const phoneNumber = normalizeNigerianPhoneForFlutterwave(input.phone);
-
-  switch (input.paymentMethod) {
-    case 'opay':
-      return { type: 'opay' };
-    case 'mobile_money':
-      return {
-        type: 'mobile_money',
-        mobile_money: {
-          country_code: '234',
-          network: 'MTN',
-          phone_number: phoneNumber,
-        },
-      };
-    case 'ussd':
-      if (!input.ussdBankCode) {
-        throw new Error('USSD bank code is required.');
-      }
-      return {
-        type: 'ussd',
-        ussd: { account_bank: input.ussdBankCode },
-      };
-    case 'bank_transfer':
-      return { type: 'bank_transfer' };
-    default:
-      return { type: 'opay' };
-  }
+  return { type: 'bank_transfer' };
 }

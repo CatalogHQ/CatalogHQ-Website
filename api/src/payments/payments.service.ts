@@ -9,6 +9,7 @@ import { LowStockEvent } from '../orders/events/low-stock.event';
 import { flutterwaveAmountMatchesNaira } from './flutterwave-amount.util';
 import { buildFlutterwaveReference } from './flutterwave-reference.util';
 import { buildCheckoutSplitPayload } from './flutterwave-split.util';
+import { buildFlutterwaveCheckoutEmail } from './flutterwave-payment-methods';
 import { FlutterwaveService } from './flutterwave.service';
 
 @Injectable()
@@ -190,16 +191,28 @@ export class PaymentsService {
         )
       : [];
     const init = await this.flutterwave.initializeTransaction({
-      email: `${order.customerPhone}@cataloghq.ng`,
+      email: buildFlutterwaveCheckoutEmail(order.customerPhone),
       phone: order.customerPhone,
       name: order.customerName,
       amountNaira: order.totalPaid,
       reference,
       callbackPath: `/s/${order.store.slug}/order/${order.paymentRef}?paid=1`,
-      paymentMethod: 'opay',
+      paymentMethod: 'bank_transfer',
       metadata: { paymentRef: order.paymentRef, orderId: order.id },
       subaccounts,
     });
+
+    if (init.paymentInstruction || init.virtualAccount) {
+      await this.prisma.order.update({
+        where: { id: order.id },
+        data: { gatewayReference: init.reference },
+      });
+      const callbackBase = this.configService.get<string>(
+        'FLUTTERWAVE_CALLBACK_BASE_URL',
+        'http://localhost:3000',
+      );
+      return `${callbackBase.replace(/\/$/, '')}/s/${order.store.slug}/order/${order.paymentRef}`;
+    }
 
     if (init.authorizationUrl) {
       await this.prisma.order.update({

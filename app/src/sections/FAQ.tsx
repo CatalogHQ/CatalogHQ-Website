@@ -20,7 +20,7 @@ const faqs = [
   {
     question: "How does payment work for my customers?",
     answer:
-      "Flutterwave handles all payments securely. Customers can pay by card, bank transfer, or USSD. Payment is confirmed instantly before the order is accepted. You never need to chase a transfer again.",
+      "Flutterwave handles all payments securely. Customers pay by bank transfer to a dedicated account. Payment is confirmed automatically before the order is accepted. You never need to chase a transfer again.",
   },
   {
     question: "What if I am not good with technology?",
