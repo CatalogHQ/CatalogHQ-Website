@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { User, UserRole } from '@prisma/client';
-import { ADMIN_TOTP_OPTIONAL_KEY } from '../../common/constants/metadata';
+import { ADMIN_TOTP_OPTIONAL_KEY } from '../common/constants/metadata';
 
 @Injectable()
 export class AdminTotpGuard implements CanActivate {

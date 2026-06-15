@@ -5,6 +5,7 @@ import { PaymentsModule } from '../payments/payments.module';
 import { PlansModule } from '../plans/plans.module';
 import { TicketsModule } from '../tickets/tickets.module';
 import { AdminAuthService } from './admin-auth.service';
+import { AdminTotpGuard } from './admin-totp.guard';
 import { AdminController } from './admin.controller';
 import { AdminService } from './admin.service';
 

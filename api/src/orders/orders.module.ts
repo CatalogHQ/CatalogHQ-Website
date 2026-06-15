@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { PaymentsModule } from '../payments/payments.module';
 import { PlansModule } from '../plans/plans.module';
 import { AbandonedCartService } from './abandoned-cart.service';
+import { OrderAccessAttemptService } from './order-access-attempt.service';
 import { OrdersController } from './orders.controller';
 import { OrdersService } from './orders.service';
 
