@@ -16,6 +16,9 @@ import {
   vendorPayoutMinimumMessage,
 } from './vendor-payout.constants';
 
+/** Buffer above payout amount to cover Flutterwave transfer fees (typically ~10 NGN). */
+export const PAYOUT_WALLET_FEE_BUFFER_NGN = 15;
+
 const FLUTTERWAVE_POST_MAX_ATTEMPTS = 3;
 const FLUTTERWAVE_RETRY_BASE_MS = 300;
 
@@ -88,6 +91,31 @@ export class FlutterwaveTransferService {
 
   isConfigured(): boolean {
     return this.auth.isConfigured();
+  }
+
+  async getNgnAvailableBalance(): Promise<number | null> {
+    if (!this.isConfigured()) {
+      return null;
+    }
+
+    try {
+      const data = await this.request<{ available_balance?: number }>(
+        '/wallets/balances/NGN',
+        { method: 'GET' },
+      );
+      if (
+        typeof data.available_balance === 'number' &&
+        Number.isFinite(data.available_balance)
+      ) {
+        return Math.floor(data.available_balance);
+      }
+      return null;
+    } catch (error) {
+      this.logger.warn(
+        `Could not fetch Flutterwave NGN wallet balance: ${error instanceof Error ? error.message : 'unknown'}`,
+      );
+      return null;
+    }
   }
 
   async createNgnBankRecipient(

@@ -13,7 +13,7 @@ import { buildFlutterwaveReference } from './flutterwave-reference.util';
 import { resolveFlutterwavePayoutReference } from './flutterwave-payout-reference.util';
 import { buildFlutterwaveCheckoutEmail } from './flutterwave-payment-methods';
 import { FlutterwaveService } from './flutterwave.service';
-import { FlutterwaveTransferService } from './flutterwave-transfer.service';
+import { FlutterwaveTransferService, PAYOUT_WALLET_FEE_BUFFER_NGN } from './flutterwave-transfer.service';
 import {
   isVendorPayoutAmountEligible,
   MIN_VENDOR_PAYOUT_NAIRA,
@@ -280,10 +280,20 @@ export class PaymentsService {
       return;
     }
 
+    if (order.payoutStatus === PayoutStatus.settled) {
+      return;
+    }
+
     if (
-      order.flutterwaveTransferId ||
-      order.payoutStatus === PayoutStatus.processing ||
-      order.payoutStatus === PayoutStatus.settled
+      order.payoutStatus === PayoutStatus.processing &&
+      order.flutterwaveTransferId
+    ) {
+      return;
+    }
+
+    if (
+      order.flutterwaveTransferId &&
+      order.payoutStatus !== PayoutStatus.failed
     ) {
       return;
     }
@@ -314,7 +324,23 @@ export class PaymentsService {
       return;
     }
 
-    const payoutReference = resolveFlutterwavePayoutReference(order);
+    const payoutReference = resolveFlutterwavePayoutReference({
+      id: order.id,
+      flutterwavePayoutReference: order.flutterwavePayoutReference,
+      payoutStatus: order.payoutStatus,
+    });
+
+    const requiredWalletBalance = order.vendorNet + PAYOUT_WALLET_FEE_BUFFER_NGN;
+    const availableBalance = await this.transferService.getNgnAvailableBalance();
+    if (
+      availableBalance !== null &&
+      availableBalance < requiredWalletBalance
+    ) {
+      this.logger.warn(
+        `Deferring vendor payout for order ${order.paymentRef}: Flutterwave available balance ${availableBalance} NGN is below required ${requiredWalletBalance} NGN (payout ${order.vendorNet} + fee buffer).`,
+      );
+      return;
+    }
 
     try {
       const transfer = await this.transferService.initiateInstantTransfer({
@@ -349,6 +375,7 @@ export class PaymentsService {
         where: { id: order.id },
         data: {
           payoutStatus: PayoutStatus.failed,
+          flutterwaveTransferId: null,
           flutterwavePayoutReference: payoutReference,
         },
       });
@@ -435,7 +462,10 @@ export class PaymentsService {
 
     await this.prisma.order.update({
       where: { id: order.id },
-      data: { payoutStatus: PayoutStatus.failed },
+      data: {
+        payoutStatus: PayoutStatus.failed,
+        flutterwaveTransferId: null,
+      },
     });
   }
 

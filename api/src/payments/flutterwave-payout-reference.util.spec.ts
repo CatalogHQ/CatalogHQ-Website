@@ -1,5 +1,6 @@
 import {
   buildFlutterwavePayoutReference,
+  buildFlutterwavePayoutRetryReference,
   isValidFlutterwaveTransferReference,
   resolveFlutterwavePayoutReference,
 } from './flutterwave-payout-reference.util';
@@ -11,6 +12,16 @@ describe('flutterwave-payout-reference.util', () => {
     );
 
     expect(reference).toBe('po-0dc72157efdf44291363674dbf452faf');
+    expect(reference.length).toBeLessThanOrEqual(42);
+    expect(isValidFlutterwaveTransferReference(reference)).toBe(true);
+  });
+
+  it('builds a fresh reference when retrying a failed payout', () => {
+    const reference = buildFlutterwavePayoutRetryReference(
+      '0dc72157-efdf-4429-1363-674dbf452faf',
+    );
+
+    expect(reference).toMatch(/^po-0dc72157efdf44291363674dbf452faf-r/);
     expect(reference.length).toBeLessThanOrEqual(42);
     expect(isValidFlutterwaveTransferReference(reference)).toBe(true);
   });

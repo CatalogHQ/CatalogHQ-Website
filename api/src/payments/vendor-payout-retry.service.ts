@@ -22,7 +22,6 @@ export class VendorPayoutRetryService {
       where: {
         paymentStatus: PaymentStatus.paid,
         vendorNet: { gte: MIN_VENDOR_PAYOUT_NAIRA },
-        flutterwaveTransferId: null,
         payoutStatus: { in: [PayoutStatus.pending, PayoutStatus.failed] },
         store: {
           payoutSetupComplete: true,
