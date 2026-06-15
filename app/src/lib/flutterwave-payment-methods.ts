@@ -1,5 +1,9 @@
 export const FLUTTERWAVE_PAYMENT_METHODS = [
-  { id: "opay", label: "OPay", description: "Pay with OPay wallet" },
+  {
+    id: "opay",
+    label: "OPay",
+    description: "Log in to your OPay wallet to approve payment",
+  },
   {
     id: "mobile_money",
     label: "Mobile Money (MTN)",

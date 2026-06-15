@@ -323,6 +323,13 @@ export default function FlutterwaveCheckout({
               )}
             />
 
+            {paymentMethod === "opay" && (
+              <p className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs text-blue-900">
+                You will be redirected to OPay to log in and approve this payment
+                in your wallet.
+              </p>
+            )}
+
             {paymentMethod === "ussd" && (
               <FormField
                 control={form.control}

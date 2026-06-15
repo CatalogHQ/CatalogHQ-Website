@@ -44,6 +44,27 @@ export function normalizeNigerianPhoneForFlutterwave(phone: string): string {
   return digits;
 }
 
+export function buildFlutterwaveOrchestratorCustomer(input: {
+  email: string;
+  name: string;
+  phone: string;
+}): Record<string, unknown> {
+  const nameParts = splitCustomerName(input.name);
+  const phoneNumber = normalizeNigerianPhoneForFlutterwave(input.phone);
+
+  return {
+    email: input.email,
+    name: nameParts,
+    phone: {
+      country_code: '234',
+      number: phoneNumber,
+    },
+    address: {
+      country: 'NG',
+    },
+  };
+}
+
 export function buildFlutterwavePaymentMethod(
   input: FlutterwavePaymentMethodInput,
 ): Record<string, unknown> {

@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Injectable,
   InternalServerErrorException,
   Logger,
@@ -13,6 +14,7 @@ import {
 } from './flutterwave.config';
 import { flutterwaveIdempotencyKey } from './flutterwave-idempotency.util';
 import {
+  buildFlutterwaveOrchestratorCustomer,
   buildFlutterwavePaymentMethod,
   FlutterwavePaymentMethod,
   normalizeNigerianPhoneForFlutterwave,
@@ -55,6 +57,10 @@ type CustomerData = {
   id: string;
 };
 
+type PaymentMethodData = {
+  id: string;
+};
+
 type VirtualAccountData = {
   account_number: string;
   account_bank_name: string;
@@ -82,6 +88,46 @@ class FlutterwaveRetryableError extends Error {
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function stringifyFlutterwaveMeta(
+  metadata?: Record<string, unknown>,
+): Record<string, string> | undefined {
+  if (!metadata) {
+    return undefined;
+  }
+
+  const meta: Record<string, string> = {};
+  for (const [key, value] of Object.entries(metadata)) {
+    if (value === undefined || value === null) {
+      continue;
+    }
+    meta[key] = String(value);
+  }
+
+  return Object.keys(meta).length > 0 ? meta : undefined;
+}
+
+function toFlutterwaveClientError(detail: string): string {
+  const lower = detail.toLowerCase();
+
+  if (
+    lower.includes('subaccount') ||
+    lower.includes('split') ||
+    lower.includes('merchant not found')
+  ) {
+    return 'This store payout account is not ready for split payments. The vendor should re-link their bank on the Payouts page.';
+  }
+
+  if (lower.includes('opay')) {
+    return 'OPay checkout is not available on this Flutterwave account yet. Try bank transfer or ask the vendor to contact Flutterwave to enable OPay.';
+  }
+
+  if (detail.length > 180) {
+    return 'Payment could not be started. Try another payment method or contact support.';
+  }
+
+  return detail;
 }
 
 @Injectable()
@@ -133,9 +179,11 @@ export class FlutterwaveService {
       return this.initializeBankTransfer(params);
     }
 
+    if (params.paymentMethod === 'opay') {
+      return this.initializeOpayCharge(params);
+    }
+
     const redirectUrl = `${this.callbackBaseUrl.replace(/\/$/, '')}${params.callbackPath}`;
-    const nameParts = splitCustomerName(params.name);
-    const phoneNumber = normalizeNigerianPhoneForFlutterwave(params.phone);
 
     const payload = await this.request<ChargeData>(
       '/orchestration/direct-charges',
@@ -147,20 +195,17 @@ export class FlutterwaveService {
           currency: 'NGN',
           reference: params.reference,
           redirect_url: redirectUrl,
-          customer: {
+          customer: buildFlutterwaveOrchestratorCustomer({
             email: params.email,
-            name: nameParts,
-            phone: {
-              country_code: '234',
-              number: phoneNumber,
-            },
-          },
+            name: params.name,
+            phone: params.phone,
+          }),
           payment_method: buildFlutterwavePaymentMethod({
             paymentMethod: params.paymentMethod,
             phone: params.phone,
             ussdBankCode: params.ussdBankCode,
           }),
-          meta: params.metadata,
+          meta: stringifyFlutterwaveMeta(params.metadata),
           ...(params.subaccounts?.length
             ? { subaccounts: params.subaccounts }
             : {}),
@@ -169,6 +214,90 @@ export class FlutterwaveService {
     );
 
     return this.parseChargeResponse(payload, params.reference);
+  }
+
+  /** OPay general flow: customer → payment method → charge (Flutterwave OPay docs). */
+  private async initializeOpayCharge(params: {
+    email: string;
+    phone: string;
+    name: string;
+    amountNaira: number;
+    reference: string;
+    callbackPath: string;
+    metadata?: Record<string, unknown>;
+    subaccounts?: FlutterwaveSplitSubaccount[];
+  }): Promise<FlutterwaveInitResult> {
+    const redirectUrl = `${this.callbackBaseUrl.replace(/\/$/, '')}${params.callbackPath}`;
+
+    const customer = await this.request<CustomerData>('/customers', {
+      method: 'POST',
+      idempotencyKey: flutterwaveIdempotencyKey('customer', params.reference),
+      body: buildFlutterwaveOrchestratorCustomer({
+        email: params.email,
+        name: params.name,
+        phone: params.phone,
+      }),
+    });
+
+    if (!customer.id) {
+      throw new InternalServerErrorException('Could not start OPay payment.');
+    }
+
+    const paymentMethod = await this.request<PaymentMethodData>(
+      '/payment-methods',
+      {
+        method: 'POST',
+        idempotencyKey: flutterwaveIdempotencyKey(
+          'payment-method',
+          params.reference,
+        ),
+        body: { type: 'opay' },
+      },
+    );
+
+    if (!paymentMethod.id) {
+      throw new InternalServerErrorException('Could not start OPay payment.');
+    }
+
+    const baseChargeBody = {
+      currency: 'NGN',
+      customer_id: customer.id,
+      payment_method_id: paymentMethod.id,
+      amount: params.amountNaira,
+      reference: params.reference,
+      redirect_url: redirectUrl,
+      meta: stringifyFlutterwaveMeta(params.metadata),
+    };
+
+    const createCharge = (withSplit: boolean) =>
+      this.request<ChargeData>('/charges', {
+        method: 'POST',
+        idempotencyKey: flutterwaveIdempotencyKey(
+          withSplit ? 'charge' : 'charge-no-split',
+          params.reference,
+        ),
+        body: {
+          ...baseChargeBody,
+          ...(withSplit && params.subaccounts?.length
+            ? { subaccounts: params.subaccounts }
+            : {}),
+        },
+      });
+
+    try {
+      const charge = await createCharge(true);
+      return this.parseChargeResponse(charge, params.reference);
+    } catch (error) {
+      if (!params.subaccounts?.length) {
+        throw error;
+      }
+
+      this.logger.warn(
+        `OPay charge with vendor split failed for ${params.reference}; retrying without split.`,
+      );
+      const charge = await createCharge(false);
+      return this.parseChargeResponse(charge, params.reference);
+    }
   }
 
   private async initializeBankTransfer(params: {
@@ -216,7 +345,7 @@ export class FlutterwaveService {
           account_type: 'dynamic',
           expiry: 3600,
           narration: params.name,
-          meta: params.metadata,
+          meta: stringifyFlutterwaveMeta(params.metadata),
           ...(params.subaccounts?.length
             ? { subaccounts: params.subaccounts }
             : {}),
@@ -472,7 +601,12 @@ export class FlutterwaveService {
           `Flutterwave error code=${json.error.code} type=${json.error.type}`,
         );
       }
-      throw new InternalServerErrorException('Could not complete payment request.');
+
+      if (response.status >= 500) {
+        throw new FlutterwaveRetryableError(detail);
+      }
+
+      throw new BadRequestException(toFlutterwaveClientError(detail));
     }
 
     return json.data as T;
