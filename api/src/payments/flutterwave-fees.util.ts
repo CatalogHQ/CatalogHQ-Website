@@ -43,9 +43,24 @@ export function customerPriceForVendorNet(vendorNet: number): number {
   return low;
 }
 
+/** If the last two naira digits are below 50, round the amount up to the next 50. */
+export function roundCustomerPayAmount(amount: number): number {
+  if (amount <= 0) {
+    return 0;
+  }
+
+  const lastTwoDigits = amount % 100;
+  if (lastTwoDigits === 0 || lastTwoDigits >= 50) {
+    return amount;
+  }
+
+  return amount + (50 - lastTwoDigits);
+}
+
 export function computeCheckoutPricing(vendorNet: number): CheckoutPricing {
   const normalizedVendorNet = Math.max(0, vendorNet);
-  const customerTotal = customerPriceForVendorNet(normalizedVendorNet);
+  const rawCustomerTotal = customerPriceForVendorNet(normalizedVendorNet);
+  const customerTotal = roundCustomerPayAmount(rawCustomerTotal);
 
   return {
     vendorNet: normalizedVendorNet,

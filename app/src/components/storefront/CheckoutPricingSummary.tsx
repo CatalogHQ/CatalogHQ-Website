@@ -60,6 +60,12 @@ export default function CheckoutPricingSummary({
               <span>−{formatNaira(discountAmount)}</span>
             </div>
           )}
+          {showProcessingFee && (
+            <div className="flex items-center justify-between border-t border-gray-200 pt-2 text-gray-700">
+              <span>Subtotal</span>
+              <span>{formatNaira(vendorNet)}</span>
+            </div>
+          )}
         </>
       )}
       {showProcessingFee && processingFee > 0 && (

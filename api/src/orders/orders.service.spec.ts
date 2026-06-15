@@ -65,7 +65,7 @@ describe('OrdersService', () => {
     deliveryFee: 0,
     discountAmount: 0,
     discountCode: null,
-    totalPaid: 5102,
+    totalPaid: 5150,
     vendorNet: 5000,
     platformFee: 102,
     payoutStatus: PayoutStatus.split,
@@ -141,7 +141,7 @@ describe('OrdersService', () => {
       paymentMethod: 'bank_transfer',
     });
 
-    expect(result.totalPaid).toBe(5102);
+    expect(result.totalPaid).toBe(5150);
     expect(result.unitPrice).toBe(2500);
     expect(paymentsService.confirmPayment).toHaveBeenCalled();
   });
