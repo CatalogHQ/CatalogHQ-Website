@@ -16,9 +16,9 @@ import { flutterwaveIdempotencyKey } from './flutterwave-idempotency.util';
 import {
   buildFlutterwaveOrchestratorCustomer,
   buildFlutterwavePaymentMethod,
+  buildFlutterwaveCheckoutEmail,
+  isFlutterwaveCustomerExistsMessage,
   FlutterwavePaymentMethod,
-  normalizeNigerianPhoneForFlutterwave,
-  splitCustomerName,
 } from './flutterwave-payment-methods';
 import { FlutterwaveSplitSubaccount } from './flutterwave-split.util';
 import { flutterwaveAmountMatchesNaira } from './flutterwave-amount.util';
@@ -229,19 +229,12 @@ export class FlutterwaveService {
   }): Promise<FlutterwaveInitResult> {
     const redirectUrl = `${this.callbackBaseUrl.replace(/\/$/, '')}${params.callbackPath}`;
 
-    const customer = await this.request<CustomerData>('/customers', {
-      method: 'POST',
-      idempotencyKey: flutterwaveIdempotencyKey('customer', params.reference),
-      body: buildFlutterwaveOrchestratorCustomer({
-        email: params.email,
-        name: params.name,
-        phone: params.phone,
-      }),
+    const customerId = await this.ensureFlutterwaveCustomer({
+      email: params.email,
+      name: params.name,
+      phone: params.phone,
+      reference: params.reference,
     });
-
-    if (!customer.id) {
-      throw new InternalServerErrorException('Could not start OPay payment.');
-    }
 
     const paymentMethod = await this.request<PaymentMethodData>(
       '/payment-methods',
@@ -261,7 +254,7 @@ export class FlutterwaveService {
 
     const baseChargeBody = {
       currency: 'NGN',
-      customer_id: customer.id,
+      customer_id: customerId,
       payment_method_id: paymentMethod.id,
       amount: params.amountNaira,
       reference: params.reference,
@@ -300,6 +293,71 @@ export class FlutterwaveService {
     }
   }
 
+  private async ensureFlutterwaveCustomer(params: {
+    email: string;
+    name: string;
+    phone: string;
+    reference: string;
+  }): Promise<string> {
+    const body = buildFlutterwaveOrchestratorCustomer({
+      email: params.email,
+      name: params.name,
+      phone: params.phone,
+    });
+    const email = String(body.email);
+
+    const existing = await this.findFlutterwaveCustomerByEmail(email);
+    if (existing) {
+      return existing;
+    }
+
+    try {
+      const created = await this.request<CustomerData>('/customers', {
+        method: 'POST',
+        idempotencyKey: flutterwaveIdempotencyKey('customer-create', email),
+        body,
+      });
+
+      if (!created.id) {
+        throw new InternalServerErrorException('Could not start payment.');
+      }
+
+      return created.id;
+    } catch (error) {
+      const message =
+        error instanceof BadRequestException
+          ? error.message
+          : error instanceof Error
+            ? error.message
+            : '';
+
+      if (!isFlutterwaveCustomerExistsMessage(message)) {
+        throw error;
+      }
+
+      const reused = await this.findFlutterwaveCustomerByEmail(email);
+      if (reused) {
+        this.logger.log(`Reusing existing Flutterwave customer for ${email}`);
+        return reused;
+      }
+
+      throw error;
+    }
+  }
+
+  private async findFlutterwaveCustomerByEmail(
+    email: string,
+  ): Promise<string | null> {
+    const results = await this.request<CustomerData[]>('/customers/search', {
+      method: 'POST',
+      idempotencyKey: flutterwaveIdempotencyKey('customer-search', email),
+      body: { email },
+    });
+
+    const customer = Array.isArray(results) ? results[0] : undefined;
+    return customer?.id ?? null;
+  }
+
   private async initializeBankTransfer(params: {
     email: string;
     phone: string;
@@ -309,25 +367,12 @@ export class FlutterwaveService {
     metadata?: Record<string, unknown>;
     subaccounts?: FlutterwaveSplitSubaccount[];
   }): Promise<FlutterwaveInitResult> {
-    const nameParts = splitCustomerName(params.name);
-    const phoneNumber = normalizeNigerianPhoneForFlutterwave(params.phone);
-
-    const customer = await this.request<CustomerData>('/customers', {
-      method: 'POST',
-      idempotencyKey: flutterwaveIdempotencyKey('customer', params.reference),
-      body: {
-        email: params.email,
-        name: nameParts,
-        phone: {
-          country_code: '234',
-          number: phoneNumber,
-        },
-      },
+    const customerId = await this.ensureFlutterwaveCustomer({
+      email: params.email ?? buildFlutterwaveCheckoutEmail(params.phone),
+      name: params.name,
+      phone: params.phone,
+      reference: params.reference,
     });
-
-    if (!customer.id) {
-      throw new InternalServerErrorException('Could not start payment.');
-    }
 
     const virtualAccount = await this.request<VirtualAccountData>(
       '/virtual-accounts',
@@ -339,7 +384,7 @@ export class FlutterwaveService {
         ),
         body: {
           reference: params.reference,
-          customer_id: customer.id,
+          customer_id: customerId,
           amount: params.amountNaira,
           currency: 'NGN',
           account_type: 'dynamic',

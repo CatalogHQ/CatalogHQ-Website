@@ -66,6 +66,21 @@ export function normalizeNigerianPhoneForFlutterwave(phone: string): string {
   return digits;
 }
 
+export function isFlutterwaveCustomerExistsMessage(
+  message: string | undefined,
+): boolean {
+  if (!message) {
+    return false;
+  }
+
+  const lower = message.toLowerCase();
+  return (
+    lower.includes('customer already exists') ||
+    lower.includes('customer exists') ||
+    (lower.includes('already exists') && lower.includes('customer'))
+  );
+}
+
 export function buildFlutterwaveCheckoutEmail(phone: string): string {
   const digits = normalizeNigerianPhoneForFlutterwave(phone);
   return `buyer${digits}@cataloghq.ng`;
@@ -78,9 +93,7 @@ export function buildFlutterwaveOrchestratorCustomer(input: {
 }): Record<string, unknown> {
   const nameParts = splitCustomerName(input.name);
   const phoneNumber = normalizeNigerianPhoneForFlutterwave(input.phone);
-  const email = input.email.includes('@')
-    ? input.email.trim()
-    : buildFlutterwaveCheckoutEmail(input.phone);
+  const email = buildFlutterwaveCheckoutEmail(input.phone);
 
   return {
     email,

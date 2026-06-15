@@ -19,6 +19,7 @@ import { normalizePhone } from '../common/phone.util';
 import { verifyPhoneLastFour } from '../common/order-phone.util';
 import { FlutterwaveService } from '../payments/flutterwave.service';
 import { computeCheckoutPricing } from '../payments/flutterwave-fees.util';
+import { buildFlutterwaveCheckoutEmail } from '../payments/flutterwave-payment-methods';
 import { buildCheckoutSplitPayload } from '../payments/flutterwave-split.util';
 import { buildFlutterwaveReference } from '../payments/flutterwave-reference.util';
 import { PaymentsService } from '../payments/payments.service';
@@ -111,7 +112,7 @@ export class OrdersService {
         : [];
 
       const init = await this.flutterwave.initializeTransaction({
-        email: `${order.customerPhone}@cataloghq.ng`,
+        email: buildFlutterwaveCheckoutEmail(order.customerPhone),
         phone: order.customerPhone,
         name: order.customerName,
         amountNaira: order.totalPaid,

@@ -76,8 +76,16 @@ describe('FlutterwaveService', () => {
     expect(init.headers['X-Idempotency-Key']).toBeDefined();
   });
 
-  it('creates OPay charges via customer, payment method, and charge APIs', async () => {
+  it('creates OPay charges via customer search, create, payment method, and charge APIs', async () => {
     (global.fetch as jest.Mock)
+      .mockResolvedValueOnce({
+        ok: true,
+        headers: { get: () => null },
+        json: async () => ({
+          status: 'success',
+          data: [],
+        }),
+      })
       .mockResolvedValueOnce({
         ok: true,
         headers: { get: () => null },
@@ -120,8 +128,64 @@ describe('FlutterwaveService', () => {
     });
 
     expect(result.authorizationUrl).toBe('https://checkout.example/opay');
+    expect(global.fetch).toHaveBeenCalledTimes(4);
+    expect((global.fetch as jest.Mock).mock.calls[0][0]).toContain(
+      '/customers/search',
+    );
+    expect((global.fetch as jest.Mock).mock.calls[1][0]).toContain('/customers');
+    expect((global.fetch as jest.Mock).mock.calls[2][0]).toContain(
+      '/payment-methods',
+    );
+    expect((global.fetch as jest.Mock).mock.calls[3][0]).toContain('/charges');
+  });
+
+  it('reuses an existing Flutterwave customer for OPay when search finds one', async () => {
+    (global.fetch as jest.Mock)
+      .mockResolvedValueOnce({
+        ok: true,
+        headers: { get: () => null },
+        json: async () => ({
+          status: 'success',
+          data: [{ id: 'cus_existing' }],
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        headers: { get: () => null },
+        json: async () => ({
+          status: 'success',
+          data: { id: 'pmd_test_1', type: 'opay' },
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        headers: { get: () => null },
+        json: async () => ({
+          status: 'success',
+          data: {
+            reference: 'flw-ref-1',
+            next_action: {
+              type: 'redirect_url',
+              redirect_url: { url: 'https://checkout.example/opay' },
+            },
+          },
+        }),
+      });
+
+    await service.initializeTransaction({
+      email: 'buyer@example.com',
+      phone: '08012345678',
+      name: 'Ada Lovelace',
+      amountNaira: 5000,
+      reference: 'flw-ref-1',
+      callbackPath: '/callback',
+      paymentMethod: 'opay',
+    });
+
     expect(global.fetch).toHaveBeenCalledTimes(3);
-    expect((global.fetch as jest.Mock).mock.calls[0][0]).toContain('/customers');
+    expect((global.fetch as jest.Mock).mock.calls[0][0]).toContain(
+      '/customers/search',
+    );
     expect((global.fetch as jest.Mock).mock.calls[1][0]).toContain(
       '/payment-methods',
     );

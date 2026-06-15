@@ -2,6 +2,7 @@ import {
   buildFlutterwaveCheckoutEmail,
   buildFlutterwaveOrchestratorCustomer,
   buildFlutterwavePaymentMethod,
+  isFlutterwaveCustomerExistsMessage,
   normalizeNigerianPhoneForFlutterwave,
   sanitizeFlutterwaveNamePart,
   splitCustomerName,
@@ -50,6 +51,13 @@ describe('flutterwave-payment-methods', () => {
     expect(buildFlutterwaveCheckoutEmail('08012345678')).toBe(
       'buyer8012345678@cataloghq.ng',
     );
+  });
+
+  it('detects Flutterwave customer already exists errors', () => {
+    expect(isFlutterwaveCustomerExistsMessage('Customer already exists')).toBe(
+      true,
+    );
+    expect(isFlutterwaveCustomerExistsMessage('Invalid amount')).toBe(false);
   });
 
   it('builds opay payment method payload', () => {
