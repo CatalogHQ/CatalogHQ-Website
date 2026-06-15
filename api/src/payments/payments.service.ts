@@ -26,12 +26,18 @@ export class PaymentsService {
     private readonly lowStockAlertService: LowStockAlertService,
   ) {}
 
-  async markWebhookProcessed(dedupeKey: string): Promise<boolean> {
+  async isWebhookProcessed(dedupeKey: string): Promise<boolean> {
+    const existing = await this.prisma.processedWebhook.findUnique({
+      where: { txRef: dedupeKey },
+    });
+    return Boolean(existing);
+  }
+
+  async markWebhookProcessed(dedupeKey: string): Promise<void> {
     try {
       await this.prisma.processedWebhook.create({
         data: { txRef: dedupeKey },
       });
-      return false;
     } catch (error) {
       if (
         typeof error === 'object' &&
@@ -39,7 +45,7 @@ export class PaymentsService {
         'code' in error &&
         error.code === 'P2002'
       ) {
-        return true;
+        return;
       }
       throw error;
     }

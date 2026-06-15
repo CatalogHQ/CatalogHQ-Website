@@ -1,4 +1,6 @@
 export type FlutterwaveWebhookPayload = {
+  id?: string;
+  timestamp?: number;
   type?: string;
   event?: string;
   data?: {
@@ -8,6 +10,7 @@ export type FlutterwaveWebhookPayload = {
     status?: string;
     amount?: number;
     currency?: string;
+    [key: string]: unknown;
   };
 };
 
@@ -45,7 +48,11 @@ export function normalizeFlutterwaveWebhook(
 
 export function buildWebhookDedupeKey(
   normalized: NormalizedFlutterwaveWebhook,
+  webhookId?: string,
 ): string {
+  if (webhookId?.trim()) {
+    return `${normalized.eventType}:${webhookId.trim()}`;
+  }
   if (normalized.transferId) {
     return `${normalized.eventType}:${normalized.transferId}`;
   }

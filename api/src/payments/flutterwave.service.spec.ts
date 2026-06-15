@@ -167,13 +167,28 @@ describe('FlutterwaveService', () => {
     expect(verified).toBe(false);
   });
 
-  it('validates webhook HMAC signature', () => {
+  it('validates v4 flutterwave-signature HMAC', () => {
     const rawBody = '{"type":"charge.completed"}';
     const signature = createHmac('sha256', 'webhook-secret')
       .update(rawBody)
       .digest('base64');
 
-    expect(() => service.verifyWebhookSignature(rawBody, signature)).not.toThrow();
-    expect(() => service.verifyWebhookSignature(rawBody, 'invalid')).toThrow();
+    expect(() =>
+      service.verifyWebhookSignature(rawBody, { flutterwaveSignature: signature }),
+    ).not.toThrow();
+    expect(() =>
+      service.verifyWebhookSignature(rawBody, { flutterwaveSignature: 'invalid' }),
+    ).toThrow();
+  });
+
+  it('validates legacy verif-hash header', () => {
+    const rawBody = '{"type":"charge.completed"}';
+
+    expect(() =>
+      service.verifyWebhookSignature(rawBody, { verifHash: 'webhook-secret' }),
+    ).not.toThrow();
+    expect(() =>
+      service.verifyWebhookSignature(rawBody, { verifHash: 'wrong-secret' }),
+    ).toThrow();
   });
 });

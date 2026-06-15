@@ -1,4 +1,5 @@
 import {
+  buildWebhookDedupeKey,
   isChargeCompletedEvent,
   isSuccessfulPaymentStatus,
   normalizeFlutterwaveWebhook,
@@ -8,21 +9,39 @@ describe('flutterwave-webhook.util', () => {
   it('normalizes v4 charge.completed payloads', () => {
     expect(
       normalizeFlutterwaveWebhook({
+        id: 'wbk_test123',
+        timestamp: 1735116884019,
         type: 'charge.completed',
         data: {
+          id: 'chg_test123',
           reference: 'SHP-abc',
           status: 'succeeded',
           amount: 5100,
           currency: 'NGN',
+          customer: { email: 'buyer@example.com' },
         },
       }),
     ).toEqual({
       eventType: 'charge.completed',
       reference: 'SHP-abc',
+      transferId: 'chg_test123',
       status: 'succeeded',
       amount: 5100,
       currency: 'NGN',
     });
+  });
+
+  it('builds dedupe keys from webhook id when present', () => {
+    expect(
+      buildWebhookDedupeKey(
+        {
+          eventType: 'charge.completed',
+          reference: 'SHP-abc',
+          status: 'succeeded',
+        },
+        'wbk_test123',
+      ),
+    ).toBe('charge.completed:wbk_test123');
   });
 
   it('normalizes v3 charge.completed payloads', () => {

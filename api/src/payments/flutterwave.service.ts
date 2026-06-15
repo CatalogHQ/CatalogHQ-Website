@@ -380,31 +380,51 @@ export class FlutterwaveService {
     return json.data as T;
   }
 
-  verifyWebhookSignature(rawBody: string, signature: string): void {
+  verifyWebhookSignature(
+    rawBody: string,
+    headers: {
+      flutterwaveSignature?: string;
+      verifHash?: string;
+    },
+  ): void {
     if (!this.webhookSecret) {
       throw new InternalServerErrorException(
         'Webhook secret is not configured. All webhook requests are being rejected for security.',
       );
     }
 
-    if (!signature) {
-      throw new UnauthorizedException('Missing webhook signature');
+    const flutterwaveSignature = headers.flutterwaveSignature?.trim();
+    const verifHash = headers.verifHash?.trim();
+
+    if (flutterwaveSignature) {
+      const expectedHash = createHmac('sha256', this.webhookSecret)
+        .update(rawBody)
+        .digest('base64');
+
+      const expectedBuffer = Buffer.from(expectedHash);
+      const signatureBuffer = Buffer.from(flutterwaveSignature);
+
+      if (
+        expectedBuffer.length === signatureBuffer.length &&
+        timingSafeEqual(expectedBuffer, signatureBuffer)
+      ) {
+        return;
+      }
     }
 
-    const expectedHash = createHmac('sha256', this.webhookSecret)
-      .update(rawBody)
-      .digest('base64');
+    if (verifHash) {
+      const secretBuffer = Buffer.from(this.webhookSecret);
+      const verifBuffer = Buffer.from(verifHash);
 
-    const expectedBuffer = Buffer.from(expectedHash);
-    const signatureBuffer = Buffer.from(signature);
-
-    if (expectedBuffer.length !== signatureBuffer.length) {
-      throw new UnauthorizedException('Invalid webhook signature');
+      if (
+        secretBuffer.length === verifBuffer.length &&
+        timingSafeEqual(secretBuffer, verifBuffer)
+      ) {
+        return;
+      }
     }
 
-    if (!timingSafeEqual(expectedBuffer, signatureBuffer)) {
-      throw new UnauthorizedException('Invalid webhook signature');
-    }
+    throw new UnauthorizedException('Invalid webhook signature');
   }
 
   private async request<T>(

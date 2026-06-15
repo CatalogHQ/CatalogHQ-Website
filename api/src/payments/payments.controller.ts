@@ -3,6 +3,8 @@ import {
   Body,
   Controller,
   Headers,
+  HttpCode,
+  Logger,
   Post,
   RawBodyRequest,
   Req,
@@ -10,10 +12,11 @@ import {
 import { SkipThrottle } from '@nestjs/throttler';
 import { Public } from '../common/decorators/public.decorator';
 import { VendorSubscriptionService } from '../subscriptions/vendor-subscription.service';
-import { FlutterwaveWebhookDto } from './dto/flutterwave-webhook.dto';
 import { FlutterwaveService } from './flutterwave.service';
+import { getFlutterwaveWebhookRawBody } from './flutterwave-webhook-raw-body.util';
 import {
   buildWebhookDedupeKey,
+  FlutterwaveWebhookPayload,
   isChargeCompletedEvent,
   isChargeFailedEvent,
   isFailedTransferStatus,
@@ -21,11 +24,14 @@ import {
   isSuccessfulTransferStatus,
   isTransferDisburseEvent,
   normalizeFlutterwaveWebhook,
+  NormalizedFlutterwaveWebhook,
 } from './flutterwave-webhook.util';
 import { PaymentsService } from './payments.service';
 
 @Controller('payments')
 export class PaymentsController {
+  private readonly logger = new Logger(PaymentsController.name);
+
   constructor(
     private readonly paymentsService: PaymentsService,
     private readonly flutterwaveService: FlutterwaveService,
@@ -34,32 +40,48 @@ export class PaymentsController {
 
   @Public()
   @SkipThrottle()
+  @HttpCode(200)
   @Post('flutterwave/webhook')
   async flutterwaveWebhook(
     @Req() req: RawBodyRequest<Request>,
-    @Headers('flutterwave-signature') signature: string,
-    @Body() body: FlutterwaveWebhookDto,
+    @Headers('flutterwave-signature') flutterwaveSignature: string | undefined,
+    @Headers('verif-hash') verifHash: string | undefined,
+    @Body() body: FlutterwaveWebhookPayload,
   ) {
-    const rawBody =
-      typeof req.rawBody === 'string'
-        ? req.rawBody
-        : JSON.stringify(body);
+    const rawBody = getFlutterwaveWebhookRawBody(req, body);
 
-    this.flutterwaveService.verifyWebhookSignature(rawBody, signature);
+    this.flutterwaveService.verifyWebhookSignature(rawBody, {
+      flutterwaveSignature,
+      verifHash,
+    });
 
     const normalized = normalizeFlutterwaveWebhook(body);
     if (!normalized) {
       throw new BadRequestException('Missing transaction reference');
     }
 
-    const { eventType, reference, status, amount, currency } = normalized;
-    const dedupeKey = buildWebhookDedupeKey(normalized);
+    const dedupeKey = buildWebhookDedupeKey(normalized, body.id);
 
     const alreadyProcessed =
-      await this.paymentsService.markWebhookProcessed(dedupeKey);
+      await this.paymentsService.isWebhookProcessed(dedupeKey);
     if (alreadyProcessed) {
       return { received: true, note: 'Already processed' };
     }
+
+    void this.processFlutterwaveWebhook(normalized, dedupeKey).catch((error) => {
+      this.logger.error(
+        `Flutterwave webhook processing failed for ${dedupeKey}: ${error instanceof Error ? error.message : 'unknown'}`,
+      );
+    });
+
+    return { received: true };
+  }
+
+  private async processFlutterwaveWebhook(
+    normalized: NormalizedFlutterwaveWebhook,
+    dedupeKey: string,
+  ): Promise<void> {
+    const { eventType, reference, status, amount, currency } = normalized;
 
     if (
       isChargeCompletedEvent(eventType) &&
@@ -101,6 +123,6 @@ export class PaymentsController {
       await this.paymentsService.markPayoutSettled(reference);
     }
 
-    return { received: true };
+    await this.paymentsService.markWebhookProcessed(dedupeKey);
   }
 }
