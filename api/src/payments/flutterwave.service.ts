@@ -596,6 +596,13 @@ export class FlutterwaveService {
       this.logger.error(
         `Flutterwave API ${method} ${path} failed: ${detail}`,
       );
+      if (json.error?.validation_errors?.length) {
+        this.logger.error(
+          `Flutterwave validation errors: ${json.error.validation_errors
+            .map((entry) => `${entry.field_name}: ${entry.message}`)
+            .join('; ')}`,
+        );
+      }
       if (json.error?.code) {
         this.logger.debug(
           `Flutterwave error code=${json.error.code} type=${json.error.type}`,

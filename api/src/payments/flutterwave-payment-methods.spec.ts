@@ -1,6 +1,9 @@
 import {
+  buildFlutterwaveCheckoutEmail,
+  buildFlutterwaveOrchestratorCustomer,
   buildFlutterwavePaymentMethod,
   normalizeNigerianPhoneForFlutterwave,
+  sanitizeFlutterwaveNamePart,
   splitCustomerName,
 } from './flutterwave-payment-methods';
 
@@ -18,6 +21,34 @@ describe('flutterwave-payment-methods', () => {
     );
     expect(normalizeNigerianPhoneForFlutterwave('2348012345678')).toBe(
       '8012345678',
+    );
+  });
+
+  it('builds a valid Flutterwave customer without partial address', () => {
+    expect(
+      buildFlutterwaveOrchestratorCustomer({
+        email: 'buyer8012345678@cataloghq.ng',
+        name: 'Ada Lovelace',
+        phone: '08012345678',
+      }),
+    ).toEqual({
+      email: 'buyer8012345678@cataloghq.ng',
+      name: { first: 'Ada', last: 'Lovelace' },
+      phone: { country_code: '234', number: '8012345678' },
+    });
+  });
+
+  it('sanitizes short customer names for Flutterwave', () => {
+    expect(sanitizeFlutterwaveNamePart('A')).toBe('Customer');
+    expect(splitCustomerName('Chidi')).toEqual({
+      first: 'Chidi',
+      last: 'Chidi',
+    });
+  });
+
+  it('builds checkout email from phone', () => {
+    expect(buildFlutterwaveCheckoutEmail('08012345678')).toBe(
+      'buyer8012345678@cataloghq.ng',
     );
   });
 

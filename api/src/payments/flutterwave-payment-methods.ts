@@ -14,6 +14,19 @@ export type FlutterwavePaymentMethodInput = {
   ussdBankCode?: string;
 };
 
+export function sanitizeFlutterwaveNamePart(value: string): string {
+  const cleaned = value
+    .replace(/[^A-Za-z ,.'-]/g, ' ')
+    .trim()
+    .replace(/\s+/g, ' ');
+
+  if (cleaned.length >= 2) {
+    return cleaned.slice(0, 50);
+  }
+
+  return 'Customer';
+}
+
 export function splitCustomerName(fullName: string): {
   first: string;
   middle?: string;
@@ -24,12 +37,21 @@ export function splitCustomerName(fullName: string): {
     return { first: 'Customer', last: 'Customer' };
   }
   if (parts.length === 1) {
-    return { first: parts[0], last: parts[0] };
+    const only = sanitizeFlutterwaveNamePart(parts[0]);
+    return { first: only, last: only };
   }
+
+  const first = sanitizeFlutterwaveNamePart(parts[0]);
+  const last = sanitizeFlutterwaveNamePart(parts[parts.length - 1]);
+  const middle =
+    parts.length > 2
+      ? sanitizeFlutterwaveNamePart(parts.slice(1, -1).join(' '))
+      : undefined;
+
   return {
-    first: parts[0],
-    middle: parts.length > 2 ? parts.slice(1, -1).join(' ') : undefined,
-    last: parts[parts.length - 1],
+    first,
+    ...(middle && middle !== first ? { middle } : {}),
+    last,
   };
 }
 
@@ -44,6 +66,11 @@ export function normalizeNigerianPhoneForFlutterwave(phone: string): string {
   return digits;
 }
 
+export function buildFlutterwaveCheckoutEmail(phone: string): string {
+  const digits = normalizeNigerianPhoneForFlutterwave(phone);
+  return `buyer${digits}@cataloghq.ng`;
+}
+
 export function buildFlutterwaveOrchestratorCustomer(input: {
   email: string;
   name: string;
@@ -51,16 +78,16 @@ export function buildFlutterwaveOrchestratorCustomer(input: {
 }): Record<string, unknown> {
   const nameParts = splitCustomerName(input.name);
   const phoneNumber = normalizeNigerianPhoneForFlutterwave(input.phone);
+  const email = input.email.includes('@')
+    ? input.email.trim()
+    : buildFlutterwaveCheckoutEmail(input.phone);
 
   return {
-    email: input.email,
+    email,
     name: nameParts,
     phone: {
       country_code: '234',
       number: phoneNumber,
-    },
-    address: {
-      country: 'NG',
     },
   };
 }
