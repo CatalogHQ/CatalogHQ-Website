@@ -11,14 +11,16 @@ import { FlutterwaveAuthService } from './flutterwave-auth.service';
 import {
   newFlutterwaveTraceId,
   resolveFlutterwaveBaseUrl,
+  FLUTTERWAVE_V3_BASE_URL,
 } from './flutterwave.config';
-import { flutterwaveIdempotencyKey } from './flutterwave-idempotency.util';
 import {
-  buildFlutterwaveOrchestratorCustomer,
   buildFlutterwaveCheckoutEmail,
-  isFlutterwaveCustomerExistsMessage,
   FlutterwavePaymentMethod,
 } from './flutterwave-payment-methods';
+import {
+  extractV3BankTransferAuthorization,
+  formatFlutterwaveV3PhoneNumber,
+} from './flutterwave-bank-transfer.util';
 import { FlutterwaveSplitSubaccount } from './flutterwave-split.util';
 import { flutterwaveAmountMatchesNaira } from './flutterwave-amount.util';
 
@@ -52,15 +54,16 @@ type ChargeData = {
   next_action?: NextAction;
 };
 
-type CustomerData = {
-  id: string;
+type V3ApiResponse<T> = {
+  status: string;
+  message?: string;
+  data?: T;
 };
 
-type VirtualAccountData = {
-  account_number: string;
-  account_bank_name: string;
-  account_expiration_datetime?: string;
-  note?: string;
+type V3VerifiedTransaction = {
+  status?: string;
+  amount?: number;
+  currency?: string;
 };
 
 export type FlutterwaveInitResult = {
@@ -83,24 +86,6 @@ class FlutterwaveRetryableError extends Error {
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-function stringifyFlutterwaveMeta(
-  metadata?: Record<string, unknown>,
-): Record<string, string> | undefined {
-  if (!metadata) {
-    return undefined;
-  }
-
-  const meta: Record<string, string> = {};
-  for (const [key, value] of Object.entries(metadata)) {
-    if (value === undefined || value === null) {
-      continue;
-    }
-    meta[key] = String(value);
-  }
-
-  return Object.keys(meta).length > 0 ? meta : undefined;
 }
 
 function toFlutterwaveClientError(detail: string): string {
@@ -129,6 +114,7 @@ export class FlutterwaveService {
   private readonly callbackBaseUrl: string;
   private readonly scenarioKey: string | undefined;
   private readonly env: string | undefined;
+  private readonly secretKey: string | undefined;
 
   constructor(
     private readonly configService: ConfigService,
@@ -136,6 +122,7 @@ export class FlutterwaveService {
   ) {
     this.env = this.configService.get<string>('FLUTTERWAVE_ENV', 'sandbox');
     this.baseUrl = resolveFlutterwaveBaseUrl(this.env);
+    this.secretKey = this.configService.get<string>('FLUTTERWAVE_SECRET_KEY');
     this.webhookSecret = this.configService.get<string>(
       'FLUTTERWAVE_WEBHOOK_SECRET',
     );
@@ -147,7 +134,7 @@ export class FlutterwaveService {
   }
 
   isConfigured(): boolean {
-    return this.auth.isConfigured();
+    return this.auth.isConfigured() && Boolean(this.secretKey?.trim());
   }
 
   async initializeTransaction(params: {
@@ -172,71 +159,6 @@ export class FlutterwaveService {
     return this.initializeBankTransfer(params);
   }
 
-  private async ensureFlutterwaveCustomer(params: {
-    email: string;
-    name: string;
-    phone: string;
-    reference: string;
-  }): Promise<string> {
-    const body = buildFlutterwaveOrchestratorCustomer({
-      email: params.email,
-      name: params.name,
-      phone: params.phone,
-    });
-    const email = String(body.email);
-
-    const existing = await this.findFlutterwaveCustomerByEmail(email);
-    if (existing) {
-      return existing;
-    }
-
-    try {
-      const created = await this.request<CustomerData>('/customers', {
-        method: 'POST',
-        idempotencyKey: flutterwaveIdempotencyKey('customer-create', email),
-        body,
-      });
-
-      if (!created.id) {
-        throw new InternalServerErrorException('Could not start payment.');
-      }
-
-      return created.id;
-    } catch (error) {
-      const message =
-        error instanceof BadRequestException
-          ? error.message
-          : error instanceof Error
-            ? error.message
-            : '';
-
-      if (!isFlutterwaveCustomerExistsMessage(message)) {
-        throw error;
-      }
-
-      const reused = await this.findFlutterwaveCustomerByEmail(email);
-      if (reused) {
-        this.logger.log(`Reusing existing Flutterwave customer for ${email}`);
-        return reused;
-      }
-
-      throw error;
-    }
-  }
-
-  private async findFlutterwaveCustomerByEmail(
-    email: string,
-  ): Promise<string | null> {
-    const results = await this.request<CustomerData[]>('/customers/search', {
-      method: 'POST',
-      idempotencyKey: flutterwaveIdempotencyKey('customer-search', email),
-      body: { email },
-    });
-
-    const customer = Array.isArray(results) ? results[0] : undefined;
-    return customer?.id ?? null;
-  }
-
   private async initializeBankTransfer(params: {
     email: string;
     phone: string;
@@ -246,51 +168,53 @@ export class FlutterwaveService {
     metadata?: Record<string, unknown>;
     subaccounts?: FlutterwaveSplitSubaccount[];
   }): Promise<FlutterwaveInitResult> {
-    const customerId = await this.ensureFlutterwaveCustomer({
-      email: params.email ?? buildFlutterwaveCheckoutEmail(params.phone),
-      name: params.name,
-      phone: params.phone,
-      reference: params.reference,
-    });
-
-    const virtualAccount = await this.request<VirtualAccountData>(
-      '/virtual-accounts',
-      {
-        method: 'POST',
-        idempotencyKey: flutterwaveIdempotencyKey(
-          'virtual-account',
-          params.reference,
-        ),
-        body: {
-          reference: params.reference,
-          customer_id: customerId,
-          amount: params.amountNaira,
-          currency: 'NGN',
-          account_type: 'dynamic',
-          expiry: 3600,
-          narration: params.name,
-          meta: stringifyFlutterwaveMeta(params.metadata),
-          ...(params.subaccounts?.length
-            ? { subaccounts: params.subaccounts }
-            : {}),
-        },
-      },
-    );
-
-    if (!virtualAccount.account_number) {
+    if (!this.secretKey?.trim()) {
       throw new InternalServerErrorException('Could not start payment.');
     }
+
+    const body: Record<string, unknown> = {
+      tx_ref: params.reference,
+      amount: params.amountNaira,
+      currency: 'NGN',
+      email: params.email || buildFlutterwaveCheckoutEmail(params.phone),
+      fullname: params.name,
+      phone_number: formatFlutterwaveV3PhoneNumber(params.phone),
+      bank_transfer_options: { expires: 3600 },
+      ...(params.metadata ? { meta: params.metadata } : {}),
+      ...(params.subaccounts?.length ? { subaccounts: params.subaccounts } : {}),
+    };
+
+    if (params.subaccounts?.length) {
+      this.logger.log(
+        `Starting bank transfer ${params.reference} with vendor split to ${params.subaccounts[0]?.id ?? 'unknown subaccount'}.`,
+      );
+    }
+
+    const response = await this.requestV3BankTransferCharge(body);
+    const authorization = extractV3BankTransferAuthorization(response);
+
+    if (!authorization?.transfer_account || !authorization.transfer_bank) {
+      throw new InternalServerErrorException('Could not start payment.');
+    }
+
+    const expiresAt =
+      authorization.account_expiration &&
+      authorization.account_expiration !== 'N/A'
+        ? authorization.account_expiration
+        : undefined;
 
     return {
       authorizationUrl: null,
       reference: params.reference,
       paymentInstruction:
-        virtualAccount.note ??
-        `Transfer exactly ₦${params.amountNaira.toLocaleString('en-NG')} to ${virtualAccount.account_bank_name} account ${virtualAccount.account_number}.`,
+        authorization.transfer_note &&
+        authorization.transfer_note !== 'N/A'
+          ? authorization.transfer_note
+          : `Transfer exactly ₦${params.amountNaira.toLocaleString('en-NG')} to ${authorization.transfer_bank} account ${authorization.transfer_account}.`,
       virtualAccount: {
-        accountNumber: virtualAccount.account_number,
-        bankName: virtualAccount.account_bank_name,
-        expiresAt: virtualAccount.account_expiration_datetime,
+        accountNumber: authorization.transfer_account,
+        bankName: authorization.transfer_bank,
+        expiresAt,
       },
     };
   }
@@ -303,36 +227,169 @@ export class FlutterwaveService {
       return true;
     }
 
-    const payload = await this.request<ChargeData[]>(
-      `/charges?reference=${encodeURIComponent(reference)}`,
-      { method: 'GET' },
-    );
-
-    const charge = Array.isArray(payload) ? payload[0] : undefined;
-    if (!charge || charge.status !== 'succeeded') {
-      return false;
+    const v4Verified = await this.verifyV4Charge(reference, expectedAmount);
+    if (v4Verified) {
+      return true;
     }
 
-    if (charge.reference && charge.reference !== reference) {
-      this.logger.warn(
-        `Flutterwave charge reference mismatch: expected ${reference}, got ${charge.reference}`,
+    return this.verifyV3Transaction(reference, expectedAmount);
+  }
+
+  private async verifyV4Charge(
+    reference: string,
+    expectedAmount?: number,
+  ): Promise<boolean> {
+    try {
+      const payload = await this.request<ChargeData[]>(
+        `/charges?reference=${encodeURIComponent(reference)}`,
+        { method: 'GET' },
       );
-      return false;
-    }
 
-    if (expectedAmount !== undefined) {
-      if (!flutterwaveAmountMatchesNaira(expectedAmount, charge.amount)) {
+      const charge = Array.isArray(payload) ? payload[0] : undefined;
+      if (!charge || charge.status !== 'succeeded') {
+        return false;
+      }
+
+      if (charge.reference && charge.reference !== reference) {
         this.logger.warn(
-          `Flutterwave charge amount mismatch for ${reference}: expected ${expectedAmount}, got ${charge.amount}`,
+          `Flutterwave charge reference mismatch: expected ${reference}, got ${charge.reference}`,
         );
         return false;
       }
-      if (charge.currency && charge.currency !== 'NGN') {
-        return false;
+
+      if (expectedAmount !== undefined) {
+        if (!flutterwaveAmountMatchesNaira(expectedAmount, charge.amount)) {
+          this.logger.warn(
+            `Flutterwave charge amount mismatch for ${reference}: expected ${expectedAmount}, got ${charge.amount}`,
+          );
+          return false;
+        }
+        if (charge.currency && charge.currency !== 'NGN') {
+          return false;
+        }
       }
+
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  private async verifyV3Transaction(
+    reference: string,
+    expectedAmount?: number,
+  ): Promise<boolean> {
+    if (!this.secretKey?.trim()) {
+      return false;
     }
 
-    return true;
+    try {
+      const payload = await this.requestV3<V3VerifiedTransaction>(
+        `/transactions/verify_by_reference?tx_ref=${encodeURIComponent(reference)}`,
+        { method: 'GET' },
+      );
+
+      if (payload.status !== 'successful') {
+        return false;
+      }
+
+      if (expectedAmount !== undefined) {
+        if (!flutterwaveAmountMatchesNaira(expectedAmount, payload.amount)) {
+          this.logger.warn(
+            `Flutterwave v3 amount mismatch for ${reference}: expected ${expectedAmount}, got ${payload.amount}`,
+          );
+          return false;
+        }
+        if (payload.currency && payload.currency !== 'NGN') {
+          return false;
+        }
+      }
+
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  private async requestV3BankTransferCharge(
+    body: Record<string, unknown>,
+  ): Promise<V3ApiResponse<Record<string, unknown>> & { meta?: { authorization?: Record<string, unknown> } }> {
+    if (!this.secretKey?.trim()) {
+      throw new InternalServerErrorException('Could not start payment.');
+    }
+
+    let response: Response;
+    try {
+      response = await fetch(
+        `${FLUTTERWAVE_V3_BASE_URL}/charges?type=bank_transfer`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${this.secretKey}`,
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
+          },
+          body: JSON.stringify(body),
+        },
+      );
+    } catch (error) {
+      this.logger.error(
+        `Flutterwave v3 bank transfer network error: ${error instanceof Error ? error.message : 'unknown'}`,
+      );
+      throw new InternalServerErrorException('Could not start payment.');
+    }
+
+    let json: V3ApiResponse<Record<string, unknown>> & {
+      meta?: { authorization?: Record<string, unknown> };
+    };
+    try {
+      json = (await response.json()) as typeof json;
+    } catch {
+      throw new InternalServerErrorException('Could not start payment.');
+    }
+
+    if (!response.ok || json.status !== 'success') {
+      const detail = json.message ?? `HTTP ${response.status}`;
+      this.logger.error(`Flutterwave v3 bank transfer failed: ${detail}`);
+      throw new BadRequestException(toFlutterwaveClientError(detail));
+    }
+
+    return json;
+  }
+
+  private async requestV3<T>(
+    path: string,
+    options: {
+      method: string;
+      body?: Record<string, unknown>;
+    },
+  ): Promise<T> {
+    if (!this.secretKey?.trim()) {
+      throw new InternalServerErrorException('Could not verify payment.');
+    }
+
+    const response = await fetch(`${FLUTTERWAVE_V3_BASE_URL}${path}`, {
+      method: options.method,
+      headers: {
+        Authorization: `Bearer ${this.secretKey}`,
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+      body: options.body ? JSON.stringify(options.body) : undefined,
+    });
+
+    let json: V3ApiResponse<T>;
+    try {
+      json = (await response.json()) as V3ApiResponse<T>;
+    } catch {
+      throw new InternalServerErrorException('Could not verify payment.');
+    }
+
+    if (!response.ok || json.status !== 'success') {
+      throw new BadRequestException(json.message ?? 'Could not verify payment.');
+    }
+
+    return json.data as T;
   }
 
   verifyWebhookSignature(rawBody: string, signature: string): void {

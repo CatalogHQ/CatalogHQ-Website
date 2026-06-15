@@ -7,6 +7,8 @@ export const FLUTTERWAVE_SANDBOX_BASE_URL =
 export const FLUTTERWAVE_PRODUCTION_BASE_URL =
   'https://f4bexperience.flutterwave.com';
 
+export const FLUTTERWAVE_V3_BASE_URL = 'https://api.flutterwave.com/v3';
+
 export type FlutterwaveEnv = 'sandbox' | 'production';
 
 export function resolveFlutterwaveBaseUrl(env: string | undefined): string {
