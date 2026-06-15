@@ -96,6 +96,8 @@ export class PaymentsController {
         await this.paymentsService.confirmPayment(reference, {
           amount,
           currency,
+          paymentRef: normalized.paymentRefHint,
+          orderId: normalized.orderIdHint,
         });
       }
     }

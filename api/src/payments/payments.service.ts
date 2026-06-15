@@ -53,23 +53,36 @@ export class PaymentsService {
 
   async confirmPayment(
     gatewayReference: string,
-    webhookHint?: { amount?: number; currency?: string },
+    webhookHint?: {
+      amount?: number;
+      currency?: string;
+      paymentRef?: string;
+      orderId?: string;
+    },
   ): Promise<void> {
-    const order = await this.prisma.order.findUnique({
-      where: { gatewayReference },
-      include: { store: { include: { vendor: true } } },
-    });
+    const order = await this.findOrderForPaymentNotification(
+      gatewayReference,
+      webhookHint,
+    );
 
     if (!order || order.paymentStatus === PaymentStatus.paid) {
+      if (!order) {
+        this.logger.warn(
+          `No order found for Flutterwave payment reference ${gatewayReference}`,
+        );
+      }
       return;
     }
+
+    const verifyReference =
+      order.gatewayReference ?? buildFlutterwaveReference(order.paymentRef);
 
     if (
       webhookHint?.amount !== undefined &&
       !flutterwaveAmountMatchesNaira(order.totalPaid, webhookHint.amount)
     ) {
       this.logger.warn(
-        `Payment amount mismatch for ${gatewayReference}: expected ${order.totalPaid} NGN, got ${webhookHint.amount}`,
+        `Payment amount mismatch for ${verifyReference}: expected ${order.totalPaid} NGN, got ${webhookHint.amount}`,
       );
       return;
     }
@@ -79,18 +92,18 @@ export class PaymentsService {
       webhookHint.currency !== 'NGN'
     ) {
       this.logger.warn(
-        `Payment currency mismatch for ${gatewayReference}: ${webhookHint.currency}`,
+        `Payment currency mismatch for ${verifyReference}: ${webhookHint.currency}`,
       );
       return;
     }
 
     const verified = await this.flutterwave.verifyTransaction(
-      gatewayReference,
+      verifyReference,
       order.totalPaid,
     );
     if (!verified) {
       this.logger.warn(
-        `Flutterwave verify failed for ${gatewayReference} (order ${order.paymentRef})`,
+        `Flutterwave verify failed for ${verifyReference} (order ${order.paymentRef})`,
       );
       await this.prisma.order.update({
         where: { id: order.id },
@@ -118,6 +131,72 @@ export class PaymentsService {
       ORDER_CREATED_EVENT,
       new OrderCreatedEvent(order.id),
     );
+  }
+
+  private async findOrderForPaymentNotification(
+    webhookReference: string,
+    hints?: { paymentRef?: string; orderId?: string },
+  ) {
+    const ref = webhookReference.trim();
+
+    const include = { store: { include: { vendor: true } } } as const;
+
+    const byGateway = await this.prisma.order.findUnique({
+      where: { gatewayReference: ref },
+      include: include,
+    });
+    if (byGateway) {
+      return byGateway;
+    }
+
+    if (ref.startsWith('SHP-')) {
+      const byPaymentRef = await this.prisma.order.findUnique({
+        where: { paymentRef: ref },
+        include: include,
+      });
+      if (byPaymentRef) {
+        return byPaymentRef;
+      }
+    }
+
+    if (ref.startsWith('flw-')) {
+      const paymentRef = ref.slice(4);
+      const byFlwPaymentRef = await this.prisma.order.findFirst({
+        where: {
+          OR: [{ gatewayReference: ref }, { paymentRef }],
+        },
+        include: include,
+      });
+      if (byFlwPaymentRef) {
+        return byFlwPaymentRef;
+      }
+    }
+
+    const paymentRefHint = hints?.paymentRef?.trim();
+    if (paymentRefHint) {
+      const byHint = await this.prisma.order.findFirst({
+        where: {
+          OR: [
+            { paymentRef: paymentRefHint },
+            { gatewayReference: buildFlutterwaveReference(paymentRefHint) },
+          ],
+        },
+        include: include,
+      });
+      if (byHint) {
+        return byHint;
+      }
+    }
+
+    const orderIdHint = hints?.orderId?.trim();
+    if (orderIdHint) {
+      return this.prisma.order.findUnique({
+        where: { id: orderIdHint },
+        include: include,
+      });
+    }
+
+    return null;
   }
 
   async attemptVendorPayout(orderId: string): Promise<void> {

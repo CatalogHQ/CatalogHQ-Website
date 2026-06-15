@@ -14,19 +14,46 @@ describe('flutterwave-webhook.util', () => {
         type: 'charge.completed',
         data: {
           id: 'chg_test123',
-          reference: 'SHP-abc',
+          reference: '49c3c6f5-aedd-4443-9eb4-92c51758f04a',
           status: 'succeeded',
           amount: 5100,
           currency: 'NGN',
+          meta: { paymentRef: 'SHP-abc', orderId: 'order-1' },
           customer: { email: 'buyer@example.com' },
         },
       }),
     ).toEqual({
       eventType: 'charge.completed',
-      reference: 'SHP-abc',
-      transferId: 'chg_test123',
+      reference: 'flw-SHP-abc',
+      chargeId: 'chg_test123',
+      paymentRefHint: 'SHP-abc',
+      orderIdHint: 'order-1',
       status: 'succeeded',
       amount: 5100,
+      currency: 'NGN',
+    });
+  });
+
+  it('normalizes v3 charge.completed payloads with numeric data.id', () => {
+    expect(
+      normalizeFlutterwaveWebhook({
+        event: 'charge.completed',
+        data: {
+          id: 9876543210,
+          tx_ref: 'flw-SHP-legacy',
+          status: 'successful',
+          amount: 3000,
+          currency: 'NGN',
+        },
+      }),
+    ).toEqual({
+      eventType: 'charge.completed',
+      reference: 'flw-SHP-legacy',
+      chargeId: '9876543210',
+      orderIdHint: undefined,
+      paymentRefHint: undefined,
+      status: 'successful',
+      amount: 3000,
       currency: 'NGN',
     });
   });
@@ -36,32 +63,12 @@ describe('flutterwave-webhook.util', () => {
       buildWebhookDedupeKey(
         {
           eventType: 'charge.completed',
-          reference: 'SHP-abc',
+          reference: 'flw-SHP-abc',
           status: 'succeeded',
         },
         'wbk_test123',
       ),
     ).toBe('charge.completed:wbk_test123');
-  });
-
-  it('normalizes v3 charge.completed payloads', () => {
-    expect(
-      normalizeFlutterwaveWebhook({
-        event: 'charge.completed',
-        data: {
-          tx_ref: 'sub_abc123',
-          status: 'successful',
-          amount: 3000,
-          currency: 'NGN',
-        },
-      }),
-    ).toEqual({
-      eventType: 'charge.completed',
-      reference: 'sub_abc123',
-      status: 'successful',
-      amount: 3000,
-      currency: 'NGN',
-    });
   });
 
   it('detects successful payment statuses across v3 and v4', () => {

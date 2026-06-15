@@ -1,15 +1,22 @@
+import {
+  coerceWebhookString,
+  extractWebhookMetaValue,
+  resolveWebhookGatewayReference,
+} from './flutterwave-webhook-coerce.util';
+
 export type FlutterwaveWebhookPayload = {
-  id?: string;
-  timestamp?: number;
+  id?: unknown;
+  timestamp?: unknown;
   type?: string;
   event?: string;
   data?: {
-    id?: string;
-    reference?: string;
-    tx_ref?: string;
-    status?: string;
-    amount?: number;
-    currency?: string;
+    id?: unknown;
+    reference?: unknown;
+    tx_ref?: unknown;
+    status?: unknown;
+    amount?: unknown;
+    currency?: unknown;
+    meta?: unknown;
     [key: string]: unknown;
   };
 };
@@ -17,11 +24,26 @@ export type FlutterwaveWebhookPayload = {
 export type NormalizedFlutterwaveWebhook = {
   eventType: string;
   reference: string;
-  transferId?: string;
+  chargeId?: string;
+  paymentRefHint?: string;
+  orderIdHint?: string;
   status?: string;
   amount?: number;
   currency?: string;
 };
+
+function coerceWebhookAmount(value: unknown): number | undefined {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value;
+  }
+
+  if (typeof value === 'string' && value.trim()) {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : undefined;
+  }
+
+  return undefined;
+}
 
 export function normalizeFlutterwaveWebhook(
   body: FlutterwaveWebhookPayload,
@@ -31,30 +53,35 @@ export function normalizeFlutterwaveWebhook(
     return null;
   }
 
-  const reference = data.reference?.trim() || data.tx_ref?.trim();
+  const reference = resolveWebhookGatewayReference(data);
   if (!reference) {
     return null;
   }
 
+  const status = coerceWebhookString(data.status)?.toLowerCase();
+
   return {
     eventType: body.type ?? body.event ?? '',
     reference,
-    transferId: data.id?.trim(),
-    status: data.status?.toLowerCase(),
-    amount: data.amount,
-    currency: data.currency,
+    chargeId: coerceWebhookString(data.id),
+    paymentRefHint: extractWebhookMetaValue(data.meta, 'paymentRef'),
+    orderIdHint: extractWebhookMetaValue(data.meta, 'orderId'),
+    status,
+    amount: coerceWebhookAmount(data.amount),
+    currency: coerceWebhookString(data.currency),
   };
 }
 
 export function buildWebhookDedupeKey(
   normalized: NormalizedFlutterwaveWebhook,
-  webhookId?: string,
+  webhookId?: unknown,
 ): string {
-  if (webhookId?.trim()) {
-    return `${normalized.eventType}:${webhookId.trim()}`;
+  const webhookKey = coerceWebhookString(webhookId);
+  if (webhookKey) {
+    return `${normalized.eventType}:${webhookKey}`;
   }
-  if (normalized.transferId) {
-    return `${normalized.eventType}:${normalized.transferId}`;
+  if (normalized.chargeId) {
+    return `${normalized.eventType}:${normalized.chargeId}`;
   }
   return `${normalized.eventType}:${normalized.reference}`;
 }
