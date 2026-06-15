@@ -106,7 +106,7 @@ export class OrdersService {
       const subaccounts = store?.flutterwaveSubaccountId
         ? buildCheckoutSplitPayload(
             store.flutterwaveSubaccountId,
-            pricing.platformFee,
+            pricing.vendorNet,
           )
         : [];
 

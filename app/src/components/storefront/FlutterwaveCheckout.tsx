@@ -204,6 +204,10 @@ export default function FlutterwaveCheckout({
       });
 
       if (result.payment.authorizationUrl) {
+        saveOrderPhoneLastFour(
+          result.order.paymentRef,
+          values.customerPhone.trim(),
+        );
         window.location.href = result.payment.authorizationUrl;
         return;
       }

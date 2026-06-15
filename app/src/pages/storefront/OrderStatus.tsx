@@ -68,6 +68,59 @@ export default function OrderStatusPage() {
 
   useEffect(() => {
     let cancelled = false;
+    let pollTimer: number | undefined;
+
+    async function fetchOrder(attemptVerify: boolean) {
+      if (!paymentRef || !phoneLastFour) {
+        return null;
+      }
+
+      try {
+        if (attemptVerify || searchParams.get("paid") === "1") {
+          const verified = await orderRepository.verifyPayment(
+            paymentRef,
+            phoneLastFour,
+          );
+          if (!cancelled) {
+            setOrder(verified);
+          }
+          return verified;
+        }
+
+        const loaded = await orderRepository.getByPaymentRef(
+          paymentRef,
+          phoneLastFour,
+        );
+        if (!cancelled) {
+          setOrder(loaded);
+        }
+        return loaded;
+      } catch (error) {
+        if (!cancelled && searchParams.get("paid") === "1") {
+          toast.error(
+            error instanceof Error
+              ? error.message
+              : "Could not verify payment.",
+          );
+        }
+
+        try {
+          const loaded = await orderRepository.getByPaymentRef(
+            paymentRef,
+            phoneLastFour,
+          );
+          if (!cancelled) {
+            setOrder(loaded);
+          }
+          return loaded;
+        } catch {
+          if (!cancelled) {
+            setOrder(null);
+          }
+          return null;
+        }
+      }
+    }
 
     async function loadOrder() {
       if (!paymentRef || !phoneLastFour) {
@@ -77,34 +130,20 @@ export default function OrderStatusPage() {
       }
 
       setOrderLoading(true);
-      try {
-        if (searchParams.get("paid") === "1") {
-          const verified = await orderRepository.verifyPayment(
-            paymentRef,
-            phoneLastFour,
-          );
-          if (!cancelled) setOrder(verified);
-          return;
-        }
+      const loaded = await fetchOrder(searchParams.get("paid") === "1");
+      if (!cancelled) {
+        setOrderLoading(false);
+      }
 
-        const loaded = await orderRepository.getByPaymentRef(
-          paymentRef,
-          phoneLastFour,
-        );
-        if (!cancelled) setOrder(loaded);
-      } catch (error) {
-        if (!cancelled) {
-          setOrder(null);
-          if (searchParams.get("paid") === "1") {
-            toast.error(
-              error instanceof Error
-                ? error.message
-                : "Could not verify payment.",
-            );
-          }
-        }
-      } finally {
-        if (!cancelled) setOrderLoading(false);
+      if (
+        !cancelled &&
+        loaded &&
+        loaded.paymentStatus !== "paid" &&
+        loaded.status === "reserved"
+      ) {
+        pollTimer = window.setInterval(() => {
+          void fetchOrder(true);
+        }, 8000);
       }
     }
 
@@ -112,6 +151,9 @@ export default function OrderStatusPage() {
 
     return () => {
       cancelled = true;
+      if (pollTimer !== undefined) {
+        window.clearInterval(pollTimer);
+      }
     };
   }, [paymentRef, phoneLastFour, searchParams]);
 
@@ -347,10 +389,14 @@ export default function OrderStatusPage() {
               <p className="text-sm text-red-600">
                 This order was cancelled. Contact the vendor if you have questions.
               </p>
+            ) : order.paymentStatus !== "paid" ? (
+              <p className="text-sm text-amber-700">
+                Waiting for payment confirmation. If you already paid, this page
+                will update shortly.
+              </p>
             ) : order.status === "reserved" ? (
               <p className="text-sm text-amber-700">
-                Waiting for payment confirmation. Pay via the link from the
-                vendor or complete checkout.
+                Payment received. The vendor will update your order status soon.
               </p>
             ) : (
               <ol className="space-y-4">

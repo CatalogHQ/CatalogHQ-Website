@@ -1,4 +1,4 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { OrderStatus, PaymentStatus, PayoutStatus } from '@prisma/client';
@@ -6,12 +6,15 @@ import { PrismaService } from '../prisma/prisma.service';
 import { ORDER_CREATED_EVENT, LOW_STOCK_EVENT } from '../orders/events/order.events';
 import { OrderCreatedEvent } from '../orders/events/order-created.event';
 import { LowStockEvent } from '../orders/events/low-stock.event';
+import { flutterwaveAmountMatchesNaira } from './flutterwave-amount.util';
 import { buildFlutterwaveReference } from './flutterwave-reference.util';
 import { buildCheckoutSplitPayload } from './flutterwave-split.util';
 import { FlutterwaveService } from './flutterwave.service';
 
 @Injectable()
 export class PaymentsService {
+  private readonly logger = new Logger(PaymentsService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly flutterwave: FlutterwaveService,
@@ -53,8 +56,11 @@ export class PaymentsService {
 
     if (
       webhookHint?.amount !== undefined &&
-      webhookHint.amount !== order.totalPaid
+      !flutterwaveAmountMatchesNaira(order.totalPaid, webhookHint.amount)
     ) {
+      this.logger.warn(
+        `Payment amount mismatch for ${gatewayReference}: expected ${order.totalPaid} NGN, got ${webhookHint.amount}`,
+      );
       return;
     }
 
@@ -62,6 +68,9 @@ export class PaymentsService {
       webhookHint?.currency !== undefined &&
       webhookHint.currency !== 'NGN'
     ) {
+      this.logger.warn(
+        `Payment currency mismatch for ${gatewayReference}: ${webhookHint.currency}`,
+      );
       return;
     }
 
@@ -70,6 +79,9 @@ export class PaymentsService {
       order.totalPaid,
     );
     if (!verified) {
+      this.logger.warn(
+        `Flutterwave verify failed for ${gatewayReference} (order ${order.paymentRef})`,
+      );
       await this.prisma.order.update({
         where: { id: order.id },
         data: { paymentStatus: PaymentStatus.failed },
@@ -174,7 +186,7 @@ export class PaymentsService {
     const subaccounts = order.store.flutterwaveSubaccountId
       ? buildCheckoutSplitPayload(
           order.store.flutterwaveSubaccountId,
-          order.platformFee,
+          order.vendorNet,
         )
       : [];
     const init = await this.flutterwave.initializeTransaction({

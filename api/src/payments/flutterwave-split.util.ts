@@ -1,22 +1,23 @@
 export type FlutterwaveSplitSubaccount = {
   id: string;
-  transaction_charge_type: 'flat' | 'percentage';
+  transaction_charge_type: 'flat_subaccount';
   transaction_charge: number;
 };
 
+/** Route vendorNet to the vendor subaccount; platform keeps the processing fee top-up. */
 export function buildCheckoutSplitPayload(
   subaccountId: string,
-  platformFeeNaira: number,
+  vendorNetNaira: number,
 ): FlutterwaveSplitSubaccount[] {
-  if (!subaccountId || platformFeeNaira < 0) {
+  if (!subaccountId || vendorNetNaira < 0) {
     return [];
   }
 
   return [
     {
       id: subaccountId,
-      transaction_charge_type: 'flat',
-      transaction_charge: platformFeeNaira,
+      transaction_charge_type: 'flat_subaccount',
+      transaction_charge: vendorNetNaira,
     },
   ];
 }

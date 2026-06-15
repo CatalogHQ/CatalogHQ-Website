@@ -19,6 +19,7 @@ import {
   splitCustomerName,
 } from './flutterwave-payment-methods';
 import { FlutterwaveSplitSubaccount } from './flutterwave-split.util';
+import { flutterwaveAmountMatchesNaira } from './flutterwave-amount.util';
 
 const FLUTTERWAVE_POST_MAX_ATTEMPTS = 3;
 const FLUTTERWAVE_RETRY_BASE_MS = 300;
@@ -297,7 +298,10 @@ export class FlutterwaveService {
     }
 
     if (expectedAmount !== undefined) {
-      if (charge.amount !== expectedAmount) {
+      if (!flutterwaveAmountMatchesNaira(expectedAmount, charge.amount)) {
+        this.logger.warn(
+          `Flutterwave charge amount mismatch for ${reference}: expected ${expectedAmount}, got ${charge.amount}`,
+        );
         return false;
       }
       if (charge.currency && charge.currency !== 'NGN') {
