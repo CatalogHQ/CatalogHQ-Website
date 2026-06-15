@@ -294,16 +294,25 @@ export class FlutterwaveTransferService {
     }
 
     if (!response.ok || json.status !== 'success') {
+      const validationDetail = json.error?.validation_errors
+        ?.map((entry) => `${entry.field_name}: ${entry.message}`)
+        .join('; ');
       const detail =
         json.error?.message ??
         json.message ??
-        json.error?.validation_errors
-          ?.map((entry) => `${entry.field_name}: ${entry.message}`)
-          .join('; ') ??
+        validationDetail ??
         `HTTP ${response.status}`;
       this.logger.error(
         `Flutterwave transfer API ${method} ${path} failed: ${detail}`,
       );
+      if (validationDetail) {
+        this.logger.error(`Flutterwave transfer validation errors: ${validationDetail}`);
+      }
+      if (json.error?.code) {
+        this.logger.debug(
+          `Flutterwave transfer error code=${json.error.code} type=${json.error.type}`,
+        );
+      }
       throw new BadRequestException(detail);
     }
 

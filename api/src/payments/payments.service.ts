@@ -8,7 +8,7 @@ import { OrderCreatedEvent } from '../orders/events/order-created.event';
 import { LowStockAlertService } from '../notifications/low-stock-alert.service';
 import { flutterwaveAmountMatchesNaira } from './flutterwave-amount.util';
 import { buildFlutterwaveReference } from './flutterwave-reference.util';
-import { buildFlutterwavePayoutReference } from './flutterwave-payout-reference.util';
+import { resolveFlutterwavePayoutReference } from './flutterwave-payout-reference.util';
 import { buildFlutterwaveCheckoutEmail } from './flutterwave-payment-methods';
 import { FlutterwaveService } from './flutterwave.service';
 import { FlutterwaveTransferService } from './flutterwave-transfer.service';
@@ -229,9 +229,14 @@ export class PaymentsService {
       return;
     }
 
-    const payoutReference =
-      order.flutterwavePayoutReference ??
-      buildFlutterwavePayoutReference(order.paymentRef);
+    if (this.transferService.isConfigured() && isMockTransferRecipient(recipientId)) {
+      this.logger.warn(
+        `Skipping vendor payout for order ${order.paymentRef}: vendor must re-link payout bank to create a live Flutterwave recipient.`,
+      );
+      return;
+    }
+
+    const payoutReference = resolveFlutterwavePayoutReference(order);
 
     try {
       const transfer = await this.transferService.initiateInstantTransfer({
@@ -414,4 +419,8 @@ export class PaymentsService {
         order.gatewayReference ?? buildFlutterwaveReference(order.paymentRef),
     };
   }
+}
+
+function isMockTransferRecipient(recipientId: string): boolean {
+  return recipientId.startsWith('rcb_MOCK_');
 }
