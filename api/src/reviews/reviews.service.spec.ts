@@ -4,6 +4,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { PlanEntitlementService } from '../plans/plan-entitlement.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { StoresService } from '../stores/stores.service';
+import { OrderAccessAttemptService } from '../orders/order-access-attempt.service';
 import { ReviewsService } from './reviews.service';
 
 describe('ReviewsService', () => {
@@ -26,6 +27,12 @@ describe('ReviewsService', () => {
     hasFeature: jest.fn().mockResolvedValue(true),
   };
 
+  const orderAccessAttempt = {
+    assertCanAttempt: jest.fn().mockResolvedValue(undefined),
+    recordFailedAttempt: jest.fn().mockResolvedValue(undefined),
+    resetAttempts: jest.fn().mockResolvedValue(undefined),
+  };
+
   let service: ReviewsService;
 
   beforeEach(async () => {
@@ -37,6 +44,7 @@ describe('ReviewsService', () => {
         { provide: PrismaService, useValue: prisma },
         { provide: StoresService, useValue: storesService },
         { provide: PlanEntitlementService, useValue: planEntitlementService },
+        { provide: OrderAccessAttemptService, useValue: orderAccessAttempt },
       ],
     }).compile();
 
@@ -53,7 +61,7 @@ describe('ReviewsService', () => {
     });
     prisma.review.findUnique.mockResolvedValue(null);
 
-    const status = await service.getOrderReviewStatus('SHP-123', '5678');
+    const status = await service.getOrderReviewStatus('SHP-123', '08012345678');
 
     expect(status.canReview).toBe(true);
     expect(status.alreadyReviewed).toBe(false);
@@ -132,7 +140,7 @@ describe('ReviewsService', () => {
       orderId: 'order-1',
     });
 
-    const status = await service.getOrderReviewStatus('SHP-123', '5678');
+    const status = await service.getOrderReviewStatus('SHP-123', '08012345678');
 
     expect(status.alreadyReviewed).toBe(true);
     expect(status.canReview).toBe(false);
@@ -141,7 +149,7 @@ describe('ReviewsService', () => {
   it('throws when order is missing', async () => {
     prisma.order.findFirst.mockResolvedValue(null);
 
-    await expect(service.getOrderReviewStatus('SHP-123', '5678')).rejects.toBeInstanceOf(
+    await expect(service.getOrderReviewStatus('SHP-123', '08012345678')).rejects.toBeInstanceOf(
       NotFoundException,
     );
   });

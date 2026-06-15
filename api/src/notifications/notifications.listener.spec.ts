@@ -1,6 +1,7 @@
 import { ConfigService } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
 import { OrderCreatedEvent } from '../orders/events/order-created.event';
+import { PayoutSettledEvent } from '../payments/events/payout-settled.event';
 import { PlanEntitlementService } from '../plans/plan-entitlement.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsListener } from './notifications.listener';
@@ -122,5 +123,26 @@ describe('NotificationsListener', () => {
 
     expect(smsService.sendSms).toHaveBeenCalled();
     expect(emailService.sendEmail).not.toHaveBeenCalled();
+  });
+
+  it('sends SMS and email when a payout is settled', async () => {
+    prisma.order.findUnique.mockResolvedValue({
+      ...mockOrder,
+      vendorNet: 15000,
+    });
+
+    await listener.handlePayoutSettled(new PayoutSettledEvent('order-1'));
+
+    expect(smsService.sendSms).toHaveBeenCalledWith(
+      '2348012345678',
+      expect.stringContaining('15000 NGN'),
+    );
+    expect(emailService.sendEmail).toHaveBeenCalledWith(
+      'vendor@example.com',
+      'Payout sent for order SHP-ABC123',
+      expect.stringContaining('15000 NGN'),
+      'Ada Fashion',
+      { type: 'payout_settled' },
+    );
   });
 });

@@ -104,13 +104,16 @@ export function toPublicStoreDto(
     nin: _nin,
     legalFirstName: _legalFirstName,
     legalLastName: _legalLastName,
+    payoutBankName: _payoutBankName,
+    payoutAccountName: _payoutAccountName,
+    payoutAccountNumber: _payoutAccountNumber,
+    payoutSetupAt: _payoutSetupAt,
     ...publicFields
   } = dto;
   return {
     ...publicFields,
     planTier,
     deliveryZones: store.deliveryZones,
-    payoutSetupComplete: store.payoutSetupComplete,
     storeUnavailable: options?.storeUnavailable,
   };
 }

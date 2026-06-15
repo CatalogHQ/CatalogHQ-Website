@@ -69,6 +69,7 @@ async function uploadFileToApi(file: File): Promise<string> {
   const response = await fetch(`${API_URL}/uploads/product-image`, {
     method: "POST",
     headers,
+    credentials: "include",
     body: formData,
   });
 

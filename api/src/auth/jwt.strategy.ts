@@ -7,6 +7,7 @@ import { PrismaService } from '../prisma/prisma.service';
 
 type JwtPayload = {
   sub: string;
+  sv?: number;
 };
 
 @Injectable()
@@ -35,6 +36,10 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
     if (!user) {
       throw new UnauthorizedException();
+    }
+
+    if ((payload.sv ?? 0) !== user.sessionVersion) {
+      throw new UnauthorizedException('Session expired. Please sign in again.');
     }
 
     return user;

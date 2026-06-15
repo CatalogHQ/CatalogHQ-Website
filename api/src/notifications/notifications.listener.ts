@@ -14,6 +14,8 @@ import { REVIEW_INVITE_EVENT } from '../orders/events/order.events';
 import { ReviewInviteEvent } from '../orders/events/review-invite.event';
 import { LOW_STOCK_EVENT } from '../orders/events/order.events';
 import { LowStockEvent } from '../orders/events/low-stock.event';
+import { PAYOUT_SETTLED_EVENT } from '../payments/events/payout.events';
+import { PayoutSettledEvent } from '../payments/events/payout-settled.event';
 import { PlanEntitlementService } from '../plans/plan-entitlement.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { TICKET_RESOLVED_EVENT } from '../tickets/events/ticket.events';
@@ -100,6 +102,52 @@ export class NotificationsListener {
     } catch (error) {
       this.logger.error(
         `Failed to send order notification email to ${vendorEmail}.`,
+        error,
+      );
+    }
+  }
+
+  @OnEvent(PAYOUT_SETTLED_EVENT)
+  async handlePayoutSettled(event: PayoutSettledEvent): Promise<void> {
+    const order = await this.prisma.order.findUnique({
+      where: { id: event.orderId },
+      include: { store: { include: { vendor: true } } },
+    });
+
+    if (!order?.store) return;
+
+    const { store } = order;
+    const vendorEmail = store.vendor?.email;
+    const payoutsUrl = `${this.appOrigin}/dashboard/payouts`;
+    const amountNaira = order.vendorNet;
+
+    if (store.whatsapp) {
+      const message = `CatalogHQ payout sent: ${amountNaira} NGN for order ${order.paymentRef} (${order.productName}) has been transferred to your linked bank account.`;
+      await this.smsService.sendSms(store.whatsapp, message);
+    }
+
+    if (!vendorEmail) {
+      this.logger.log(
+        `Skipping payout email for order ${order.id}: no vendor email on file.`,
+      );
+      return;
+    }
+
+    const storeName = store.businessName;
+    const subject = `Payout sent for order ${order.paymentRef}`;
+    const htmlBody = `<p>Hi,</p><p>A payout of <strong>${amountNaira} NGN</strong> for order <strong>${order.paymentRef}</strong> has been sent to your linked bank account.</p><ul><li><strong>Product:</strong> ${order.productName} x${order.quantity}</li><li><strong>Customer:</strong> ${order.customerName}</li><li><strong>Amount:</strong> ${amountNaira} NGN</li></ul><p><a href="${payoutsUrl}">View payouts in your dashboard</a></p><p>CatalogHQ Team</p>`;
+
+    try {
+      await this.emailService.sendEmail(
+        vendorEmail,
+        subject,
+        htmlBody,
+        storeName,
+        { type: 'payout_settled' },
+      );
+    } catch (error) {
+      this.logger.error(
+        `Failed to send payout notification email to ${vendorEmail}.`,
         error,
       );
     }

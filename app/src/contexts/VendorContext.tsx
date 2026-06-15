@@ -22,6 +22,8 @@ type VendorContextValue = {
   products: Product[];
   orders: CustomerOrder[];
   unreadOrderCount: number;
+  unreadPayoutCount: number;
+  unreadNotificationCount: number;
   isLoading: boolean;
   refreshStore: () => Promise<void>;
   refreshProducts: () => Promise<void>;
@@ -34,6 +36,7 @@ type VendorContextValue = {
   deleteProduct: (productId: string) => Promise<void>;
   updateOrderStatus: (orderId: string, status: OrderStatus) => Promise<CustomerOrder>;
   markOrdersSeen: () => Promise<void>;
+  markPayoutsSeen: () => Promise<void>;
   decrementProductStock: (productId: string, quantity: number) => Promise<Product>;
 };
 
@@ -45,6 +48,8 @@ export function VendorProvider({ children }: { children: ReactNode }) {
   const [products, setProducts] = useState<Product[]>([]);
   const [orders, setOrders] = useState<CustomerOrder[]>([]);
   const [unreadOrderCount, setUnreadOrderCount] = useState(0);
+  const [unreadPayoutCount, setUnreadPayoutCount] = useState(0);
+  const unreadNotificationCount = unreadOrderCount + unreadPayoutCount;
   const [isLoading, setIsLoading] = useState(true);
 
   const refreshStore = useCallback(async () => {
@@ -71,10 +76,13 @@ export function VendorProvider({ children }: { children: ReactNode }) {
     if (!user) {
       setOrders([]);
       setUnreadOrderCount(0);
+      setUnreadPayoutCount(0);
       return;
     }
     setOrders(await orderRepository.listByStoreId(user.id));
-    setUnreadOrderCount(await orderRepository.getUnreadCount(user.id));
+    const unread = await orderRepository.getUnreadCounts(user.id);
+    setUnreadOrderCount(unread.orderCount);
+    setUnreadPayoutCount(unread.payoutCount);
   }, [user]);
 
   useEffect(() => {
@@ -86,6 +94,7 @@ export function VendorProvider({ children }: { children: ReactNode }) {
         setProducts([]);
         setOrders([]);
         setUnreadOrderCount(0);
+        setUnreadPayoutCount(0);
         setIsLoading(false);
         return;
       }
@@ -103,7 +112,9 @@ export function VendorProvider({ children }: { children: ReactNode }) {
         try {
           setProducts(await productRepository.listByStoreId(user.id));
           setOrders(await orderRepository.listByStoreId(user.id));
-          setUnreadOrderCount(await orderRepository.getUnreadCount(user.id));
+          const unread = await orderRepository.getUnreadCounts(user.id);
+          setUnreadOrderCount(unread.orderCount);
+          setUnreadPayoutCount(unread.payoutCount);
         } catch (error) {
           if (!isSubscriptionBlocked(error)) {
             throw error;
@@ -111,6 +122,7 @@ export function VendorProvider({ children }: { children: ReactNode }) {
           setProducts([]);
           setOrders([]);
           setUnreadOrderCount(0);
+          setUnreadPayoutCount(0);
         }
       } finally {
         if (!cancelled) {
@@ -200,6 +212,12 @@ export function VendorProvider({ children }: { children: ReactNode }) {
     await refreshOrders();
   }, [user, refreshOrders]);
 
+  const markPayoutsSeen = useCallback(async () => {
+    if (!user) return;
+    await orderRepository.markAllPayoutsSeen(user.id);
+    await refreshOrders();
+  }, [user, refreshOrders]);
+
   const decrementProductStock = useCallback(
     async (productId: string, quantity: number) => {
       if (!user) throw new Error("Not authenticated.");
@@ -220,6 +238,8 @@ export function VendorProvider({ children }: { children: ReactNode }) {
       products,
       orders,
       unreadOrderCount,
+      unreadPayoutCount,
+      unreadNotificationCount,
       isLoading,
       refreshStore,
       refreshProducts,
@@ -232,6 +252,7 @@ export function VendorProvider({ children }: { children: ReactNode }) {
       deleteProduct,
       updateOrderStatus,
       markOrdersSeen,
+      markPayoutsSeen,
       decrementProductStock,
     }),
     [
@@ -239,6 +260,8 @@ export function VendorProvider({ children }: { children: ReactNode }) {
       products,
       orders,
       unreadOrderCount,
+      unreadPayoutCount,
+      unreadNotificationCount,
       isLoading,
       refreshStore,
       refreshProducts,
@@ -251,6 +274,7 @@ export function VendorProvider({ children }: { children: ReactNode }) {
       deleteProduct,
       updateOrderStatus,
       markOrdersSeen,
+      markPayoutsSeen,
       decrementProductStock,
     ],
   );

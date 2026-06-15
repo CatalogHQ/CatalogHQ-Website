@@ -4,7 +4,7 @@ export function flutterwaveAmountMatchesNaira(
   received?: number,
 ): boolean {
   if (received === undefined || Number.isNaN(received)) {
-    return true;
+    return false;
   }
 
   const normalizedExpected = Math.round(expectedNaira);

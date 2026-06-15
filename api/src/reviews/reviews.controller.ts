@@ -1,4 +1,5 @@
 import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { Public } from '../common/decorators/public.decorator';
 import { PaymentRefPipe } from '../common/pipes/payment-ref.pipe';
 import { OrderRefQueryDto } from '../orders/dto/order-ref-query.dto';
@@ -27,6 +28,7 @@ export class OrderReviewsController {
   constructor(private readonly reviewsService: ReviewsService) {}
 
   @Get()
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
   status(
     @Param('paymentRef', PaymentRefPipe) paymentRef: string,
     @Query() query: OrderRefQueryDto,
@@ -35,6 +37,7 @@ export class OrderReviewsController {
   }
 
   @Post()
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
   create(
     @Param('paymentRef', PaymentRefPipe) paymentRef: string,
     @Body() dto: CreateReviewDto,

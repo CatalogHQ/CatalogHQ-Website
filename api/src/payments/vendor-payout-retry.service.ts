@@ -3,6 +3,7 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import { PaymentStatus, PayoutStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { PaymentsService } from './payments.service';
+import { MIN_VENDOR_PAYOUT_NAIRA } from './vendor-payout.constants';
 
 const MAX_RETRY_ORDERS = 25;
 
@@ -20,7 +21,7 @@ export class VendorPayoutRetryService {
     const orders = await this.prisma.order.findMany({
       where: {
         paymentStatus: PaymentStatus.paid,
-        vendorNet: { gt: 0 },
+        vendorNet: { gte: MIN_VENDOR_PAYOUT_NAIRA },
         flutterwaveTransferId: null,
         payoutStatus: { in: [PayoutStatus.pending, PayoutStatus.failed] },
         store: {

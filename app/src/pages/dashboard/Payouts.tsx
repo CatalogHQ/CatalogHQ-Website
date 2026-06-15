@@ -35,6 +35,10 @@ import { Spinner } from "@/components/ui/spinner";
 import VendorVerificationCard from "@/components/vendor/VendorVerificationCard";
 import { useVendor } from "@/contexts/VendorContext";
 import { formatNaira } from "@/lib/format";
+import {
+  getPayoutStatusLabel,
+  MIN_VENDOR_PAYOUT_NAIRA,
+} from "@/lib/payout-constants";
 import { payoutSetupSchema, type PayoutSetupFormValues } from "@/lib/payout-schemas";
 import { payoutRepository } from "@/lib/repositories";
 import type { CustomerOrder } from "@/types/orders";
@@ -52,7 +56,7 @@ const PAYOUT_STATUS_LABELS: Record<
 };
 
 export default function Payouts() {
-  const { store } = useVendor();
+  const { store, markPayoutsSeen } = useVendor();
   const [banks, setBanks] = useState<PayoutBank[]>([]);
   const [sandboxMode, setSandboxMode] = useState(false);
   const [sandboxHint, setSandboxHint] = useState<string | null>(null);
@@ -73,6 +77,10 @@ export default function Payouts() {
       accountNumber: "",
     },
   });
+
+  useEffect(() => {
+    void markPayoutsSeen();
+  }, [markPayoutsSeen]);
 
   useEffect(() => {
     let cancelled = false;
@@ -214,7 +222,8 @@ export default function Payouts() {
         <h1 className="text-2xl font-bold text-gray-900">Payouts</h1>
         <p className="mt-1 text-gray-600">
           Link the bank account where Flutterwave settles your order payments.
-          CatalogHQ does not hold your money.
+          CatalogHQ does not hold your money. Automatic bank transfers require
+          at least {formatNaira(MIN_VENDOR_PAYOUT_NAIRA)} per order.
         </p>
       </div>
 
@@ -225,8 +234,9 @@ export default function Payouts() {
           <CardTitle className="text-base">Settlement account</CardTitle>
           <CardDescription>
             After a customer pays, CatalogHQ automatically transfers your order
-            earnings to this bank account. You receive your listed price in
-            full. Customers pay the processing fee at checkout.
+            earnings to this bank account when the amount is at least{" "}
+            {formatNaira(MIN_VENDOR_PAYOUT_NAIRA)}. You receive your listed
+            price in full. Customers pay the processing fee at checkout.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -378,7 +388,9 @@ export default function Payouts() {
         <CardHeader>
           <CardTitle className="text-base">Payout history</CardTitle>
           <CardDescription>
-            Paid orders and their automatic bank transfer status.
+            Paid orders and their automatic bank transfer status. Orders below{" "}
+            {formatNaira(MIN_VENDOR_PAYOUT_NAIRA)} stay pending until you have
+            a qualifying sale.
           </CardDescription>
         </CardHeader>
         <CardContent className="p-0">
@@ -413,9 +425,7 @@ export default function Payouts() {
                       <TableCell>{formatNaira(order.totalPaid)}</TableCell>
                       <TableCell>
                         <Badge variant="outline">
-                          {PAYOUT_STATUS_LABELS[
-                            order.payoutStatus ?? "pending"
-                          ]}
+                          {getPayoutStatusLabel(order, PAYOUT_STATUS_LABELS)}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-gray-600">

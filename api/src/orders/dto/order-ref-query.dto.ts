@@ -1,8 +1,11 @@
-import { IsString, Length, Matches } from 'class-validator';
+import { Matches, IsString, MinLength, MaxLength } from 'class-validator';
 
 export class OrderRefQueryDto {
   @IsString()
-  @Length(4, 4)
-  @Matches(/^\d{4}$/)
+  @MinLength(10)
+  @MaxLength(14)
+  @Matches(/^[0-9+]+$/, {
+    message: 'Enter the phone number used when placing the order.',
+  })
   phone!: string;
 }

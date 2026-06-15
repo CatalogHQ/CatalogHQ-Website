@@ -248,11 +248,10 @@ function TransferReferenceField({
 
   const handleSave = async () => {
     try {
-      const phoneLastFour = customerPhone.replace(/\D/g, "").slice(-4);
       await orderRepository.markTransferReference(
         paymentRef,
         transferRef.trim(),
-        phoneLastFour,
+        customerPhone.replace(/\D/g, ""),
       );
       toast.success("Transfer reference saved.");
     } catch (error) {

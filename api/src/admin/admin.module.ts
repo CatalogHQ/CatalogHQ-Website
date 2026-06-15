@@ -11,7 +11,7 @@ import { AdminService } from './admin.service';
 @Module({
   imports: [AuthModule, CommonModule, TicketsModule, PaymentsModule, PlansModule],
   controllers: [AdminController],
-  providers: [AdminService, AdminAuthService],
+  providers: [AdminService, AdminAuthService, AdminTotpGuard],
   exports: [AdminAuthService],
 })
 export class AdminModule {}

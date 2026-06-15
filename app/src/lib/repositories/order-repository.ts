@@ -7,6 +7,11 @@ import type {
   OrderStatus,
 } from "@/types/orders";
 
+export type UnreadNotificationCounts = {
+  orderCount: number;
+  payoutCount: number;
+};
+
 export interface OrderRepository {
   create(input: CustomerOrderInput): Promise<CustomerOrder>;
   checkout(input: CheckoutInput): Promise<CheckoutResult>;
@@ -35,7 +40,8 @@ export interface OrderRepository {
   ): Promise<CustomerOrder[]>;
   getCustomerOrderCount(phone: string): Promise<number>;
   markAllSeen(storeId: string): Promise<void>;
-  getUnreadCount(storeId: string): Promise<number>;
+  markAllPayoutsSeen(storeId: string): Promise<void>;
+  getUnreadCounts(storeId: string): Promise<UnreadNotificationCounts>;
   trackAbandonedCart(input: {
     storeId: string;
     productId: string;

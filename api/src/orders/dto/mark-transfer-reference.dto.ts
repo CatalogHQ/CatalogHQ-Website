@@ -1,4 +1,4 @@
-import { IsString, Length, Matches, MinLength } from 'class-validator';
+import { IsString, Matches, MinLength } from 'class-validator';
 
 export class MarkTransferReferenceDto {
   @IsString()
@@ -6,7 +6,9 @@ export class MarkTransferReferenceDto {
   transferReference!: string;
 
   @IsString()
-  @Length(4, 4)
-  @Matches(/^\d{4}$/)
-  phoneLastFour!: string;
+  @MinLength(10)
+  @Matches(/^[0-9+]+$/, {
+    message: 'Enter the phone number used when placing the order.',
+  })
+  customerPhone!: string;
 }

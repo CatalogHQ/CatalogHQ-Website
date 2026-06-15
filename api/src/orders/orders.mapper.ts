@@ -31,6 +31,8 @@ export type OrderDto = {
   riderName?: string;
   riderPhone?: string;
   vendorSeenAt?: string;
+  payoutSettledAt?: string;
+  vendorPayoutSeenAt?: string;
   createdAt: string;
 };
 
@@ -90,6 +92,8 @@ export function toOrderDto(order: Order): OrderDto {
     riderName: order.riderName ?? undefined,
     riderPhone: order.riderPhone ?? undefined,
     vendorSeenAt: order.vendorSeenAt?.toISOString(),
+    payoutSettledAt: order.payoutSettledAt?.toISOString(),
+    vendorPayoutSeenAt: order.vendorPayoutSeenAt?.toISOString(),
     createdAt: order.createdAt.toISOString(),
   };
 }

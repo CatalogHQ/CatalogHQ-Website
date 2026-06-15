@@ -45,7 +45,7 @@ const navItems = [
   { title: "Products", href: "/dashboard/products", icon: Package },
   { title: "Inventory", href: "/dashboard/inventory", icon: Warehouse, lowStockBadge: true },
   { title: "Analytics", href: "/dashboard/analytics", icon: BarChart3 },
-  { title: "Payouts", href: "/dashboard/payouts", icon: Wallet },
+  { title: "Payouts", href: "/dashboard/payouts", icon: Wallet, payoutBadge: true },
   { title: "Billing", href: "/dashboard/billing", icon: CreditCard },
   { title: "Settings", href: "/dashboard/settings", icon: Settings },
 ];
@@ -54,7 +54,7 @@ export default function DashboardLayout() {
   const location = useLocation();
   const navigate = useNavigate();
   const { signOut, isAdmin, user } = useAuth();
-  const { store, unreadOrderCount, products } = useVendor();
+  const { store, unreadOrderCount, unreadPayoutCount, products } = useVendor();
   const { isHardBlocked, subscriptionExempt, canUseFeature } = useVendorEntitlements();
   const lowStockCount = canUseFeature("low-stock-alerts")
     ? getLowStockProducts(products).length
@@ -113,6 +113,11 @@ export default function DashboardLayout() {
                         {item.badge && unreadOrderCount > 0 && (
                           <SidebarMenuBadge className="bg-whatsapp-green text-white">
                             {unreadOrderCount}
+                          </SidebarMenuBadge>
+                        )}
+                        {item.payoutBadge && unreadPayoutCount > 0 && (
+                          <SidebarMenuBadge className="bg-whatsapp-green text-white">
+                            {unreadPayoutCount}
                           </SidebarMenuBadge>
                         )}
                         {item.lowStockBadge && lowStockCount > 0 && (

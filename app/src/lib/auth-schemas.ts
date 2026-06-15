@@ -32,7 +32,10 @@ export const emailSchema = z
 
 export const passwordSchema = z
   .string()
-  .min(8, "Password must be at least 8 characters");
+  .min(8, "Password must be at least 8 characters")
+  .regex(/^(?=.*[A-Za-z])(?=.*\d).+$/, {
+    message: "Password must include at least one letter and one number",
+  });
 
 export const signUpSchema = z
   .object({

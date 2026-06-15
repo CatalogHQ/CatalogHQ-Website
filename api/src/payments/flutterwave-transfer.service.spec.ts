@@ -106,6 +106,18 @@ describe('FlutterwaveTransferService', () => {
     expect(payload.payment_instruction.amount.value).toBe(4800);
   });
 
+  it('rejects transfers below the minimum payout amount', async () => {
+    await expect(
+      service.initiateInstantTransfer({
+        recipientId: 'rcb_test123',
+        amountNaira: 299,
+        reference: 'payout-SHP-low',
+        narration: 'Too small',
+      }),
+    ).rejects.toThrow('Minimum payout amount is 300 NGN.');
+    expect(global.fetch).not.toHaveBeenCalled();
+  });
+
   it('returns mock recipient and transfer when OAuth is not configured', async () => {
     auth.isConfigured.mockReturnValue(false);
 

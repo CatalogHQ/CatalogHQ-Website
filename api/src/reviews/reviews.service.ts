@@ -8,8 +8,9 @@ import { PlanEntitlementService } from '../plans/plan-entitlement.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { StoresService } from '../stores/stores.service';
 import { normalizePhone } from '../common/phone.util';
-import { verifyPhoneLastFour } from '../common/order-phone.util';
+import { verifyCustomerPhone } from '../common/order-phone.util';
 import { sanitizeUserText } from '../common/sanitize.util';
+import { OrderAccessAttemptService } from '../orders/order-access-attempt.service';
 import { CreateReviewDto } from './dto/create-review.dto';
 import {
   OrderReviewStatusDto,
@@ -31,6 +32,7 @@ export class ReviewsService {
     private readonly prisma: PrismaService,
     private readonly storesService: StoresService,
     private readonly planEntitlementService: PlanEntitlementService,
+    private readonly orderAccessAttempt: OrderAccessAttemptService,
   ) {}
 
   private isOrderReviewable(order: Order): boolean {
@@ -76,7 +78,7 @@ export class ReviewsService {
 
   async getOrderReviewStatus(
     paymentRef: string,
-    phoneLastFour: string,
+    customerPhone: string,
   ): Promise<OrderReviewStatusDto> {
     const order = await this.prisma.order.findFirst({
       where: { paymentRef: { equals: paymentRef, mode: 'insensitive' } },
@@ -86,7 +88,7 @@ export class ReviewsService {
       throw new NotFoundException('Order not found');
     }
 
-    verifyPhoneLastFour(order.customerPhone, phoneLastFour);
+    await this.assertCustomerOrderAccess(paymentRef, customerPhone, order);
 
     const hasReviews = await this.planEntitlementService.hasFeature(
       order.storeId,
@@ -143,6 +145,8 @@ export class ReviewsService {
       );
     }
 
+    await this.assertCustomerOrderAccess(paymentRef, dto.customerPhone, order);
+
     if (normalizePhone(dto.customerPhone) !== order.customerPhone) {
       throw new BadRequestException('Phone number does not match this order.');
     }
@@ -171,5 +175,23 @@ export class ReviewsService {
 
   async syncVerifiedReviewForDeliveredOrder(_orderId: string): Promise<void> {
     // Reviews are submitted by buyers after purchase; no auto-generated placeholders.
+  }
+
+  private async assertCustomerOrderAccess(
+    paymentRef: string,
+    customerPhone: string,
+    order: { customerPhone: string },
+  ): Promise<void> {
+    await this.orderAccessAttempt.assertCanAttempt(paymentRef);
+
+    try {
+      verifyCustomerPhone(order.customerPhone, customerPhone);
+      await this.orderAccessAttempt.resetAttempts(paymentRef);
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        await this.orderAccessAttempt.recordFailedAttempt(paymentRef);
+      }
+      throw error;
+    }
   }
 }

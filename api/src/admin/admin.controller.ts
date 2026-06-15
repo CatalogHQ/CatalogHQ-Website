@@ -15,6 +15,9 @@ import { AdminGuard } from '../common/guards/admin.guard';
 import { PlanCatalogService } from '../plans/plan-catalog.service';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { AdminAuthService } from './admin-auth.service';
+import { AdminTotpGuard } from './admin-totp.guard';
+import { AdminTotpOptional } from './decorators/admin-totp-optional.decorator';
+import { EnableTotpDto } from './dto/enable-totp.dto';
 import { AdminService } from './admin.service';
 import {
   RevenueAnalyticsQueryDto,
@@ -35,7 +38,7 @@ function parsePlanTier(tier: string): PlanTier {
 }
 
 @Controller('admin')
-@UseGuards(AdminGuard)
+@UseGuards(AdminGuard, AdminTotpGuard)
 export class AdminController {
   constructor(
     private readonly adminService: AdminService,
@@ -45,16 +48,18 @@ export class AdminController {
   ) {}
 
   @Post('totp/setup')
+  @AdminTotpOptional()
   setupTotp(@CurrentUser() user: User) {
     return this.adminAuthService.setupTotp(user.id);
   }
 
   @Post('totp/enable')
+  @AdminTotpOptional()
   async enableTotp(
     @CurrentUser() user: User,
-    @Body() body: { token: string },
+    @Body() dto: EnableTotpDto,
   ) {
-    await this.adminAuthService.enableTotp(user.id, body.token);
+    await this.adminAuthService.enableTotp(user.id, dto.token);
     return { success: true };
   }
 

@@ -13,11 +13,12 @@ import { LowStockAlertService } from '../notifications/low-stock-alert.service';
 import { PlanEntitlementService } from '../plans/plan-entitlement.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { OrdersService } from './orders.service';
+import { OrderAccessAttemptService } from './order-access-attempt.service';
 
 describe('OrdersService', () => {
   const prisma = {
     store: { findUnique: jest.fn() },
-    product: { findFirst: jest.fn() },
+    product: { findFirst: jest.fn(), updateMany: jest.fn() },
     discountCode: { findFirst: jest.fn(), update: jest.fn(), findUnique: jest.fn() },
     $transaction: jest.fn(),
     order: {
@@ -52,6 +53,12 @@ describe('OrdersService', () => {
 
   const lowStockAlertService = {
     notifyIfNeeded: jest.fn().mockResolvedValue(undefined),
+  };
+
+  const orderAccessAttempt = {
+    assertCanAttempt: jest.fn().mockResolvedValue(undefined),
+    recordFailedAttempt: jest.fn().mockResolvedValue(undefined),
+    resetAttempts: jest.fn().mockResolvedValue(undefined),
   };
 
   let service: OrdersService;
@@ -93,6 +100,7 @@ describe('OrdersService', () => {
   beforeEach(async () => {
     jest.clearAllMocks();
     flutterwave.isConfigured.mockReturnValue(false);
+    prisma.product.updateMany.mockResolvedValue({ count: 1 });
     prisma.$transaction.mockImplementation(
       async (callback: (tx: typeof prisma) => Promise<unknown>) =>
         callback(prisma),
@@ -107,6 +115,7 @@ describe('OrdersService', () => {
         { provide: PaymentsService, useValue: paymentsService },
         { provide: PlanEntitlementService, useValue: planEntitlementService },
         { provide: LowStockAlertService, useValue: lowStockAlertService },
+        { provide: OrderAccessAttemptService, useValue: orderAccessAttempt },
       ],
     }).compile();
 

@@ -5,6 +5,8 @@ import { OrderStatus, PaymentStatus, PayoutStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { ORDER_CREATED_EVENT } from '../orders/events/order.events';
 import { OrderCreatedEvent } from '../orders/events/order-created.event';
+import { PAYOUT_SETTLED_EVENT } from './events/payout.events';
+import { PayoutSettledEvent } from './events/payout-settled.event';
 import { LowStockAlertService } from '../notifications/low-stock-alert.service';
 import { flutterwaveAmountMatchesNaira } from './flutterwave-amount.util';
 import { buildFlutterwaveReference } from './flutterwave-reference.util';
@@ -12,6 +14,10 @@ import { resolveFlutterwavePayoutReference } from './flutterwave-payout-referenc
 import { buildFlutterwaveCheckoutEmail } from './flutterwave-payment-methods';
 import { FlutterwaveService } from './flutterwave.service';
 import { FlutterwaveTransferService } from './flutterwave-transfer.service';
+import {
+  isVendorPayoutAmountEligible,
+  MIN_VENDOR_PAYOUT_NAIRA,
+} from './vendor-payout.constants';
 
 @Injectable()
 export class PaymentsService {
@@ -25,6 +31,31 @@ export class PaymentsService {
     private readonly configService: ConfigService,
     private readonly lowStockAlertService: LowStockAlertService,
   ) {}
+
+  async claimWebhook(dedupeKey: string): Promise<boolean> {
+    try {
+      await this.prisma.processedWebhook.create({
+        data: { txRef: dedupeKey },
+      });
+      return true;
+    } catch (error) {
+      if (
+        typeof error === 'object' &&
+        error !== null &&
+        'code' in error &&
+        error.code === 'P2002'
+      ) {
+        return false;
+      }
+      throw error;
+    }
+  }
+
+  async releaseWebhook(dedupeKey: string): Promise<void> {
+    await this.prisma.processedWebhook.deleteMany({
+      where: { txRef: dedupeKey },
+    });
+  }
 
   async isWebhookProcessed(dedupeKey: string): Promise<boolean> {
     const existing = await this.prisma.processedWebhook.findUnique({
@@ -105,16 +136,16 @@ export class PaymentsService {
       this.logger.warn(
         `Flutterwave verify failed for ${verifyReference} (order ${order.paymentRef})`,
       );
-      await this.prisma.order.update({
-        where: { id: order.id },
+      await this.prisma.order.updateMany({
+        where: { id: order.id, paymentStatus: PaymentStatus.pending },
         data: { paymentStatus: PaymentStatus.failed },
       });
       return;
     }
 
-    await this.prisma.$transaction(async (tx) => {
-      await tx.order.update({
-        where: { id: order.id },
+    const confirmed = await this.prisma.$transaction(async (tx) => {
+      const updated = await tx.order.updateMany({
+        where: { id: order.id, paymentStatus: PaymentStatus.pending },
         data: {
           paymentStatus: PaymentStatus.paid,
           status: OrderStatus.paid,
@@ -122,8 +153,30 @@ export class PaymentsService {
         },
       });
 
-      await this.decrementStock(tx, order.storeId, order.productId, order.quantity);
+      if (updated.count === 0) {
+        return false;
+      }
+
+      const current = await tx.order.findUnique({ where: { id: order.id } });
+      if (!current?.stockHeldAt) {
+        await this.decrementStock(
+          tx,
+          order.storeId,
+          order.productId,
+          order.quantity,
+        );
+        await tx.order.update({
+          where: { id: order.id },
+          data: { stockHeldAt: new Date() },
+        });
+      }
+
+      return true;
     });
+
+    if (!confirmed) {
+      return;
+    }
 
     await this.attemptVendorPayout(order.id);
 
@@ -218,6 +271,13 @@ export class PaymentsService {
     }
 
     if (order.vendorNet <= 0) {
+      return;
+    }
+
+    if (!isVendorPayoutAmountEligible(order.vendorNet)) {
+      this.logger.warn(
+        `Skipping vendor payout for order ${order.paymentRef}: amount ${order.vendorNet} NGN is below the ${MIN_VENDOR_PAYOUT_NAIRA} NGN minimum.`,
+      );
       return;
     }
 
@@ -334,8 +394,16 @@ export class PaymentsService {
 
     await this.prisma.order.update({
       where: { id: order.id },
-      data: { payoutStatus: PayoutStatus.settled },
+      data: {
+        payoutStatus: PayoutStatus.settled,
+        payoutSettledAt: new Date(),
+      },
     });
+
+    this.eventEmitter.emit(
+      PAYOUT_SETTLED_EVENT,
+      new PayoutSettledEvent(order.id),
+    );
   }
 
   async markPayoutFailed(payoutReference: string): Promise<void> {

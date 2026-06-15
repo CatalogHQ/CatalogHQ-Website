@@ -16,6 +16,7 @@ type OrderResponse = {
 
 type UnreadCountResponse = {
   count: number;
+  payoutCount: number;
 };
 
 export class ApiOrderRepository implements OrderRepository {
@@ -74,7 +75,7 @@ export class ApiOrderRepository implements OrderRepository {
       `/orders/ref/${encodeURIComponent(paymentRef)}/transfer`,
       {
         method: "PATCH",
-        body: JSON.stringify({ transferReference, phoneLastFour }),
+        body: JSON.stringify({ transferReference, customerPhone: phoneLastFour }),
       },
     );
   }
@@ -136,11 +137,21 @@ export class ApiOrderRepository implements OrderRepository {
     await apiClient("/stores/me/orders/mark-seen", { method: "POST" });
   }
 
-  async getUnreadCount(_storeId: string): Promise<number> {
+  async markAllPayoutsSeen(_storeId: string): Promise<void> {
+    await apiClient("/stores/me/payouts/mark-seen", { method: "POST" });
+  }
+
+  async getUnreadCounts(_storeId: string): Promise<{
+    orderCount: number;
+    payoutCount: number;
+  }> {
     const response = await apiClient<UnreadCountResponse>(
       "/stores/me/orders/unread-count",
     );
-    return response.count;
+    return {
+      orderCount: response.count,
+      payoutCount: response.payoutCount ?? 0,
+    };
   }
 
   async trackAbandonedCart(input: {

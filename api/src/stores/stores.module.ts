@@ -13,7 +13,7 @@ import { VendorToolsService } from './vendor-tools.service';
 @Module({
   imports: [AuthModule, PaymentsModule, PlansModule, VerificationModule, EventEmitterModule],
   controllers: [StoresController],
-  providers: [StoresService, VendorToolsService, StoreStaffService, VendorPayoutService],
+  providers: [StoresService, VendorToolsService, StoreStaffService, VendorPayoutService, VendorStoreAccessService],
   exports: [StoresService],
 })
 export class StoresModule {}

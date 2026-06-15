@@ -8,7 +8,7 @@ import { OrdersService } from './orders.service';
 @Module({
   imports: [PaymentsModule, PlansModule],
   controllers: [OrdersController],
-  providers: [OrdersService, AbandonedCartService],
-  exports: [OrdersService],
+  providers: [OrdersService, AbandonedCartService, OrderAccessAttemptService],
+  exports: [OrdersService, OrderAccessAttemptService],
 })
 export class OrdersModule {}

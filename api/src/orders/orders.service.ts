@@ -10,13 +10,14 @@ import { randomBytes } from 'crypto';
 import {
   OrderStatus,
   PaymentStatus,
+  PayoutStatus,
   PlanTier,
   Prisma,
 } from '@prisma/client';
 import { DELIVERY_TYPE_IDS } from '../common/constants/delivery-types';
 import { deliveryRequiresAddress } from '../common/delivery.util';
 import { normalizePhone } from '../common/phone.util';
-import { verifyPhoneLastFour } from '../common/order-phone.util';
+import { verifyCustomerPhone } from '../common/order-phone.util';
 import { FlutterwaveService } from '../payments/flutterwave.service';
 import { computeCheckoutPricing } from '../payments/flutterwave-fees.util';
 import { buildFlutterwaveCheckoutEmail } from '../payments/flutterwave-payment-methods';
@@ -39,6 +40,7 @@ import { OrderCheckoutBaseDto } from './dto/order-checkout-base.dto';
 import { CheckoutPaymentDto } from './dto/checkout-payment.dto';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { OrderDto, PublicOrderDto, toOrderDto, toPublicOrderDto } from './orders.mapper';
+import { OrderAccessAttemptService } from './order-access-attempt.service';
 
 type DeliveryZone = { id: string; name: string; fee: number };
 
@@ -55,6 +57,7 @@ export class OrdersService {
     private readonly paymentsService: PaymentsService,
     private readonly planEntitlementService: PlanEntitlementService,
     private readonly lowStockAlertService: LowStockAlertService,
+    private readonly orderAccessAttempt: OrderAccessAttemptService,
   ) {}
 
   async checkout(dto: CheckoutPaymentDto, storeSlug: string) {
@@ -73,6 +76,8 @@ export class OrdersService {
       if (!product) {
         throw new NotFoundException('Product not found.');
       }
+
+      await this.holdStock(tx, dto.storeId, dto.productId, dto.quantity);
 
       return tx.order.create({
         data: {
@@ -97,6 +102,7 @@ export class OrdersService {
           status: OrderStatus.reserved,
           paymentStatus: PaymentStatus.pending,
           gatewayReference,
+          stockHeldAt: new Date(),
         },
       });
     });
@@ -187,6 +193,7 @@ export class OrdersService {
           status: OrderStatus.reserved,
           paymentStatus: PaymentStatus.pending,
           reservedUntil,
+          stockHeldAt: new Date(),
         },
       });
 
@@ -207,10 +214,10 @@ export class OrdersService {
 
   async verifyPayment(
     paymentRef: string,
-    phoneLastFour: string,
+    customerPhone: string,
   ): Promise<PublicOrderDto> {
     const order = await this.findOrderByPaymentRef(paymentRef);
-    verifyPhoneLastFour(order.customerPhone, phoneLastFour);
+    await this.assertCustomerOrderAccess(paymentRef, customerPhone, order);
 
     if (!order.gatewayReference) {
       throw new NotFoundException('Order not found');
@@ -231,8 +238,8 @@ export class OrdersService {
     return toPublicOrderDto(updated);
   }
 
-  async getReceipt(paymentRef: string, phoneLastFour: string) {
-    const order = await this.getByPaymentRef(paymentRef, phoneLastFour);
+  async getReceipt(paymentRef: string, customerPhone: string) {
+    const order = await this.getByPaymentRef(paymentRef, customerPhone);
     return {
       valid: order.paymentStatus === 'paid' || order.status !== 'reserved',
       order,
@@ -262,10 +269,10 @@ export class OrdersService {
 
   async getByPaymentRef(
     paymentRef: string,
-    phoneLastFour: string,
+    customerPhone: string,
   ): Promise<PublicOrderDto> {
     const order = await this.findOrderByPaymentRef(paymentRef);
-    verifyPhoneLastFour(order.customerPhone, phoneLastFour);
+    await this.assertCustomerOrderAccess(paymentRef, customerPhone, order);
     return toPublicOrderDto(order);
   }
 
@@ -352,10 +359,10 @@ export class OrdersService {
   async markTransferReference(
     paymentRef: string,
     transferReference: string,
-    phoneLastFour: string,
+    customerPhone: string,
   ): Promise<PublicOrderDto> {
     const order = await this.findOrderByPaymentRef(paymentRef);
-    verifyPhoneLastFour(order.customerPhone, phoneLastFour);
+    await this.assertCustomerOrderAccess(paymentRef, customerPhone, order);
 
     if (order.transferReference) {
       throw new ConflictException('Transfer reference already attached');
@@ -381,6 +388,24 @@ export class OrdersService {
     return order;
   }
 
+  private async assertCustomerOrderAccess(
+    paymentRef: string,
+    customerPhone: string,
+    order: { customerPhone: string },
+  ): Promise<void> {
+    await this.orderAccessAttempt.assertCanAttempt(paymentRef);
+
+    try {
+      verifyCustomerPhone(order.customerPhone, customerPhone);
+      await this.orderAccessAttempt.resetAttempts(paymentRef);
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        await this.orderAccessAttempt.recordFailedAttempt(paymentRef);
+      }
+      throw error;
+    }
+  }
+
   async markAllSeen(storeId: string): Promise<void> {
     await this.prisma.order.updateMany({
       where: { storeId, vendorSeenAt: null },
@@ -388,9 +413,30 @@ export class OrdersService {
     });
   }
 
+  async markAllPayoutsSeen(storeId: string): Promise<void> {
+    await this.prisma.order.updateMany({
+      where: {
+        storeId,
+        payoutStatus: PayoutStatus.settled,
+        vendorPayoutSeenAt: null,
+      },
+      data: { vendorPayoutSeenAt: new Date() },
+    });
+  }
+
   async getUnreadCount(storeId: string): Promise<number> {
     return this.prisma.order.count({
       where: { storeId, vendorSeenAt: null },
+    });
+  }
+
+  async getUnreadPayoutCount(storeId: string): Promise<number> {
+    return this.prisma.order.count({
+      where: {
+        storeId,
+        payoutStatus: PayoutStatus.settled,
+        vendorPayoutSeenAt: null,
+      },
     });
   }
 

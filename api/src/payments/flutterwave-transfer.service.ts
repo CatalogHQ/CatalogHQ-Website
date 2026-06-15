@@ -11,6 +11,10 @@ import {
   resolveFlutterwaveBaseUrl,
 } from './flutterwave.config';
 import { normalizeNigerianBankCode } from './flutterwave-bank.util';
+import {
+  isVendorPayoutAmountEligible,
+  vendorPayoutMinimumMessage,
+} from './vendor-payout.constants';
 
 const FLUTTERWAVE_POST_MAX_ATTEMPTS = 3;
 const FLUTTERWAVE_RETRY_BASE_MS = 300;
@@ -131,6 +135,10 @@ export class FlutterwaveTransferService {
   }): Promise<FlutterwaveTransferResult> {
     if (params.amountNaira <= 0) {
       throw new BadRequestException('Transfer amount must be greater than zero.');
+    }
+
+    if (!isVendorPayoutAmountEligible(params.amountNaira)) {
+      throw new BadRequestException(vendorPayoutMinimumMessage());
     }
 
     if (!this.isConfigured()) {

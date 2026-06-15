@@ -56,7 +56,10 @@ export class AuthService {
   }
 
   createSession(user: User): Promise<{ user: SafeUser; token: string }> {
-    const token = this.jwtService.sign({ sub: user.id });
+    const token = this.jwtService.sign({
+      sub: user.id,
+      sv: user.sessionVersion,
+    });
     return this.toSafeUser(user).then((safeUser) => ({
       user: safeUser,
       token,

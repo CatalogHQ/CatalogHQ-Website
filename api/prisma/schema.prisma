@@ -58,6 +58,7 @@ model User {
   totpSecret         String?
   totpEnabled        Boolean             @default(false)
   totpVerifiedAt     DateTime?
+  sessionVersion     Int                 @default(0)
   createdAt          DateTime            @default(now())
   store              Store?
   subscription       VendorSubscription?
@@ -117,6 +118,13 @@ model OtpVerifyAttempt {
   attempts    Int      @default(0)
   lockedUntil DateTime?
   updatedAt   DateTime @updatedAt
+}
+
+model OrderAccessAttempt {
+  paymentRef  String    @id
+  attempts    Int       @default(0)
+  lockedUntil DateTime?
+  updatedAt   DateTime  @updatedAt
 }
 
 model ProcessedWebhook {
@@ -412,6 +420,9 @@ model Order {
   riderName           String?
   riderPhone          String?
   vendorSeenAt        DateTime?
+  payoutSettledAt     DateTime?
+  vendorPayoutSeenAt  DateTime?
+  stockHeldAt         DateTime?
   createdAt           DateTime      @default(now())
 
   @@index([storeId])

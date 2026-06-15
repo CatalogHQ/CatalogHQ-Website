@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { Link } from "react-router";
-import { Bell } from "lucide-react";
+import { Bell, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Popover,
@@ -11,7 +11,7 @@ import OrderStatusBadge from "@/components/vendor/OrderStatusBadge";
 import { useVendor } from "@/contexts/VendorContext";
 import { formatNaira } from "@/lib/format";
 
-function formatOrderTime(iso: string): string {
+function formatNotificationTime(iso: string): string {
   const date = new Date(iso);
   const diffMs = Date.now() - date.getTime();
   const diffMins = Math.floor(diffMs / 60_000);
@@ -29,7 +29,12 @@ function formatOrderTime(iso: string): string {
 }
 
 export default function VendorOrderNotifications() {
-  const { orders, unreadOrderCount, refreshOrders } = useVendor();
+  const {
+    orders,
+    unreadNotificationCount,
+    refreshOrders,
+    markPayoutsSeen,
+  } = useVendor();
 
   const unreadOrders = useMemo(
     () =>
@@ -39,10 +44,24 @@ export default function VendorOrderNotifications() {
     [orders],
   );
 
+  const unreadPayouts = useMemo(
+    () =>
+      orders
+        .filter(
+          (order) =>
+            order.payoutStatus === "settled" && !order.vendorPayoutSeenAt,
+        )
+        .slice(0, 5),
+    [orders],
+  );
+
   return (
     <Popover
       onOpenChange={(open) => {
-        if (open) void refreshOrders();
+        if (open) {
+          void refreshOrders();
+          void markPayoutsSeen();
+        }
       }}
     >
       <PopoverTrigger asChild>
@@ -52,15 +71,15 @@ export default function VendorOrderNotifications() {
           size="icon"
           className="relative shrink-0"
           aria-label={
-            unreadOrderCount > 0
-              ? `${unreadOrderCount} new order notifications`
-              : "Order notifications"
+            unreadNotificationCount > 0
+              ? `${unreadNotificationCount} new notifications`
+              : "Notifications"
           }
         >
           <Bell className="h-5 w-5" />
-          {unreadOrderCount > 0 && (
+          {unreadNotificationCount > 0 && (
             <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-whatsapp-green px-1 text-[10px] font-semibold text-white">
-              {unreadOrderCount > 9 ? "9+" : unreadOrderCount}
+              {unreadNotificationCount > 9 ? "9+" : unreadNotificationCount}
             </span>
           )}
         </Button>
@@ -68,52 +87,104 @@ export default function VendorOrderNotifications() {
 
       <PopoverContent align="end" className="w-80 p-0">
         <div className="border-b px-4 py-3">
-          <p className="text-sm font-semibold text-gray-900">Order notifications</p>
+          <p className="text-sm font-semibold text-gray-900">Notifications</p>
           <p className="text-xs text-gray-500">
-            {unreadOrderCount > 0
-              ? `${unreadOrderCount} new order${unreadOrderCount === 1 ? "" : "s"}`
+            {unreadNotificationCount > 0
+              ? `${unreadNotificationCount} unread update${unreadNotificationCount === 1 ? "" : "s"}`
               : "You are all caught up"}
           </p>
         </div>
 
-        {unreadOrders.length === 0 ? (
+        {unreadOrders.length === 0 && unreadPayouts.length === 0 ? (
           <div className="px-4 py-6 text-center text-sm text-gray-500">
-            No new orders right now.
+            No new notifications right now.
           </div>
         ) : (
-          <ul className="max-h-72 overflow-y-auto divide-y">
-            {unreadOrders.map((order) => (
-              <li key={order.id}>
-                <Link
-                  to="/dashboard/orders"
-                  className="block px-4 py-3 transition-colors hover:bg-gray-50"
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <p className="text-sm font-medium text-gray-900">
-                      {order.customerName}
-                    </p>
-                    <span className="shrink-0 text-xs text-gray-500">
-                      {formatOrderTime(order.createdAt)}
-                    </span>
-                  </div>
-                  <p className="mt-0.5 truncate text-xs text-gray-600">
-                    {order.productName} x{order.quantity}
+          <div className="max-h-80 overflow-y-auto">
+            {unreadPayouts.length > 0 && (
+              <div>
+                <div className="flex items-center gap-2 border-b bg-gray-50 px-4 py-2">
+                  <Wallet className="h-3.5 w-3.5 text-gray-500" />
+                  <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+                    Payouts
                   </p>
-                  <div className="mt-2 flex items-center justify-between gap-2">
-                    <span className="text-xs font-medium text-whatsapp-dark">
-                      {formatNaira(order.totalPaid)}
-                    </span>
-                    <OrderStatusBadge status={order.status} />
-                  </div>
-                </Link>
-              </li>
-            ))}
-          </ul>
+                </div>
+                <ul className="divide-y">
+                  {unreadPayouts.map((order) => (
+                    <li key={`payout-${order.id}`}>
+                      <Link
+                        to="/dashboard/payouts"
+                        className="block px-4 py-3 transition-colors hover:bg-gray-50"
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <p className="text-sm font-medium text-gray-900">
+                            Payout sent
+                          </p>
+                          <span className="shrink-0 text-xs text-gray-500">
+                            {formatNotificationTime(
+                              order.payoutSettledAt ?? order.createdAt,
+                            )}
+                          </span>
+                        </div>
+                        <p className="mt-0.5 truncate text-xs text-gray-600">
+                          {order.paymentRef} · {order.productName}
+                        </p>
+                        <p className="mt-2 text-xs font-medium text-whatsapp-dark">
+                          {formatNaira(order.vendorNet ?? 0)} to your bank
+                        </p>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {unreadOrders.length > 0 && (
+              <div>
+                <div className="border-b bg-gray-50 px-4 py-2">
+                  <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+                    Orders
+                  </p>
+                </div>
+                <ul className="divide-y">
+                  {unreadOrders.map((order) => (
+                    <li key={order.id}>
+                      <Link
+                        to="/dashboard/orders"
+                        className="block px-4 py-3 transition-colors hover:bg-gray-50"
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <p className="text-sm font-medium text-gray-900">
+                            {order.customerName}
+                          </p>
+                          <span className="shrink-0 text-xs text-gray-500">
+                            {formatNotificationTime(order.createdAt)}
+                          </span>
+                        </div>
+                        <p className="mt-0.5 truncate text-xs text-gray-600">
+                          {order.productName} x{order.quantity}
+                        </p>
+                        <div className="mt-2 flex items-center justify-between gap-2">
+                          <span className="text-xs font-medium text-whatsapp-dark">
+                            {formatNaira(order.totalPaid)}
+                          </span>
+                          <OrderStatusBadge status={order.status} />
+                        </div>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
         )}
 
-        <div className="border-t p-2">
-          <Button asChild variant="ghost" size="sm" className="w-full">
-            <Link to="/dashboard/orders">View all orders</Link>
+        <div className="grid grid-cols-2 gap-1 border-t p-2">
+          <Button asChild variant="ghost" size="sm">
+            <Link to="/dashboard/payouts">Payouts</Link>
+          </Button>
+          <Button asChild variant="ghost" size="sm">
+            <Link to="/dashboard/orders">Orders</Link>
           </Button>
         </div>
       </PopoverContent>

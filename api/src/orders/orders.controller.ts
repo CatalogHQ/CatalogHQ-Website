@@ -111,7 +111,7 @@ export class OrdersController {
     return this.ordersService.markTransferReference(
       paymentRef,
       dto.transferReference,
-      dto.phoneLastFour,
+      dto.customerPhone,
     );
   }
 
@@ -126,8 +126,11 @@ export class OrdersController {
 
   @Get('stores/me/orders/unread-count')
   async unreadCount(@CurrentUser() user: User) {
-    const count = await this.ordersService.getUnreadCount(user.id);
-    return { count };
+    const [count, payoutCount] = await Promise.all([
+      this.ordersService.getUnreadCount(user.id),
+      this.ordersService.getUnreadPayoutCount(user.id),
+    ]);
+    return { count, payoutCount };
   }
 
   @Patch('stores/me/orders/:orderId/status')
@@ -170,6 +173,12 @@ export class OrdersController {
   @Post('stores/me/orders/mark-seen')
   async markSeen(@CurrentUser() user: User) {
     await this.ordersService.markAllSeen(user.id);
+    return { success: true };
+  }
+
+  @Post('stores/me/payouts/mark-seen')
+  async markPayoutsSeen(@CurrentUser() user: User) {
+    await this.ordersService.markAllPayoutsSeen(user.id);
     return { success: true };
   }
 }

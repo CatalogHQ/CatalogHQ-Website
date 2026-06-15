@@ -6,11 +6,17 @@ import {
 import { normalizeEmail } from '../common/email.util';
 import { PrismaService } from '../prisma/prisma.service';
 
+import { VendorStoreAccessService } from './vendor-store-access.service';
+
 @Injectable()
 export class StoreStaffService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly vendorStoreAccess: VendorStoreAccessService,
+  ) {}
 
   async listMembers(storeId: string) {
+    await this.vendorStoreAccess.assertStoreOwner(storeId);
     const members = await this.prisma.storeMember.findMany({
       where: { storeId },
       orderBy: { createdAt: 'asc' },
@@ -32,6 +38,7 @@ export class StoreStaffService {
   }
 
   async addMember(storeId: string, email: string, role: 'fulfiller' | 'owner') {
+    await this.vendorStoreAccess.assertStoreOwner(storeId);
     const normalized = normalizeEmail(email);
     const user = await this.prisma.user.findUnique({
       where: { email: normalized },
@@ -61,6 +68,7 @@ export class StoreStaffService {
   }
 
   async removeMember(storeId: string, memberId: string) {
+    await this.vendorStoreAccess.assertStoreOwner(storeId);
     const member = await this.prisma.storeMember.findFirst({
       where: { id: memberId, storeId },
     });
@@ -78,6 +86,7 @@ export class StoreStaffService {
   }
 
   async listActivity(storeId: string) {
+    await this.vendorStoreAccess.assertStoreOwner(storeId);
     const logs = await this.prisma.activityLog.findMany({
       where: { storeId },
       orderBy: { createdAt: 'desc' },

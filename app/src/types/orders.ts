@@ -43,6 +43,8 @@ export type CustomerOrder = {
   riderName?: string;
   riderPhone?: string;
   vendorSeenAt?: string;
+  payoutSettledAt?: string;
+  vendorPayoutSeenAt?: string;
   createdAt: string;
 };
 

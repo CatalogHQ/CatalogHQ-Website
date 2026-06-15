@@ -229,10 +229,38 @@ export class LocalOrderRepository implements OrderRepository {
     }
   }
 
-  async getUnreadCount(storeId: string): Promise<number> {
-    return this.getOrders().filter(
-      (order) => order.storeId === storeId && !order.vendorSeenAt,
-    ).length;
+  async markAllPayoutsSeen(storeId: string): Promise<void> {
+    const now = new Date().toISOString();
+    const orders = this.getOrders();
+    let changed = false;
+
+    for (let i = 0; i < orders.length; i++) {
+      if (
+        orders[i].storeId === storeId &&
+        orders[i].payoutStatus === "settled" &&
+        !orders[i].vendorPayoutSeenAt
+      ) {
+        orders[i] = { ...orders[i], vendorPayoutSeenAt: now };
+        changed = true;
+      }
+    }
+
+    if (changed) {
+      this.saveOrders(orders);
+    }
+  }
+
+  async getUnreadCounts(storeId: string): Promise<{
+    orderCount: number;
+    payoutCount: number;
+  }> {
+    const orders = this.getOrders().filter((order) => order.storeId === storeId);
+    return {
+      orderCount: orders.filter((order) => !order.vendorSeenAt).length,
+      payoutCount: orders.filter(
+        (order) => order.payoutStatus === "settled" && !order.vendorPayoutSeenAt,
+      ).length,
+    };
   }
 
   async trackAbandonedCart(): Promise<void> {

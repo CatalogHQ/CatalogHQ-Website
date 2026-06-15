@@ -1,25 +1,27 @@
 import { useCallback, useState } from "react";
 import {
-  loadOrderPhoneLastFour,
-  saveOrderPhoneLastFour,
+  loadOrderCustomerPhone,
+  saveOrderCustomerPhone,
 } from "@/lib/order-phone-session";
 
 export function useOrderPhoneGate(paymentRef: string) {
-  const [phoneLastFour, setPhoneLastFour] = useState<string | null>(() =>
-    paymentRef ? loadOrderPhoneLastFour(paymentRef) : null,
+  const [customerPhone, setCustomerPhone] = useState<string | null>(() =>
+    paymentRef ? loadOrderCustomerPhone(paymentRef) : null,
   );
 
   const onVerified = useCallback(
-    (digits: string) => {
-      saveOrderPhoneLastFour(paymentRef, digits);
-      setPhoneLastFour(digits);
+    (phone: string) => {
+      saveOrderCustomerPhone(paymentRef, phone);
+      setCustomerPhone(phone.replace(/\D/g, ""));
     },
     [paymentRef],
   );
 
   return {
-    phoneLastFour,
+    customerPhone,
+    /** @deprecated Use customerPhone */
+    phoneLastFour: customerPhone,
     onVerified,
-    needsPhoneGate: Boolean(paymentRef) && !phoneLastFour,
+    needsPhoneGate: Boolean(paymentRef) && !customerPhone,
   };
 }

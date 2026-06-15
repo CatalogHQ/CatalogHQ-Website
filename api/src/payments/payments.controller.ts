@@ -62,9 +62,8 @@ export class PaymentsController {
 
     const dedupeKey = buildWebhookDedupeKey(normalized, body.id);
 
-    const alreadyProcessed =
-      await this.paymentsService.isWebhookProcessed(dedupeKey);
-    if (alreadyProcessed) {
+    const claimed = await this.paymentsService.claimWebhook(dedupeKey);
+    if (!claimed) {
       return { received: true, note: 'Already processed' };
     }
 
@@ -72,6 +71,7 @@ export class PaymentsController {
       this.logger.error(
         `Flutterwave webhook processing failed for ${dedupeKey}: ${error instanceof Error ? error.message : 'unknown'}`,
       );
+      void this.paymentsService.releaseWebhook(dedupeKey);
     });
 
     return { received: true };
@@ -124,7 +124,5 @@ export class PaymentsController {
     ) {
       await this.paymentsService.markPayoutSettled(reference);
     }
-
-    await this.paymentsService.markWebhookProcessed(dedupeKey);
   }
 }
