@@ -7,6 +7,7 @@ import { PlanTier } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { PlanCatalogService } from '../plans/plan-catalog.service';
 import { PlanEntitlementService } from '../plans/plan-entitlement.service';
+import { LowStockAlertService } from '../notifications/low-stock-alert.service';
 import { StoresService } from '../stores/stores.service';
 import { sanitizeUserHtml, sanitizeUserText } from '../common/sanitize.util';
 import { ProductInputDto } from './dto/product-input.dto';
@@ -26,6 +27,7 @@ export class ProductsService {
     private readonly storesService: StoresService,
     private readonly planCatalogService: PlanCatalogService,
     private readonly planEntitlementService: PlanEntitlementService,
+    private readonly lowStockAlertService: LowStockAlertService,
   ) {}
 
   private normalizeInput(input: ProductInputDto) {
@@ -145,6 +147,11 @@ export class ProductsService {
         ...this.normalizeInput(input),
       },
     });
+    await this.lowStockAlertService.notifyIfNeeded(storeId, {
+      name: product.name,
+      stock: product.stock,
+      lowStockThreshold: product.lowStockThreshold,
+    });
     return toProductDto(product);
   }
 
@@ -153,11 +160,26 @@ export class ProductsService {
     productId: string,
     input: ProductInputDto,
   ): Promise<ProductDto> {
-    await this.getById(storeId, productId);
+    const existing = await this.prisma.product.findFirst({
+      where: { id: productId, storeId },
+    });
+    if (!existing) {
+      throw new NotFoundException('Product not found.');
+    }
+
     const product = await this.prisma.product.update({
       where: { id: productId, storeId },
       data: this.normalizeInput(input),
     });
+    await this.lowStockAlertService.notifyIfNeeded(
+      storeId,
+      {
+        name: product.name,
+        stock: product.stock,
+        lowStockThreshold: product.lowStockThreshold,
+      },
+      existing.stock,
+    );
     return toProductDto(product);
   }
 

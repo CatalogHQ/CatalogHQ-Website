@@ -9,6 +9,7 @@ import {
 } from '@prisma/client';
 import { FlutterwaveService } from '../payments/flutterwave.service';
 import { PaymentsService } from '../payments/payments.service';
+import { LowStockAlertService } from '../notifications/low-stock-alert.service';
 import { PlanEntitlementService } from '../plans/plan-entitlement.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { OrdersService } from './orders.service';
@@ -47,6 +48,10 @@ describe('OrdersService', () => {
   const planEntitlementService = {
     isStorePubliclyAvailable: jest.fn().mockResolvedValue(true),
     hasFeature: jest.fn().mockResolvedValue(true),
+  };
+
+  const lowStockAlertService = {
+    notifyIfNeeded: jest.fn().mockResolvedValue(undefined),
   };
 
   let service: OrdersService;
@@ -101,6 +106,7 @@ describe('OrdersService', () => {
         { provide: FlutterwaveService, useValue: flutterwave },
         { provide: PaymentsService, useValue: paymentsService },
         { provide: PlanEntitlementService, useValue: planEntitlementService },
+        { provide: LowStockAlertService, useValue: lowStockAlertService },
       ],
     }).compile();
 

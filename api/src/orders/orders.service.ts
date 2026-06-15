@@ -23,6 +23,7 @@ import { buildFlutterwaveCheckoutEmail } from '../payments/flutterwave-payment-m
 import { buildCheckoutSplitPayload } from '../payments/flutterwave-split.util';
 import { buildFlutterwaveReference } from '../payments/flutterwave-reference.util';
 import { PaymentsService } from '../payments/payments.service';
+import { LowStockAlertService } from '../notifications/low-stock-alert.service';
 import { PlanEntitlementService } from '../plans/plan-entitlement.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { OrderDeliveredEvent } from './events/order-delivered.event';
@@ -54,6 +55,7 @@ export class OrdersService {
     private readonly flutterwave: FlutterwaveService,
     private readonly paymentsService: PaymentsService,
     private readonly planEntitlementService: PlanEntitlementService,
+    private readonly lowStockAlertService: LowStockAlertService,
   ) {}
 
   async checkout(dto: CheckoutPaymentDto, storeSlug: string) {
@@ -592,6 +594,21 @@ export class OrdersService {
       });
       throw new ConflictException(
         `"${product?.name ?? productId}" is out of stock or has insufficient quantity`,
+      );
+    }
+
+    const product = await tx.product.findFirst({
+      where: { id: productId, storeId },
+    });
+    if (product) {
+      await this.lowStockAlertService.notifyIfNeeded(
+        storeId,
+        {
+          name: product.name,
+          stock: product.stock,
+          lowStockThreshold: product.lowStockThreshold,
+        },
+        product.stock + quantity,
       );
     }
   }

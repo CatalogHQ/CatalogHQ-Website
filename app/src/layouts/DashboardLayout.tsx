@@ -37,12 +37,13 @@ import CatalogHqLogo from "@/components/brand/CatalogHqLogo";
 import SubscriptionPaywallBanner from "@/components/vendor/SubscriptionPaywallBanner";
 import { useVendorEntitlements } from "@/hooks/use-vendor-entitlements";
 import { getStoreUrl } from "@/lib/slug";
+import { getLowStockProducts } from "@/lib/sales-analytics";
 
 const navItems = [
   { title: "Overview", href: "/dashboard", icon: LayoutDashboard },
   { title: "Orders", href: "/dashboard/orders", icon: ClipboardList, badge: true },
   { title: "Products", href: "/dashboard/products", icon: Package },
-  { title: "Inventory", href: "/dashboard/inventory", icon: Warehouse },
+  { title: "Inventory", href: "/dashboard/inventory", icon: Warehouse, lowStockBadge: true },
   { title: "Analytics", href: "/dashboard/analytics", icon: BarChart3 },
   { title: "Payouts", href: "/dashboard/payouts", icon: Wallet },
   { title: "Billing", href: "/dashboard/billing", icon: CreditCard },
@@ -53,8 +54,11 @@ export default function DashboardLayout() {
   const location = useLocation();
   const navigate = useNavigate();
   const { signOut, isAdmin, user } = useAuth();
-  const { store, unreadOrderCount } = useVendor();
-  const { isHardBlocked, subscriptionExempt } = useVendorEntitlements();
+  const { store, unreadOrderCount, products } = useVendor();
+  const { isHardBlocked, subscriptionExempt, canUseFeature } = useVendorEntitlements();
+  const lowStockCount = canUseFeature("low-stock-alerts")
+    ? getLowStockProducts(products).length
+    : 0;
   const subscriptionPending = user?.subscription?.status === "pending";
 
   const billingOnly =
@@ -109,6 +113,11 @@ export default function DashboardLayout() {
                         {item.badge && unreadOrderCount > 0 && (
                           <SidebarMenuBadge className="bg-whatsapp-green text-white">
                             {unreadOrderCount}
+                          </SidebarMenuBadge>
+                        )}
+                        {item.lowStockBadge && lowStockCount > 0 && (
+                          <SidebarMenuBadge className="bg-amber-500 text-white">
+                            {lowStockCount}
                           </SidebarMenuBadge>
                         )}
                       </Link>

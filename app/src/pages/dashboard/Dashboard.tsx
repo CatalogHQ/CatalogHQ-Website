@@ -32,7 +32,7 @@ import { cn } from "@/lib/utils";
 
 export default function Dashboard() {
   const { store, products, orders, unreadOrderCount } = useVendor();
-  const { paidPlanTier } = useVendorEntitlements();
+  const { paidPlanTier, canUseFeature } = useVendorEntitlements();
   const { getProductLimit } = usePlanCatalog();
   const planTier = paidPlanTier;
   const [salesPeriod, setSalesPeriod] = useState<"month" | "all">("month");
@@ -80,9 +80,7 @@ export default function Dashboard() {
 
   const productLimit = planTier ? getProductLimit(planTier) : 0;
   const hasAnalytics = planTier ? hasFeature(planTier, "analytics-dashboard") : false;
-  const hasLowStockAlerts = planTier
-    ? hasFeature(planTier, "low-stock-alerts")
-    : false;
+  const hasLowStockAlerts = canUseFeature("low-stock-alerts");
   const lowStockCount = hasLowStockAlerts
     ? getLowStockProducts(products).length
     : 0;

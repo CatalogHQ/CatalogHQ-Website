@@ -3,9 +3,9 @@ import { ConfigService } from '@nestjs/config';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { OrderStatus, PaymentStatus, PayoutStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
-import { ORDER_CREATED_EVENT, LOW_STOCK_EVENT } from '../orders/events/order.events';
+import { ORDER_CREATED_EVENT } from '../orders/events/order.events';
 import { OrderCreatedEvent } from '../orders/events/order-created.event';
-import { LowStockEvent } from '../orders/events/low-stock.event';
+import { LowStockAlertService } from '../notifications/low-stock-alert.service';
 import { flutterwaveAmountMatchesNaira } from './flutterwave-amount.util';
 import { buildFlutterwaveReference } from './flutterwave-reference.util';
 import { buildCheckoutSplitPayload } from './flutterwave-split.util';
@@ -21,6 +21,7 @@ export class PaymentsService {
     private readonly flutterwave: FlutterwaveService,
     private readonly eventEmitter: EventEmitter2,
     private readonly configService: ConfigService,
+    private readonly lowStockAlertService: LowStockAlertService,
   ) {}
 
   async markWebhookProcessed(txRef: string): Promise<boolean> {
@@ -144,17 +145,15 @@ export class PaymentsService {
     });
     if (!product) return;
 
-    if (product.stock <= product.lowStockThreshold) {
-      const store = await tx.store.findUnique({
-        where: { vendorId: storeId },
-      });
-      if (store?.whatsapp) {
-        this.eventEmitter.emit(
-          LOW_STOCK_EVENT,
-          new LowStockEvent(store.whatsapp, product.name, product.stock),
-        );
-      }
-    }
+    await this.lowStockAlertService.notifyIfNeeded(
+      storeId,
+      {
+        name: product.name,
+        stock: product.stock,
+        lowStockThreshold: product.lowStockThreshold,
+      },
+      product.stock + quantity,
+    );
   }
 
   async markPayoutSettled(gatewayReference: string): Promise<void> {

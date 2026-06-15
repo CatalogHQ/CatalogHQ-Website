@@ -20,9 +20,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import FeatureUpgradeBanner from "@/components/vendor/FeatureUpgradeBanner";
-import { useAuth } from "@/contexts/AuthContext";
 import { useVendor } from "@/contexts/VendorContext";
-import { hasFeature } from "@/data/plans";
+import { useVendorEntitlements } from "@/hooks/use-vendor-entitlements";
 import {
   getInStockCount,
   getInventoryStatus,
@@ -42,19 +41,15 @@ const STATUS_LABELS = {
 };
 
 export default function Inventory() {
-  const { user } = useAuth();
   const { products } = useVendor();
+  const { canUseFeature } = useVendorEntitlements();
   const [locationProductId, setLocationProductId] = useState("");
   const [locationName, setLocationName] = useState("");
   const [locationStock, setLocationStock] = useState("");
-  const planTier = user?.planTier ?? "starter";
-  const hasBasicInventory = hasFeature(planTier, "basic-inventory-tracking");
-  const hasAdvancedInventory = hasFeature(
-    planTier,
-    "advanced-inventory-tracking",
-  );
-  const hasLowStockAlerts = hasFeature(planTier, "low-stock-alerts");
-  const hasMultiLocation = hasFeature(planTier, "multi-location-stock");
+  const hasBasicInventory = canUseFeature("basic-inventory-tracking");
+  const hasAdvancedInventory = canUseFeature("advanced-inventory-tracking");
+  const hasLowStockAlerts = canUseFeature("low-stock-alerts");
+  const hasMultiLocation = canUseFeature("multi-location-stock");
 
   const lowStockProducts = hasLowStockAlerts
     ? getLowStockProducts(products)
