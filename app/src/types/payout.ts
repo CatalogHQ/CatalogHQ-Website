@@ -24,6 +24,11 @@ export type VendorPayoutAccount = {
   verificationStatus?: VendorVerificationStatus;
 };
 
+export type ResolvedPayoutAccount = {
+  accountNumber: string;
+  accountName: string;
+};
+
 export type UpdatePayoutInput = {
   bankCode: string;
   accountNumber: string;

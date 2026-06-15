@@ -32,3 +32,19 @@ export function isFlutterwaveSandboxBankRestrictionMessage(
 
   return message.toLowerCase().includes('only 044 is allowed');
 }
+
+/** Subaccount id from sandbox or another Flutterwave merchant account. */
+export function isFlutterwaveStaleSubaccountMessage(
+  message: string | undefined,
+): boolean {
+  if (!message) {
+    return false;
+  }
+
+  const lower = message.toLowerCase();
+  return (
+    lower.includes('merchant not found') ||
+    lower.includes('subaccount not found') ||
+    lower.includes('invalid subaccount')
+  );
+}

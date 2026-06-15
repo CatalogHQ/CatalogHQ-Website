@@ -3,6 +3,7 @@ import type { PayoutRepository } from "@/lib/repositories/payout-repository";
 import type { CustomerOrder } from "@/types/orders";
 import type {
   PayoutBanksResponse,
+  ResolvedPayoutAccount,
   UpdatePayoutInput,
   VendorPayoutAccount,
 } from "@/types/payout";
@@ -14,6 +15,13 @@ export class ApiPayoutRepository implements PayoutRepository {
 
   getAccount(): Promise<VendorPayoutAccount> {
     return apiClient<VendorPayoutAccount>("/stores/me/payout");
+  }
+
+  resolveAccount(input: UpdatePayoutInput): Promise<ResolvedPayoutAccount> {
+    return apiClient<ResolvedPayoutAccount>("/stores/me/payout/resolve", {
+      method: "POST",
+      body: JSON.stringify(input),
+    });
   }
 
   updateAccount(input: UpdatePayoutInput): Promise<VendorPayoutAccount> {

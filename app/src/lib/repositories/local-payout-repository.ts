@@ -8,6 +8,7 @@ import type { CustomerOrder } from "@/types/orders";
 import type {
   PayoutBank,
   PayoutBanksResponse,
+  ResolvedPayoutAccount,
   UpdatePayoutInput,
   VendorPayoutAccount,
 } from "@/types/payout";
@@ -65,6 +66,30 @@ export class LocalPayoutRepository implements PayoutRepository {
       payoutSetupComplete: payout?.payoutSetupComplete ?? false,
       payoutSetupAt: payout?.payoutSetupAt,
       verificationStatus: store?.verificationStatus,
+    };
+  }
+
+  async resolveAccount(input: UpdatePayoutInput): Promise<ResolvedPayoutAccount> {
+    const session = authRepository.getSession();
+    if (!session) {
+      throw new Error("Sign in required.");
+    }
+
+    const store = await storeRepository.getByVendorId(session.userId);
+    if (store?.verificationStatus !== "verified") {
+      throw new Error(
+        "Your store must be verified before checking a payout bank account.",
+      );
+    }
+
+    const bank = MOCK_BANKS.find((entry) => entry.code === input.bankCode);
+    if (!bank) {
+      throw new Error("Select a valid bank.");
+    }
+
+    return {
+      accountNumber: input.accountNumber,
+      accountName: "Demo Vendor Account",
     };
   }
 

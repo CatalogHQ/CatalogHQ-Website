@@ -40,6 +40,30 @@ export class VendorPayoutService {
     return this.toPayoutAccountDto(store);
   }
 
+  async resolvePayoutAccount(
+    vendorId: string,
+    dto: UpdatePayoutDto,
+  ): Promise<{ accountNumber: string; accountName: string }> {
+    const store = await this.prisma.store.findUnique({
+      where: { vendorId },
+    });
+
+    if (!store) {
+      throw new NotFoundException('Store not found.');
+    }
+
+    if (store.verificationStatus !== VendorVerificationStatus.verified) {
+      throw new BadRequestException(
+        'Your store must be verified before checking a payout bank account.',
+      );
+    }
+
+    const bank = await this.findPayoutBank(dto.bankCode);
+    const accountNumber = dto.accountNumber.trim();
+
+    return this.subaccountService.resolveAccount(bank.code, accountNumber);
+  }
+
   async updatePayoutAccount(
     vendorId: string,
     dto: UpdatePayoutDto,
@@ -59,18 +83,7 @@ export class VendorPayoutService {
     }
 
     const banksResponse = await this.subaccountService.listBanks();
-    const normalizedBankCode = dto.bankCode.trim();
-    const bank = banksResponse.banks.find(
-      (entry) => entry.code === normalizeNigerianBankCode(normalizedBankCode),
-    );
-    if (!bank) {
-      throw new BadRequestException(
-        banksResponse.sandboxMode
-          ? 'Flutterwave test mode only supports Access Bank (044) for payout setup.'
-          : 'Select a valid bank.',
-      );
-    }
-
+    const bank = await this.findPayoutBank(dto.bankCode, banksResponse);
     const accountNumber = dto.accountNumber.trim();
     const resolved = await this.subaccountService.resolveAccount(
       bank.code,
@@ -113,6 +126,27 @@ export class VendorPayoutService {
     });
 
     return orders.map(toOrderDto);
+  }
+
+  private async findPayoutBank(
+    bankCode: string,
+    banksResponse?: Awaited<ReturnType<FlutterwaveSubaccountService['listBanks']>>,
+  ) {
+    const response =
+      banksResponse ?? (await this.subaccountService.listBanks());
+    const bank = response.banks.find(
+      (entry) => entry.code === normalizeNigerianBankCode(bankCode.trim()),
+    );
+
+    if (!bank) {
+      throw new BadRequestException(
+        response.sandboxMode
+          ? 'Flutterwave test mode only supports Access Bank (044) for payout setup.'
+          : 'Select a valid bank.',
+      );
+    }
+
+    return bank;
   }
 
   private toPayoutAccountDto(store: {

@@ -2,6 +2,7 @@ import {
   FLUTTERWAVE_SANDBOX_BANK_CODE,
   isFlutterwaveSandbox,
   isFlutterwaveSandboxBankRestrictionMessage,
+  isFlutterwaveStaleSubaccountMessage,
   normalizeNigerianBankCode,
 } from './flutterwave-bank.util';
 
@@ -23,6 +24,16 @@ describe('flutterwave-bank.util', () => {
   it('treats non-production env as sandbox', () => {
     expect(isFlutterwaveSandbox('sandbox')).toBe(true);
     expect(isFlutterwaveSandbox('production')).toBe(false);
+  });
+
+  it('detects stale subaccount errors after env or account switch', () => {
+    expect(isFlutterwaveStaleSubaccountMessage('Merchant not found')).toBe(
+      true,
+    );
+    expect(isFlutterwaveStaleSubaccountMessage('Subaccount not found')).toBe(
+      true,
+    );
+    expect(isFlutterwaveStaleSubaccountMessage('Invalid bank')).toBe(false);
   });
 
   it('uses 044 as sandbox bank code constant', () => {

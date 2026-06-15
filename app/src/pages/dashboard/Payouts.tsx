@@ -3,6 +3,7 @@ import { Link } from "react-router";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
+import { AlertCircle, CheckCircle2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -37,7 +38,7 @@ import { formatNaira } from "@/lib/format";
 import { payoutSetupSchema, type PayoutSetupFormValues } from "@/lib/payout-schemas";
 import { payoutRepository } from "@/lib/repositories";
 import type { CustomerOrder } from "@/types/orders";
-import type { PayoutBank, VendorPayoutAccount } from "@/types/payout";
+import type { PayoutBank, ResolvedPayoutAccount, VendorPayoutAccount } from "@/types/payout";
 
 const PAYOUT_STATUS_LABELS: Record<
   NonNullable<CustomerOrder["payoutStatus"]>,
@@ -59,6 +60,10 @@ export default function Payouts() {
   const [history, setHistory] = useState<CustomerOrder[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isResolving, setIsResolving] = useState(false);
+  const [resolvedAccount, setResolvedAccount] =
+    useState<ResolvedPayoutAccount | null>(null);
+  const [resolveError, setResolveError] = useState<string | null>(null);
 
   const form = useForm<PayoutSetupFormValues>({
     resolver: zodResolver(payoutSetupSchema),
@@ -113,7 +118,57 @@ export default function Payouts() {
     };
   }, [form]);
 
+  const bankCode = form.watch("bankCode");
+  const accountNumber = form.watch("accountNumber");
+  const canResolveAccount =
+    Boolean(bankCode) && /^\d{10}$/.test(accountNumber ?? "");
+  const resolvedMatchesForm =
+    resolvedAccount?.accountNumber === accountNumber &&
+    canResolveAccount;
+
+  useEffect(() => {
+    if (!canResolveAccount) {
+      setResolvedAccount(null);
+      setResolveError(null);
+      setIsResolving(false);
+      return;
+    }
+
+    setResolvedAccount(null);
+    setResolveError(null);
+    setIsResolving(true);
+
+    const timeoutId = window.setTimeout(() => {
+      void payoutRepository
+        .resolveAccount({ bankCode, accountNumber })
+        .then((result) => {
+          setResolvedAccount(result);
+          setResolveError(null);
+        })
+        .catch((error) => {
+          setResolvedAccount(null);
+          setResolveError(
+            error instanceof Error
+              ? error.message
+              : "Could not verify this bank account.",
+          );
+        })
+        .finally(() => {
+          setIsResolving(false);
+        });
+    }, 500);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [bankCode, accountNumber, canResolveAccount]);
+
   const onSubmit = async (values: PayoutSetupFormValues) => {
+    if (!resolvedMatchesForm) {
+      toast.error("Confirm the account holder name before linking.");
+      return;
+    }
+
     setIsSaving(true);
     try {
       const updated = await payoutRepository.updateAccount(values);
@@ -125,6 +180,8 @@ export default function Payouts() {
         bankCode: updated.bankCode ?? values.bankCode,
         accountNumber: "",
       });
+      setResolvedAccount(null);
+      setResolveError(null);
     } catch (error) {
       toast.error(
         error instanceof Error
@@ -261,9 +318,47 @@ export default function Payouts() {
                 />
 
                 <div className="sm:col-span-2">
+                  {isResolving ? (
+                    <div className="flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600">
+                      <Spinner className="size-4 text-whatsapp-green" />
+                      Checking account holder name...
+                    </div>
+                  ) : null}
+
+                  {!isResolving && resolvedMatchesForm && resolvedAccount ? (
+                    <div className="rounded-lg border border-whatsapp-green/30 bg-whatsapp-green/5 px-4 py-3 text-sm">
+                      <div className="flex items-start gap-2">
+                        <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-whatsapp-green" />
+                        <div>
+                          <p className="font-medium text-gray-900">
+                            Account holder: {resolvedAccount.accountName}
+                          </p>
+                          <p className="mt-1 text-gray-600">
+                            Confirm this name matches your bank account before
+                            linking.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ) : null}
+
+                  {!isResolving && resolveError && canResolveAccount ? (
+                    <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900">
+                      <AlertCircle className="mt-0.5 size-4 shrink-0" />
+                      <p>{resolveError}</p>
+                    </div>
+                  ) : null}
+                </div>
+
+                <div className="sm:col-span-2">
                   <Button
                     type="submit"
-                    disabled={isSaving}
+                    disabled={
+                      isSaving ||
+                      isResolving ||
+                      !resolvedMatchesForm ||
+                      Boolean(resolveError)
+                    }
                     className="bg-whatsapp-green hover:bg-whatsapp-green/90"
                   >
                     {account.payoutSetupComplete

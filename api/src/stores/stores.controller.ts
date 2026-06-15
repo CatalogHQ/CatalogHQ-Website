@@ -171,6 +171,14 @@ export class StoresController {
     return this.vendorPayoutService.getPayoutAccount(user.id);
   }
 
+  @Post('me/payout/resolve')
+  resolvePayoutAccount(
+    @CurrentUser() user: User,
+    @Body() dto: UpdatePayoutDto,
+  ) {
+    return this.vendorPayoutService.resolvePayoutAccount(user.id, dto);
+  }
+
   @Put('me/payout')
   updatePayoutAccount(
     @CurrentUser() user: User,

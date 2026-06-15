@@ -12,6 +12,7 @@ import {
   FLUTTERWAVE_SANDBOX_TEST_ACCOUNT_NUMBERS,
   isFlutterwaveSandbox,
   isFlutterwaveSandboxBankRestrictionMessage,
+  isFlutterwaveStaleSubaccountMessage,
   normalizeNigerianBankCode,
 } from './flutterwave-bank.util';
 
@@ -200,14 +201,27 @@ export class FlutterwaveSubaccountService {
     };
 
     if (store.flutterwaveSubaccountId) {
-      await this.request<V3Subaccount>(
+      const updateResult = await this.requestResult<V3Subaccount>(
         `/subaccounts/${encodeURIComponent(store.flutterwaveSubaccountId)}`,
         {
           method: 'PUT',
           body,
         },
       );
-      return store.flutterwaveSubaccountId;
+
+      if (updateResult.ok) {
+        return store.flutterwaveSubaccountId;
+      }
+
+      if (!isFlutterwaveStaleSubaccountMessage(updateResult.message)) {
+        throw new InternalServerErrorException(
+          updateResult.message ?? 'Could not update payout account.',
+        );
+      }
+
+      this.logger.warn(
+        `Stale Flutterwave subaccount ${store.flutterwaveSubaccountId}; creating a new one for vendor ${store.vendorId}.`,
+      );
     }
 
     const created = await this.request<V3Subaccount>('/subaccounts', {
@@ -237,13 +251,13 @@ export class FlutterwaveSubaccountService {
     ];
   }
 
-  private async request<T>(
+  private async requestResult<T>(
     path: string,
     options: {
       method: string;
       body?: Record<string, unknown>;
     },
-  ): Promise<T> {
+  ): Promise<{ ok: true; data: T } | { ok: false; message?: string }> {
     if (!this.secretKey) {
       throw new ServiceUnavailableException(
         'Payout setup is not configured. Set FLUTTERWAVE_SECRET_KEY.',
@@ -271,18 +285,33 @@ export class FlutterwaveSubaccountService {
       this.logger.error(
         `Flutterwave v3 ${options.method} ${path} failed: ${json.message ?? response.status}`,
       );
+      return { ok: false, message: json.message };
+    }
 
-      if (isFlutterwaveSandboxBankRestrictionMessage(json.message)) {
-        throw new BadRequestException(
-          'Flutterwave test mode only supports Access Bank (044) with Flutterwave sandbox test account numbers.',
-        );
-      }
+    return { ok: true, data: json.data as T };
+  }
 
-      throw new InternalServerErrorException(
-        json.message ?? 'Could not complete payout request.',
+  private async request<T>(
+    path: string,
+    options: {
+      method: string;
+      body?: Record<string, unknown>;
+    },
+  ): Promise<T> {
+    const result = await this.requestResult<T>(path, options);
+
+    if (result.ok) {
+      return result.data;
+    }
+
+    if (isFlutterwaveSandboxBankRestrictionMessage(result.message)) {
+      throw new BadRequestException(
+        'Flutterwave test mode only supports Access Bank (044) with Flutterwave sandbox test account numbers.',
       );
     }
 
-    return json.data as T;
+    throw new InternalServerErrorException(
+      result.message ?? 'Could not complete payout request.',
+    );
   }
 }

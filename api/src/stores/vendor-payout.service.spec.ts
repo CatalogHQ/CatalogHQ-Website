@@ -106,6 +106,32 @@ describe('VendorPayoutService', () => {
     expect(result.flutterwaveSubaccountId).toBe('RS_VENDOR_1');
   });
 
+  it('resolves account holder name for verified vendors', async () => {
+    prisma.store.findUnique.mockResolvedValue({
+      vendorId: 'vendor-1',
+      verificationStatus: VendorVerificationStatus.verified,
+    });
+    subaccountService.listBanks.mockResolvedValue({
+      banks: [{ code: '044', name: 'Access Bank' }],
+      sandboxMode: false,
+    });
+    subaccountService.resolveAccount.mockResolvedValue({
+      accountNumber: '0123456789',
+      accountName: 'Ada Lovelace',
+    });
+
+    const result = await service.resolvePayoutAccount('vendor-1', {
+      bankCode: '044',
+      accountNumber: '0123456789',
+    });
+
+    expect(result.accountName).toBe('Ada Lovelace');
+    expect(subaccountService.resolveAccount).toHaveBeenCalledWith(
+      '044',
+      '0123456789',
+    );
+  });
+
   it('throws when store is missing', async () => {
     prisma.store.findUnique.mockResolvedValue(null);
 
