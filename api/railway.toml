@@ -3,5 +3,5 @@ builder = "dockerfile"
 dockerfilePath = "Dockerfile"
 
 [deploy]
-startCommand = "node dist/main"
+startCommand = "npm run start:prod"
 restartPolicyType = "ON_FAILURE"
