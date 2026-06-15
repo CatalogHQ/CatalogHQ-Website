@@ -28,7 +28,10 @@ import {
   CHECKOUT_PAYMENT_METHOD,
   savePendingPaymentDetails,
 } from "@/lib/flutterwave-payment-methods";
-import { saveOrderPhoneLastFour } from "@/lib/order-phone-session";
+import {
+  buildOrderRefQuery,
+  saveOrderPhoneLastFour,
+} from "@/lib/order-phone-session";
 import { formatNaira } from "@/lib/format";
 import { computeCheckoutPricing } from "@/lib/flutterwave-fees";
 import CheckoutPricingSummary from "@/components/storefront/CheckoutPricingSummary";
@@ -173,17 +176,16 @@ export default function FlutterwaveCheckout({
         result.payment.paymentInstruction ||
         result.payment.virtualAccount
       ) {
+        const normalizedPhone = values.customerPhone.trim().replace(/\D/g, "");
         savePendingPaymentDetails(result.order.paymentRef, {
           paymentInstruction: result.payment.paymentInstruction,
           virtualAccount: result.payment.virtualAccount,
+          totalPaid: result.order.totalPaid,
         });
-        saveOrderPhoneLastFour(
-          result.order.paymentRef,
-          values.customerPhone.trim(),
-        );
+        saveOrderPhoneLastFour(result.order.paymentRef, normalizedPhone);
         form.reset();
         onOpenChange(false);
-        window.location.href = `/s/${storeSlug}/order/${result.order.paymentRef}`;
+        window.location.href = `/s/${storeSlug}/order/${result.order.paymentRef}${buildOrderRefQuery(normalizedPhone)}`;
         return;
       }
 

@@ -13,6 +13,7 @@ export type PendingPaymentDetails = {
     bankName: string;
     expiresAt?: string;
   };
+  totalPaid?: number;
 };
 
 const PENDING_PAYMENT_PREFIX = "cataloghq_pending_payment_";

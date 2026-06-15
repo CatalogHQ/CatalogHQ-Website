@@ -224,6 +224,88 @@ export default function OrderStatusPage() {
     );
   }
 
+  const pendingCheckoutPayment = loadPendingPaymentDetails(paymentRef);
+
+  if (!order && store && pendingCheckoutPayment && phoneLastFour) {
+    return (
+      <StorefrontLayout store={store} supportOrderRef={paymentRef}>
+        <div className="mx-auto max-w-lg space-y-6">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Complete your payment</h1>
+            <p className="mt-1 text-gray-600">
+              Order ref: <span className="font-medium">{paymentRef}</span>
+            </p>
+          </div>
+
+          {pendingCheckoutPayment.virtualAccount && (
+            <Card className="border-[#F5A623]/40 bg-orange-50">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">Complete your bank transfer</CardTitle>
+                <CardDescription>
+                  {pendingCheckoutPayment.totalPaid
+                    ? `Transfer exactly ${formatNaira(pendingCheckoutPayment.totalPaid)} to the account below.`
+                    : "Transfer to the account below to complete your order."}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-2 text-sm">
+                <p>
+                  <span className="text-gray-500">Bank: </span>
+                  <span className="font-medium">
+                    {pendingCheckoutPayment.virtualAccount.bankName}
+                  </span>
+                </p>
+                <p>
+                  <span className="text-gray-500">Account number: </span>
+                  <span className="font-mono font-semibold">
+                    {pendingCheckoutPayment.virtualAccount.accountNumber}
+                  </span>
+                </p>
+                {pendingCheckoutPayment.virtualAccount.expiresAt && (
+                  <p className="text-xs text-gray-600">
+                    Account expires{" "}
+                    {new Date(
+                      pendingCheckoutPayment.virtualAccount.expiresAt,
+                    ).toLocaleString("en-NG")}
+                  </p>
+                )}
+                {pendingCheckoutPayment.paymentInstruction && (
+                  <p className="text-gray-700">
+                    {pendingCheckoutPayment.paymentInstruction}
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {pendingCheckoutPayment.paymentInstruction &&
+            !pendingCheckoutPayment.virtualAccount && (
+              <Card className="border-[#F5A623]/40 bg-orange-50">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base">Payment instructions</CardTitle>
+                </CardHeader>
+                <CardContent className="text-sm text-gray-800">
+                  {pendingCheckoutPayment.paymentInstruction}
+                </CardContent>
+              </Card>
+            )}
+
+          <p className="text-sm text-gray-600">
+            We saved your payment details. This page will refresh when your order
+            is ready to track.
+          </p>
+
+          <Button
+            type="button"
+            className="w-full bg-whatsapp-green hover:bg-whatsapp-dark"
+            onClick={() => window.location.reload()}
+          >
+            Refresh order status
+          </Button>
+        </div>
+      </StorefrontLayout>
+    );
+  }
+
   if (!isValid || !order || !store) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-gray-50 px-4 text-center">
