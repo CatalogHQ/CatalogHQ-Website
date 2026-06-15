@@ -8,6 +8,10 @@ class FlutterwaveWebhookDataDto {
 
   @IsOptional()
   @IsString()
+  tx_ref?: string;
+
+  @IsOptional()
+  @IsString()
   status?: string;
 
   @IsOptional()
@@ -23,6 +27,10 @@ export class FlutterwaveWebhookDto {
   @IsOptional()
   @IsString()
   type?: string;
+
+  @IsOptional()
+  @IsString()
+  event?: string;
 
   @IsOptional()
   @ValidateNested()

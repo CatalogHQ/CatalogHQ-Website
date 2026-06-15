@@ -12,6 +12,12 @@ import { Public } from '../common/decorators/public.decorator';
 import { VendorSubscriptionService } from '../subscriptions/vendor-subscription.service';
 import { FlutterwaveWebhookDto } from './dto/flutterwave-webhook.dto';
 import { FlutterwaveService } from './flutterwave.service';
+import {
+  isChargeCompletedEvent,
+  isChargeFailedEvent,
+  isSuccessfulPaymentStatus,
+  normalizeFlutterwaveWebhook,
+} from './flutterwave-webhook.util';
 import { PaymentsService } from './payments.service';
 
 @Controller('payments')
@@ -37,53 +43,48 @@ export class PaymentsController {
 
     this.flutterwaveService.verifyWebhookSignature(rawBody, signature);
 
-    const txRef = body.data?.reference;
-    if (!txRef) {
+    const normalized = normalizeFlutterwaveWebhook(body);
+    if (!normalized) {
       throw new BadRequestException('Missing transaction reference');
     }
 
-    const alreadyProcessed = await this.paymentsService.markWebhookProcessed(txRef);
+    const { eventType, reference, status, amount, currency } = normalized;
+
+    const alreadyProcessed = await this.paymentsService.markWebhookProcessed(reference);
     if (alreadyProcessed) {
       return { received: true, note: 'Already processed' };
     }
 
     if (
-      body.type === 'charge.completed' &&
-      body.data?.status === 'succeeded' &&
-      body.data?.reference
+      isChargeCompletedEvent(eventType) &&
+      isSuccessfulPaymentStatus(status)
     ) {
-      if (
-        this.vendorSubscriptionService.isSubscriptionReference(body.data.reference)
-      ) {
-        await this.vendorSubscriptionService.activateFromPayment(
-          body.data.reference,
-          {
-            amountKobo: body.data.amount,
-            currency: body.data.currency,
-          },
-        );
+      if (this.vendorSubscriptionService.isSubscriptionReference(reference)) {
+        await this.vendorSubscriptionService.activateFromPayment(reference, {
+          amountKobo: amount,
+          currency,
+        });
       } else {
-        await this.paymentsService.confirmPayment(body.data.reference, {
-          amount: body.data.amount,
-          currency: body.data.currency,
+        await this.paymentsService.confirmPayment(reference, {
+          amount,
+          currency,
         });
       }
     }
 
     if (
-      body.type === 'charge.failed' &&
-      body.data?.reference &&
-      this.vendorSubscriptionService.isSubscriptionReference(body.data.reference)
+      isChargeFailedEvent(eventType) &&
+      this.vendorSubscriptionService.isSubscriptionReference(reference)
     ) {
-      await this.vendorSubscriptionService.markPaymentFailed(body.data.reference);
+      await this.vendorSubscriptionService.markPaymentFailed(reference);
     }
 
     if (
-      (body.type === 'transfer.completed' ||
-        body.type === 'settlement.completed') &&
-      body.data?.reference
+      (eventType === 'transfer.completed' ||
+        eventType === 'settlement.completed') &&
+      reference
     ) {
-      await this.paymentsService.markPayoutSettled(body.data.reference);
+      await this.paymentsService.markPayoutSettled(reference);
     }
 
     return { received: true };

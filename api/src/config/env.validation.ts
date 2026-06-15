@@ -149,9 +149,26 @@ export function validateEnv(config: Record<string, unknown>) {
         'NIN_ENCRYPTION_KEY must be a 64-character hex string in production',
       );
     }
-    const webhookSecret = config.FLUTTERWAVE_WEBHOOK_SECRET;
-    if (typeof webhookSecret !== 'string' || !webhookSecret.trim()) {
-      throw new Error('FLUTTERWAVE_WEBHOOK_SECRET is required in production');
+
+    if (config.FLUTTERWAVE_ENV !== 'production') {
+      throw new Error(
+        'FLUTTERWAVE_ENV must be production when NODE_ENV is production',
+      );
+    }
+
+    const requiredFlutterwaveKeys = [
+      'FLUTTERWAVE_CLIENT_ID',
+      'FLUTTERWAVE_CLIENT_SECRET',
+      'FLUTTERWAVE_SECRET_KEY',
+      'FLUTTERWAVE_WEBHOOK_SECRET',
+      'FLUTTERWAVE_CALLBACK_BASE_URL',
+    ] as const;
+
+    for (const key of requiredFlutterwaveKeys) {
+      const value = config[key];
+      if (typeof value !== 'string' || !value.trim()) {
+        throw new Error(`${key} is required in production`);
+      }
     }
   }
 
