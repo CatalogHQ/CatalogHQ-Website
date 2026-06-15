@@ -210,17 +210,111 @@ export class FlutterwaveService {
   async verifyTransaction(
     reference: string,
     expectedAmount?: number,
+    options?: {
+      chargeId?: string;
+      alternateReferences?: string[];
+      retryDelaysMs?: number[];
+    },
   ): Promise<boolean> {
     if (!this.auth.isConfigured()) {
       return true;
     }
 
-    const v4Verified = await this.verifyV4Charge(reference, expectedAmount);
-    if (v4Verified) {
-      return true;
+    const references = [
+      reference,
+      ...(options?.alternateReferences ?? []).filter(
+        (candidate) => candidate && candidate !== reference,
+      ),
+    ];
+    const retryDelaysMs = options?.retryDelaysMs ?? [0, 1_500, 3_000, 5_000];
+
+    for (const delayMs of retryDelaysMs) {
+      if (delayMs > 0) {
+        await sleep(delayMs);
+      }
+
+      if (options?.chargeId) {
+        const byChargeId = await this.verifyV4ChargeById(
+          options.chargeId,
+          expectedAmount,
+        );
+        if (byChargeId) {
+          return true;
+        }
+      }
+
+      for (const candidate of references) {
+        const v4Verified = await this.verifyV4Charge(candidate, expectedAmount);
+        if (v4Verified) {
+          return true;
+        }
+
+        const v3Verified = await this.verifyV3Transaction(
+          candidate,
+          expectedAmount,
+        );
+        if (v3Verified) {
+          return true;
+        }
+      }
     }
 
-    return this.verifyV3Transaction(reference, expectedAmount);
+    return false;
+  }
+
+  private chargeMatchesExpectedAmount(
+    charge: ChargeData,
+    reference: string,
+    expectedAmount?: number,
+  ): boolean {
+    if (!charge || charge.status !== 'succeeded') {
+      return false;
+    }
+
+    if (charge.reference && charge.reference !== reference) {
+      this.logger.warn(
+        `Flutterwave charge reference mismatch: expected ${reference}, got ${charge.reference}`,
+      );
+      return false;
+    }
+
+    if (expectedAmount !== undefined) {
+      if (!flutterwaveAmountMatchesNaira(expectedAmount, charge.amount)) {
+        this.logger.warn(
+          `Flutterwave charge amount mismatch for ${reference}: expected ${expectedAmount}, got ${charge.amount}`,
+        );
+        return false;
+      }
+      if (charge.currency && charge.currency !== 'NGN') {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  private async verifyV4ChargeById(
+    chargeId: string,
+    expectedAmount?: number,
+  ): Promise<boolean> {
+    try {
+      const charge = await this.request<ChargeData>(
+        `/charges/${encodeURIComponent(chargeId)}`,
+        { method: 'GET' },
+      );
+
+      if (!charge?.reference) {
+        return this.chargeMatchesExpectedAmount(charge, chargeId, expectedAmount);
+      }
+
+      return this.chargeMatchesExpectedAmount(
+        charge,
+        charge.reference,
+        expectedAmount,
+      );
+    } catch {
+      return false;
+    }
   }
 
   private async verifyV4Charge(
@@ -234,30 +328,11 @@ export class FlutterwaveService {
       );
 
       const charge = Array.isArray(payload) ? payload[0] : undefined;
-      if (!charge || charge.status !== 'succeeded') {
+      if (!charge) {
         return false;
       }
 
-      if (charge.reference && charge.reference !== reference) {
-        this.logger.warn(
-          `Flutterwave charge reference mismatch: expected ${reference}, got ${charge.reference}`,
-        );
-        return false;
-      }
-
-      if (expectedAmount !== undefined) {
-        if (!flutterwaveAmountMatchesNaira(expectedAmount, charge.amount)) {
-          this.logger.warn(
-            `Flutterwave charge amount mismatch for ${reference}: expected ${expectedAmount}, got ${charge.amount}`,
-          );
-          return false;
-        }
-        if (charge.currency && charge.currency !== 'NGN') {
-          return false;
-        }
-      }
-
-      return true;
+      return this.chargeMatchesExpectedAmount(charge, reference, expectedAmount);
     } catch {
       return false;
     }

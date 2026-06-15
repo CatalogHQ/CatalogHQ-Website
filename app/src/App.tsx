@@ -1,4 +1,4 @@
-import { Routes, Route } from 'react-router'
+import { Routes, Route, Navigate } from 'react-router'
 import Home from './pages/Home'
 import SignUp from './pages/SignUp'
 import SignIn from './pages/SignIn'
@@ -135,7 +135,8 @@ export default function App() {
         <Route path="verification" element={<AdminVerification />} />
         <Route path="analytics" element={<AdminAnalytics />} />
         <Route path="plans" element={<AdminPlans />} />
-        <Route path="totp-setup" element={<AdminTotpSetup />} />
+        <Route path="totp/setup" element={<AdminTotpSetup />} />
+        <Route path="totp-setup" element={<Navigate to="/admin/totp/setup" replace />} />
       </Route>
 
       <Route path="*" element={<NotFound />} />

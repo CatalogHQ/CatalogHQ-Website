@@ -98,6 +98,8 @@ export class PaymentsController {
           currency,
           paymentRef: normalized.paymentRefHint,
           orderId: normalized.orderIdHint,
+          chargeId: normalized.chargeId,
+          fromWebhook: true,
         });
       }
     }

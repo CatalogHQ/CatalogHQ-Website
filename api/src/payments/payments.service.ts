@@ -89,6 +89,8 @@ export class PaymentsService {
       currency?: string;
       paymentRef?: string;
       orderId?: string;
+      chargeId?: string;
+      fromWebhook?: boolean;
     },
   ): Promise<void> {
     const order = await this.findOrderForPaymentNotification(
@@ -131,21 +133,37 @@ export class PaymentsService {
     const verified = await this.flutterwave.verifyTransaction(
       verifyReference,
       order.totalPaid,
+      {
+        chargeId: webhookHint?.chargeId,
+        alternateReferences: [
+          order.paymentRef,
+          buildFlutterwaveReference(order.paymentRef),
+          gatewayReference,
+        ],
+      },
     );
+
     if (!verified) {
-      this.logger.warn(
-        `Flutterwave verify failed for ${verifyReference} (order ${order.paymentRef})`,
-      );
-      await this.prisma.order.updateMany({
-        where: { id: order.id, paymentStatus: PaymentStatus.pending },
-        data: { paymentStatus: PaymentStatus.failed },
-      });
-      return;
+      if (webhookHint?.fromWebhook) {
+        this.logger.warn(
+          `Flutterwave API verify inconclusive for ${verifyReference} (order ${order.paymentRef}); confirming from signed charge.completed webhook.`,
+        );
+      } else {
+        this.logger.warn(
+          `Flutterwave verify failed for ${verifyReference} (order ${order.paymentRef})`,
+        );
+        return;
+      }
     }
 
     const confirmed = await this.prisma.$transaction(async (tx) => {
       const updated = await tx.order.updateMany({
-        where: { id: order.id, paymentStatus: PaymentStatus.pending },
+        where: {
+          id: order.id,
+          paymentStatus: {
+            in: [PaymentStatus.pending, PaymentStatus.failed],
+          },
+        },
         data: {
           paymentStatus: PaymentStatus.paid,
           status: OrderStatus.paid,

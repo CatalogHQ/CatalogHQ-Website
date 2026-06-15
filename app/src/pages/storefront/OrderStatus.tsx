@@ -139,7 +139,7 @@ export default function OrderStatusPage() {
         !cancelled &&
         loaded &&
         loaded.paymentStatus !== "paid" &&
-        loaded.status === "reserved"
+        (loaded.status === "reserved" || loaded.paymentStatus === "failed")
       ) {
         pollTimer = window.setInterval(() => {
           void fetchOrder(true);

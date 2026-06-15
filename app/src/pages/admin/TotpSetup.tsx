@@ -1,11 +1,15 @@
 import { useState } from "react";
+import { useNavigate } from "react-router";
 import { apiClient } from "@/lib/api-client";
+import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 
 export default function AdminTotpSetup() {
+  const navigate = useNavigate();
+  const { refreshUser } = useAuth();
   const [qrCode, setQrCode] = useState<string | null>(null);
   const [token, setToken] = useState("");
   const [loading, setLoading] = useState(false);
@@ -36,7 +40,9 @@ export default function AdminTotpSetup() {
         method: "POST",
         body: JSON.stringify({ token }),
       });
+      await refreshUser();
       toast.success("Two-factor authentication is now enabled.");
+      navigate("/admin");
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Invalid 2FA code.",

@@ -36,6 +36,7 @@ export type StoredUser = {
     | "hasActiveAccess"
   >;
   role?: UserRole;
+  totpEnabled?: boolean;
   createdAt: string;
 };
 

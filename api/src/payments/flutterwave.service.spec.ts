@@ -110,7 +110,9 @@ describe('FlutterwaveService', () => {
       }),
     });
 
-    const verified = await service.verifyTransaction('flw-ref-1', 5000);
+    const verified = await service.verifyTransaction('flw-ref-1', 5000, {
+      retryDelaysMs: [0],
+    });
     expect(verified).toBe(true);
   });
 
@@ -138,7 +140,9 @@ describe('FlutterwaveService', () => {
         }),
       });
 
-    const verified = await service.verifyTransaction('flw-ref-1', 5150);
+    const verified = await service.verifyTransaction('flw-ref-1', 5150, {
+      retryDelaysMs: [0],
+    });
     expect(verified).toBe(true);
     expect((global.fetch as jest.Mock).mock.calls[1][0]).toContain(
       '/transactions/verify_by_reference',
@@ -163,7 +167,9 @@ describe('FlutterwaveService', () => {
       }),
     });
 
-    const verified = await service.verifyTransaction('flw-ref-1', 5000);
+    const verified = await service.verifyTransaction('flw-ref-1', 5000, {
+      retryDelaysMs: [0],
+    });
     expect(verified).toBe(false);
   });
 

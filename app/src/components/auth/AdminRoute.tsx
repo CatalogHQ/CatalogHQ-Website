@@ -9,7 +9,7 @@ type AdminRouteProps = {
 };
 
 export default function AdminRoute({ children }: AdminRouteProps) {
-  const { isAuthenticated, isAdmin, isLoading } = useAuth();
+  const { user, isAuthenticated, isAdmin, isLoading } = useAuth();
   const location = useLocation();
 
   useEffect(() => {
@@ -33,6 +33,14 @@ export default function AdminRoute({ children }: AdminRouteProps) {
 
   if (!isAdmin) {
     return <Navigate to="/dashboard" replace />;
+  }
+
+  const onTotpSetup =
+    location.pathname === "/admin/totp/setup" ||
+    location.pathname === "/admin/totp-setup";
+
+  if (user?.role === "admin" && user.totpEnabled === false && !onTotpSetup) {
+    return <Navigate to="/admin/totp/setup" replace />;
   }
 
   return children;
