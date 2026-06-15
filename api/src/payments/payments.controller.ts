@@ -13,9 +13,13 @@ import { VendorSubscriptionService } from '../subscriptions/vendor-subscription.
 import { FlutterwaveWebhookDto } from './dto/flutterwave-webhook.dto';
 import { FlutterwaveService } from './flutterwave.service';
 import {
+  buildWebhookDedupeKey,
   isChargeCompletedEvent,
   isChargeFailedEvent,
+  isFailedTransferStatus,
   isSuccessfulPaymentStatus,
+  isSuccessfulTransferStatus,
+  isTransferDisburseEvent,
   normalizeFlutterwaveWebhook,
 } from './flutterwave-webhook.util';
 import { PaymentsService } from './payments.service';
@@ -49,8 +53,10 @@ export class PaymentsController {
     }
 
     const { eventType, reference, status, amount, currency } = normalized;
+    const dedupeKey = buildWebhookDedupeKey(normalized);
 
-    const alreadyProcessed = await this.paymentsService.markWebhookProcessed(reference);
+    const alreadyProcessed =
+      await this.paymentsService.markWebhookProcessed(dedupeKey);
     if (alreadyProcessed) {
       return { received: true, note: 'Already processed' };
     }
@@ -77,6 +83,14 @@ export class PaymentsController {
       this.vendorSubscriptionService.isSubscriptionReference(reference)
     ) {
       await this.vendorSubscriptionService.markPaymentFailed(reference);
+    }
+
+    if (isTransferDisburseEvent(eventType)) {
+      if (isSuccessfulTransferStatus(status)) {
+        await this.paymentsService.markPayoutSettled(reference);
+      } else if (isFailedTransferStatus(status)) {
+        await this.paymentsService.markPayoutFailed(reference);
+      }
     }
 
     if (

@@ -21,7 +21,6 @@ import {
   extractV3BankTransferAuthorization,
   formatFlutterwaveV3PhoneNumber,
 } from './flutterwave-bank-transfer.util';
-import { FlutterwaveSplitSubaccount } from './flutterwave-split.util';
 import { flutterwaveAmountMatchesNaira } from './flutterwave-amount.util';
 
 const FLUTTERWAVE_POST_MAX_ATTEMPTS = 3;
@@ -92,11 +91,9 @@ function toFlutterwaveClientError(detail: string): string {
   const lower = detail.toLowerCase();
 
   if (
-    lower.includes('subaccount') ||
-    lower.includes('split') ||
     lower.includes('merchant not found')
   ) {
-    return 'This store payout account is not ready for split payments. The vendor should re-link their bank on the Payouts page.';
+    return 'Payment could not be started. Contact support if this continues.';
   }
 
   if (detail.length > 180) {
@@ -146,7 +143,6 @@ export class FlutterwaveService {
     callbackPath: string;
     paymentMethod: FlutterwavePaymentMethod;
     metadata?: Record<string, unknown>;
-    subaccounts?: FlutterwaveSplitSubaccount[];
   }): Promise<FlutterwaveInitResult> {
     if (!this.auth.isConfigured()) {
       return { authorizationUrl: null, reference: params.reference };
@@ -166,7 +162,6 @@ export class FlutterwaveService {
     amountNaira: number;
     reference: string;
     metadata?: Record<string, unknown>;
-    subaccounts?: FlutterwaveSplitSubaccount[];
   }): Promise<FlutterwaveInitResult> {
     if (!this.secretKey?.trim()) {
       throw new InternalServerErrorException('Could not start payment.');
@@ -181,14 +176,7 @@ export class FlutterwaveService {
       phone_number: formatFlutterwaveV3PhoneNumber(params.phone),
       bank_transfer_options: { expires: 3600 },
       ...(params.metadata ? { meta: params.metadata } : {}),
-      ...(params.subaccounts?.length ? { subaccounts: params.subaccounts } : {}),
     };
-
-    if (params.subaccounts?.length) {
-      this.logger.log(
-        `Starting bank transfer ${params.reference} with vendor split to ${params.subaccounts[0]?.id ?? 'unknown subaccount'}.`,
-      );
-    }
 
     const response = await this.requestV3BankTransferCharge(body);
     const authorization = extractV3BankTransferAuthorization(response);

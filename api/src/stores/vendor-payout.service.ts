@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { VendorVerificationStatus } from '@prisma/client';
 import { FlutterwaveSubaccountService } from '../payments/flutterwave-subaccount.service';
+import { FlutterwaveTransferService } from '../payments/flutterwave-transfer.service';
 import { normalizeNigerianBankCode } from '../payments/flutterwave-bank.util';
 import { PrismaService } from '../prisma/prisma.service';
 import { UpdatePayoutDto } from './dto/update-payout.dto';
@@ -11,7 +12,7 @@ export type VendorPayoutAccountDto = {
   bankName?: string;
   accountNumber?: string;
   accountName?: string;
-  flutterwaveSubaccountId?: string;
+  flutterwaveTransferRecipientId?: string;
   payoutSetupComplete: boolean;
   payoutSetupAt?: string;
   verificationStatus?: VendorVerificationStatus;
@@ -22,6 +23,7 @@ export class VendorPayoutService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly subaccountService: FlutterwaveSubaccountService,
+    private readonly transferService: FlutterwaveTransferService,
   ) {}
 
   async listBanks() {
@@ -100,14 +102,16 @@ export class VendorPayoutService {
       },
     });
 
-    const subaccountId = await this.subaccountService.createOrUpdateSubaccount(
-      withBankDetails,
+    const recipient = await this.transferService.createNgnBankRecipient(
+      bank.code,
+      accountNumber,
+      withBankDetails.flutterwaveTransferRecipientId,
     );
 
     const updated = await this.prisma.store.update({
       where: { vendorId },
       data: {
-        flutterwaveSubaccountId: subaccountId,
+        flutterwaveTransferRecipientId: recipient.recipientId,
         payoutSetupComplete: true,
         payoutSetupAt: new Date(),
       },
@@ -154,7 +158,7 @@ export class VendorPayoutService {
     payoutBankName: string | null;
     payoutAccountNumber: string | null;
     payoutAccountName: string | null;
-    flutterwaveSubaccountId: string | null;
+    flutterwaveTransferRecipientId: string | null;
     payoutSetupComplete: boolean;
     payoutSetupAt: Date | null;
     verificationStatus: VendorVerificationStatus;
@@ -166,7 +170,8 @@ export class VendorPayoutService {
         ? maskAccountNumber(store.payoutAccountNumber)
         : undefined,
       accountName: store.payoutAccountName ?? undefined,
-      flutterwaveSubaccountId: store.flutterwaveSubaccountId ?? undefined,
+      flutterwaveTransferRecipientId:
+        store.flutterwaveTransferRecipientId ?? undefined,
       payoutSetupComplete: store.payoutSetupComplete,
       payoutSetupAt: store.payoutSetupAt?.toISOString(),
       verificationStatus: store.verificationStatus,

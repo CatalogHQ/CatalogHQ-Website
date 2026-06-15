@@ -2,6 +2,7 @@ import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { VendorVerificationStatus } from '@prisma/client';
 import { FlutterwaveSubaccountService } from '../payments/flutterwave-subaccount.service';
+import { FlutterwaveTransferService } from '../payments/flutterwave-transfer.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { VendorPayoutService } from './vendor-payout.service';
 
@@ -19,7 +20,10 @@ describe('VendorPayoutService', () => {
   const subaccountService = {
     listBanks: jest.fn(),
     resolveAccount: jest.fn(),
-    createOrUpdateSubaccount: jest.fn(),
+  };
+
+  const transferService = {
+    createNgnBankRecipient: jest.fn(),
   };
 
   let service: VendorPayoutService;
@@ -32,6 +36,7 @@ describe('VendorPayoutService', () => {
         VendorPayoutService,
         { provide: PrismaService, useValue: prisma },
         { provide: FlutterwaveSubaccountService, useValue: subaccountService },
+        { provide: FlutterwaveTransferService, useValue: transferService },
       ],
     }).compile();
 
@@ -54,13 +59,13 @@ describe('VendorPayoutService', () => {
     ).rejects.toBeInstanceOf(BadRequestException);
   });
 
-  it('creates subaccount for verified vendors', async () => {
+  it('creates transfer recipient for verified vendors', async () => {
     prisma.store.findUnique.mockResolvedValue({
       vendorId: 'vendor-1',
       verificationStatus: VendorVerificationStatus.verified,
       businessName: 'Ada Store',
       whatsapp: '08012345678',
-      flutterwaveSubaccountId: null,
+      flutterwaveTransferRecipientId: null,
     });
     subaccountService.listBanks.mockResolvedValue({
       banks: [{ code: '044', name: 'Access Bank' }],
@@ -80,7 +85,7 @@ describe('VendorPayoutService', () => {
         payoutBankName: 'Access Bank',
         payoutAccountNumber: '0123456789',
         payoutAccountName: 'Ada Lovelace',
-        flutterwaveSubaccountId: null,
+        flutterwaveTransferRecipientId: null,
         payoutSetupComplete: false,
         payoutSetupAt: null,
       })
@@ -91,11 +96,13 @@ describe('VendorPayoutService', () => {
         payoutBankName: 'Access Bank',
         payoutAccountNumber: '0123456789',
         payoutAccountName: 'Ada Lovelace',
-        flutterwaveSubaccountId: 'RS_VENDOR_1',
+        flutterwaveTransferRecipientId: 'rcb_VENDOR_1',
         payoutSetupComplete: true,
         payoutSetupAt: new Date('2026-06-14T12:00:00.000Z'),
       });
-    subaccountService.createOrUpdateSubaccount.mockResolvedValue('RS_VENDOR_1');
+    transferService.createNgnBankRecipient.mockResolvedValue({
+      recipientId: 'rcb_VENDOR_1',
+    });
 
     const result = await service.updatePayoutAccount('vendor-1', {
       bankCode: '044',
@@ -103,7 +110,12 @@ describe('VendorPayoutService', () => {
     });
 
     expect(result.payoutSetupComplete).toBe(true);
-    expect(result.flutterwaveSubaccountId).toBe('RS_VENDOR_1');
+    expect(result.flutterwaveTransferRecipientId).toBe('rcb_VENDOR_1');
+    expect(transferService.createNgnBankRecipient).toHaveBeenCalledWith(
+      '044',
+      '0123456789',
+      null,
+    );
   });
 
   it('resolves account holder name for verified vendors', async () => {

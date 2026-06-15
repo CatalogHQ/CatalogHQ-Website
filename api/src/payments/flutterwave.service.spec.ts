@@ -39,7 +39,7 @@ describe('FlutterwaveService', () => {
     service = module.get(FlutterwaveService);
   });
 
-  it('creates bank transfer checkout via v3 charge with vendor split', async () => {
+  it('creates bank transfer checkout via v3 charge without subaccount split', async () => {
     (global.fetch as jest.Mock).mockResolvedValueOnce({
       ok: true,
       headers: { get: () => null },
@@ -66,13 +66,6 @@ describe('FlutterwaveService', () => {
       reference: 'flw-ref-1',
       callbackPath: '/callback',
       paymentMethod: 'bank_transfer',
-      subaccounts: [
-        {
-          id: 'RS_VENDOR_1',
-          transaction_charge_type: 'flat_subaccount',
-          transaction_charge: 4800,
-        },
-      ],
     });
 
     expect(result.authorizationUrl).toBeNull();
@@ -92,11 +85,11 @@ describe('FlutterwaveService', () => {
     expect(init.headers.Authorization).toBe('Bearer flw-secret-key');
 
     const payload = JSON.parse(init.body) as {
-      subaccounts: Array<{ id: string }>;
+      subaccounts?: unknown;
       tx_ref: string;
     };
     expect(payload.tx_ref).toBe('flw-ref-1');
-    expect(payload.subaccounts[0]?.id).toBe('RS_VENDOR_1');
+    expect(payload.subaccounts).toBeUndefined();
   });
 
   it('verifies succeeded v4 charge with matching amount', async () => {

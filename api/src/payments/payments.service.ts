@@ -8,9 +8,10 @@ import { OrderCreatedEvent } from '../orders/events/order-created.event';
 import { LowStockAlertService } from '../notifications/low-stock-alert.service';
 import { flutterwaveAmountMatchesNaira } from './flutterwave-amount.util';
 import { buildFlutterwaveReference } from './flutterwave-reference.util';
-import { buildCheckoutSplitPayload } from './flutterwave-split.util';
+import { buildFlutterwavePayoutReference } from './flutterwave-payout-reference.util';
 import { buildFlutterwaveCheckoutEmail } from './flutterwave-payment-methods';
 import { FlutterwaveService } from './flutterwave.service';
+import { FlutterwaveTransferService } from './flutterwave-transfer.service';
 
 @Injectable()
 export class PaymentsService {
@@ -19,15 +20,16 @@ export class PaymentsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly flutterwave: FlutterwaveService,
+    private readonly transferService: FlutterwaveTransferService,
     private readonly eventEmitter: EventEmitter2,
     private readonly configService: ConfigService,
     private readonly lowStockAlertService: LowStockAlertService,
   ) {}
 
-  async markWebhookProcessed(txRef: string): Promise<boolean> {
+  async markWebhookProcessed(dedupeKey: string): Promise<boolean> {
     try {
       await this.prisma.processedWebhook.create({
-        data: { txRef },
+        data: { txRef: dedupeKey },
       });
       return false;
     } catch (error) {
@@ -98,20 +100,91 @@ export class PaymentsService {
           paymentStatus: PaymentStatus.paid,
           status: OrderStatus.paid,
           reservedUntil: null,
-          payoutStatus:
-            order.store.payoutSetupComplete && order.vendorNet > 0
-              ? PayoutStatus.split
-              : order.payoutStatus,
         },
       });
 
       await this.decrementStock(tx, order.storeId, order.productId, order.quantity);
     });
 
+    await this.attemptVendorPayout(order.id);
+
     this.eventEmitter.emit(
       ORDER_CREATED_EVENT,
       new OrderCreatedEvent(order.id),
     );
+  }
+
+  async attemptVendorPayout(orderId: string): Promise<void> {
+    const order = await this.prisma.order.findUnique({
+      where: { id: orderId },
+      include: { store: true },
+    });
+
+    if (!order || order.paymentStatus !== PaymentStatus.paid) {
+      return;
+    }
+
+    if (
+      order.flutterwaveTransferId ||
+      order.payoutStatus === PayoutStatus.processing ||
+      order.payoutStatus === PayoutStatus.settled
+    ) {
+      return;
+    }
+
+    if (order.vendorNet <= 0) {
+      return;
+    }
+
+    const recipientId = order.store.flutterwaveTransferRecipientId;
+    if (!order.store.payoutSetupComplete || !recipientId) {
+      this.logger.warn(
+        `Skipping vendor payout for order ${order.paymentRef}: payout bank not configured.`,
+      );
+      return;
+    }
+
+    const payoutReference =
+      order.flutterwavePayoutReference ??
+      buildFlutterwavePayoutReference(order.paymentRef);
+
+    try {
+      const transfer = await this.transferService.initiateInstantTransfer({
+        recipientId,
+        amountNaira: order.vendorNet,
+        reference: payoutReference,
+        narration: `CatalogHQ order ${order.paymentRef}`,
+        meta: {
+          orderId: order.id,
+          paymentRef: order.paymentRef,
+          vendorId: order.storeId,
+        },
+      });
+
+      await this.prisma.order.update({
+        where: { id: order.id },
+        data: {
+          payoutStatus: PayoutStatus.processing,
+          flutterwaveTransferId: transfer.transferId,
+          flutterwavePayoutReference: transfer.reference,
+        },
+      });
+
+      this.logger.log(
+        `Vendor payout initiated for order ${order.paymentRef}: ${transfer.transferId}`,
+      );
+    } catch (error) {
+      this.logger.error(
+        `Vendor payout failed for order ${order.paymentRef}: ${error instanceof Error ? error.message : 'unknown'}`,
+      );
+      await this.prisma.order.update({
+        where: { id: order.id },
+        data: {
+          payoutStatus: PayoutStatus.failed,
+          flutterwavePayoutReference: payoutReference,
+        },
+      });
+    }
   }
 
   private async decrementStock(
@@ -156,10 +229,14 @@ export class PaymentsService {
     );
   }
 
-  async markPayoutSettled(gatewayReference: string): Promise<void> {
-    const order = await this.prisma.order.findUnique({
-      where: { gatewayReference },
-    });
+  async markPayoutSettled(payoutReference: string): Promise<void> {
+    const order =
+      (await this.prisma.order.findUnique({
+        where: { flutterwavePayoutReference: payoutReference },
+      })) ??
+      (await this.prisma.order.findUnique({
+        where: { gatewayReference: payoutReference },
+      }));
 
     if (!order || order.payoutStatus === PayoutStatus.settled) {
       return;
@@ -168,6 +245,21 @@ export class PaymentsService {
     await this.prisma.order.update({
       where: { id: order.id },
       data: { payoutStatus: PayoutStatus.settled },
+    });
+  }
+
+  async markPayoutFailed(payoutReference: string): Promise<void> {
+    const order = await this.prisma.order.findUnique({
+      where: { flutterwavePayoutReference: payoutReference },
+    });
+
+    if (!order || order.payoutStatus === PayoutStatus.settled) {
+      return;
+    }
+
+    await this.prisma.order.update({
+      where: { id: order.id },
+      data: { payoutStatus: PayoutStatus.failed },
     });
   }
 
@@ -183,12 +275,6 @@ export class PaymentsService {
 
     const reference =
       order.gatewayReference ?? buildFlutterwaveReference(order.paymentRef);
-    const subaccounts = order.store.flutterwaveSubaccountId
-      ? buildCheckoutSplitPayload(
-          order.store.flutterwaveSubaccountId,
-          order.vendorNet,
-        )
-      : [];
     const init = await this.flutterwave.initializeTransaction({
       email: buildFlutterwaveCheckoutEmail(order.customerPhone),
       phone: order.customerPhone,
@@ -198,7 +284,6 @@ export class PaymentsService {
       callbackPath: `/s/${order.store.slug}/order/${order.paymentRef}?paid=1`,
       paymentMethod: 'bank_transfer',
       metadata: { paymentRef: order.paymentRef, orderId: order.id },
-      subaccounts,
     });
 
     if (init.paymentInstruction || init.virtualAccount) {

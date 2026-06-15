@@ -18,7 +18,7 @@ export type VendorPayoutAccount = {
   bankName?: string;
   accountNumber?: string;
   accountName?: string;
-  flutterwaveSubaccountId?: string;
+  flutterwaveTransferRecipientId?: string;
   payoutSetupComplete: boolean;
   payoutSetupAt?: string;
   verificationStatus?: VendorVerificationStatus;

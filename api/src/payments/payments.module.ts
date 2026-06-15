@@ -5,6 +5,8 @@ import { PaymentsService } from './payments.service';
 import { FlutterwaveAuthService } from './flutterwave-auth.service';
 import { FlutterwaveService } from './flutterwave.service';
 import { FlutterwaveSubaccountService } from './flutterwave-subaccount.service';
+import { FlutterwaveTransferService } from './flutterwave-transfer.service';
+import { VendorPayoutRetryService } from './vendor-payout-retry.service';
 
 @Module({
   imports: [forwardRef(() => SubscriptionsModule)],
@@ -13,12 +15,15 @@ import { FlutterwaveSubaccountService } from './flutterwave-subaccount.service';
     FlutterwaveAuthService,
     FlutterwaveService,
     FlutterwaveSubaccountService,
+    FlutterwaveTransferService,
     PaymentsService,
+    VendorPayoutRetryService,
   ],
   exports: [
     FlutterwaveAuthService,
     FlutterwaveService,
     FlutterwaveSubaccountService,
+    FlutterwaveTransferService,
     PaymentsService,
   ],
 })

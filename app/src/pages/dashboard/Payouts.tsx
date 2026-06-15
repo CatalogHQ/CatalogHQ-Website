@@ -45,7 +45,8 @@ const PAYOUT_STATUS_LABELS: Record<
   string
 > = {
   pending: "Pending",
-  split: "Split sent",
+  processing: "Transfer in progress",
+  split: "Transfer sent",
   settled: "Settled",
   failed: "Failed",
 };
@@ -223,9 +224,9 @@ export default function Payouts() {
         <CardHeader>
           <CardTitle className="text-base">Settlement account</CardTitle>
           <CardDescription>
-            Order payments split to this account after checkout. You receive
-            your listed price in full. Customers pay the processing fee at
-            checkout.
+            After a customer pays, CatalogHQ automatically transfers your order
+            earnings to this bank account. You receive your listed price in
+            full. Customers pay the processing fee at checkout.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -377,8 +378,7 @@ export default function Payouts() {
         <CardHeader>
           <CardTitle className="text-base">Payout history</CardTitle>
           <CardDescription>
-            Paid orders and their settlement status from Flutterwave split
-            payments.
+            Paid orders and their automatic bank transfer status.
           </CardDescription>
         </CardHeader>
         <CardContent className="p-0">

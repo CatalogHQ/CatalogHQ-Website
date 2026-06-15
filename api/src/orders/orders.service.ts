@@ -20,7 +20,6 @@ import { verifyPhoneLastFour } from '../common/order-phone.util';
 import { FlutterwaveService } from '../payments/flutterwave.service';
 import { computeCheckoutPricing } from '../payments/flutterwave-fees.util';
 import { buildFlutterwaveCheckoutEmail } from '../payments/flutterwave-payment-methods';
-import { buildCheckoutSplitPayload } from '../payments/flutterwave-split.util';
 import { buildFlutterwaveReference } from '../payments/flutterwave-reference.util';
 import { PaymentsService } from '../payments/payments.service';
 import { LowStockAlertService } from '../notifications/low-stock-alert.service';
@@ -62,9 +61,6 @@ export class OrdersService {
     const pricing = await this.resolvePricing(dto);
     const paymentRef = generatePaymentRef();
     const gatewayReference = buildFlutterwaveReference(paymentRef);
-    const store = await this.prisma.store.findUnique({
-      where: { vendorId: dto.storeId },
-    });
 
     const order = await this.prisma.$transaction(async (tx) => {
       if (pricing.discountRecordId) {
@@ -106,13 +102,6 @@ export class OrdersService {
     });
 
     if (this.flutterwave.isConfigured()) {
-      const subaccounts = store?.flutterwaveSubaccountId
-        ? buildCheckoutSplitPayload(
-            store.flutterwaveSubaccountId,
-            pricing.vendorNet,
-          )
-        : [];
-
       const init = await this.flutterwave.initializeTransaction({
         email: buildFlutterwaveCheckoutEmail(order.customerPhone),
         phone: order.customerPhone,
@@ -122,7 +111,6 @@ export class OrdersService {
         callbackPath: `/s/${storeSlug}/order/${order.paymentRef}?paid=1`,
         paymentMethod: dto.paymentMethod,
         metadata: { paymentRef: order.paymentRef, orderId: order.id },
-        subaccounts,
       });
 
       return {

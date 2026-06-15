@@ -2,7 +2,7 @@ import type { DeliveryTypeId } from "@/lib/delivery-types";
 
 export type PaymentStatus = "pending" | "paid" | "failed";
 
-export type PayoutStatus = "pending" | "split" | "settled" | "failed";
+export type PayoutStatus = "pending" | "processing" | "split" | "settled" | "failed";
 
 export type OrderStatus =
   | "reserved"

@@ -25,7 +25,7 @@ type StoredPayout = {
   bankName: string;
   accountNumber: string;
   accountName: string;
-  flutterwaveSubaccountId: string;
+  flutterwaveTransferRecipientId: string;
   payoutSetupComplete: boolean;
   payoutSetupAt?: string;
 };
@@ -62,7 +62,7 @@ export class LocalPayoutRepository implements PayoutRepository {
         ? `******${payout.accountNumber.slice(-4)}`
         : undefined,
       accountName: payout?.accountName,
-      flutterwaveSubaccountId: payout?.flutterwaveSubaccountId,
+      flutterwaveTransferRecipientId: payout?.flutterwaveTransferRecipientId,
       payoutSetupComplete: payout?.payoutSetupComplete ?? false,
       payoutSetupAt: payout?.payoutSetupAt,
       verificationStatus: store?.verificationStatus,
@@ -117,7 +117,7 @@ export class LocalPayoutRepository implements PayoutRepository {
       bankName: bank.name,
       accountNumber: input.accountNumber,
       accountName: "Demo Vendor Account",
-      flutterwaveSubaccountId: `RS_MOCK_${session.userId.slice(0, 8)}`,
+      flutterwaveTransferRecipientId: `rcb_MOCK_${session.userId.slice(0, 8)}`,
       payoutSetupComplete: true,
       payoutSetupAt: new Date().toISOString(),
     };

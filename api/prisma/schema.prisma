@@ -144,6 +144,7 @@ enum PaymentStatus {
 
 enum PayoutStatus {
   pending
+  processing
   split
   settled
   failed
@@ -177,8 +178,9 @@ model Store {
   payoutBankName          String?
   payoutAccountNumber     String?
   payoutAccountName       String?
-  flutterwaveSubaccountId String?
-  payoutSetupComplete     Boolean                  @default(false)
+  flutterwaveSubaccountId         String?
+  flutterwaveTransferRecipientId  String?
+  payoutSetupComplete             Boolean                  @default(false)
   payoutSetupAt           DateTime?
   quickReplyTemplates     Json                     @default("[]")
   deliveryZones           Json                     @default("[]")
@@ -400,8 +402,10 @@ model Order {
   deliveryAddress     String?
   status              OrderStatus   @default(reserved)
   paymentStatus       PaymentStatus @default(pending)
-  gatewayReference    String?       @unique @map("paystackReference")
-  transferReference   String?
+  gatewayReference            String?       @unique @map("paystackReference")
+  flutterwaveTransferId       String?
+  flutterwavePayoutReference  String?       @unique
+  transferReference           String?
   reservedUntil       DateTime?
   internalNotes       String?
   estimatedDeliveryAt DateTime?
