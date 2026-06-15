@@ -286,3 +286,6 @@ export default function ProductFeed({ products, store }: ProductFeedProps) {
     </div>
   );
 }
+
+
+// 
