@@ -17,6 +17,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import TicketPriorityBadge from "@/components/admin/TicketPriorityBadge";
 import TicketStatusBadge from "@/components/admin/TicketStatusBadge";
+import { sanitizeText } from "@/lib/sanitize";
 import type { AdminSupportTicket } from "@/data/admin-mock";
 
 type AdminTicketDetailSheetProps = {
@@ -66,7 +67,7 @@ export default function AdminTicketDetailSheet({
           <div className="rounded-lg border bg-gray-50 p-4 text-sm">
             <p className="text-gray-500">Description</p>
             <p className="mt-1 whitespace-pre-wrap text-gray-900">
-              {ticket.description}
+              {sanitizeText(ticket.description)}
             </p>
           </div>
 

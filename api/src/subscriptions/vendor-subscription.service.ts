@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -10,9 +11,12 @@ import {
   SubscriptionStatus,
 } from '@prisma/client';
 import { randomUUID } from 'crypto';
+import { flutterwaveAmountMatchesNaira } from '../payments/flutterwave-amount.util';
 import { PlanCatalogService } from '../plans/plan-catalog.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { PingramEmailService } from '../notifications/pingram-email.service';
+import { SecurityAuditAction } from '../security/security-audit.actions';
+import { SecurityAuditService } from '../security/security-audit.service';
 import { FlutterwaveSubscriptionService } from './flutterwave-subscription.service';
 import { SubscriptionCheckoutDto } from './dto/subscription-checkout.dto';
 import {
@@ -26,6 +30,7 @@ const SUBSCRIPTION_REFERENCE_PREFIX = 'sub_';
 
 @Injectable()
 export class VendorSubscriptionService {
+  private readonly logger = new Logger(VendorSubscriptionService.name);
   private readonly graceDays: number;
 
   constructor(
@@ -34,6 +39,7 @@ export class VendorSubscriptionService {
     private readonly flutterwaveSubscriptionService: FlutterwaveSubscriptionService,
     private readonly emailService: PingramEmailService,
     private readonly configService: ConfigService,
+    private readonly securityAudit: SecurityAuditService,
   ) {
     this.graceDays = Number(
       this.configService.get<string>('SUBSCRIPTION_GRACE_DAYS') ?? '2',
@@ -203,15 +209,25 @@ export class VendorSubscriptionService {
       return;
     }
 
-    await this.activateFromPayment(reference, {
-      amountKobo: undefined,
-      currency: 'NGN',
-    });
+    await this.activateFromPayment(
+      reference,
+      { currency: 'NGN' },
+      { skipAmountVerification: true },
+    );
+  }
+
+  private subscriptionAmountMatches(
+    expectedAmountKobo: number,
+    received?: number,
+  ): boolean {
+    const expectedNaira = expectedAmountKobo / 100;
+    return flutterwaveAmountMatchesNaira(expectedNaira, received);
   }
 
   async activateFromPayment(
     reference: string,
     input: { amountKobo?: number; currency?: string },
+    options?: { skipAmountVerification?: boolean },
   ): Promise<void> {
     if (!reference.startsWith(SUBSCRIPTION_REFERENCE_PREFIX)) {
       return;
@@ -227,6 +243,48 @@ export class VendorSubscriptionService {
 
     if (payment.status === SubscriptionPaymentStatus.paid) {
       return;
+    }
+
+    if (!options?.skipAmountVerification) {
+      if (input.currency !== undefined && input.currency !== 'NGN') {
+        this.logger.warn(
+          `Subscription currency mismatch for ${reference}: ${input.currency}`,
+        );
+        await this.securityAudit.log({
+          actorId: payment.vendorId,
+          action: SecurityAuditAction.SUBSCRIPTION_AMOUNT_MISMATCH,
+          targetType: 'subscription_payment',
+          targetId: payment.id,
+          metadata: {
+            reference,
+            reason: 'currency_mismatch',
+            currency: input.currency,
+          },
+        });
+        return;
+      }
+
+      if (
+        input.amountKobo === undefined ||
+        !this.subscriptionAmountMatches(payment.amountKobo, input.amountKobo)
+      ) {
+        this.logger.warn(
+          `Subscription amount mismatch for ${reference}: expected ${payment.amountKobo} kobo, got ${input.amountKobo ?? 'missing'}`,
+        );
+        await this.securityAudit.log({
+          actorId: payment.vendorId,
+          action: SecurityAuditAction.SUBSCRIPTION_AMOUNT_MISMATCH,
+          targetType: 'subscription_payment',
+          targetId: payment.id,
+          metadata: {
+            reference,
+            reason: 'amount_mismatch',
+            expectedAmountKobo: payment.amountKobo,
+            receivedAmount: input.amountKobo,
+          },
+        });
+        return;
+      }
     }
 
     const now = new Date();
@@ -273,6 +331,18 @@ export class VendorSubscriptionService {
         where: { id: payment.vendorId },
         data: { planTier: payment.planTier },
       });
+    });
+
+    await this.securityAudit.log({
+      actorId: payment.vendorId,
+      action: SecurityAuditAction.SUBSCRIPTION_ACTIVATED,
+      targetType: 'subscription_payment',
+      targetId: payment.id,
+      metadata: {
+        reference,
+        planTier: payment.planTier,
+        amountKobo: payment.amountKobo,
+      },
     });
   }
 

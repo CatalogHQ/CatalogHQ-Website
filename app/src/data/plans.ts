@@ -354,6 +354,7 @@ export function getFeatureById(id: string): Feature | undefined {
 export const PLAN_FEATURE_IDS = FEATURES.map((feature) => feature.id);
 
 export function hasFeature(tier: PlanTier, featureId: string): boolean {
+  // UX-only feature gating; backend must enforce plan limits on API routes.
   const feature = getFeatureById(featureId);
   if (!feature) return false;
   if (UNLOCK_ALL_PRO_FEATURES && !feature.comingSoon) {

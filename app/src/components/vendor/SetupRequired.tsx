@@ -2,6 +2,7 @@ import { Navigate } from "react-router";
 import { useVendor } from "@/contexts/VendorContext";
 import { Spinner } from "@/components/ui/spinner";
 
+/** UI-only setup gate; plan limits and store access are enforced by the API. */
 type SetupRequiredProps = {
   children: React.ReactNode;
   requireComplete?: boolean;

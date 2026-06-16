@@ -7,6 +7,7 @@ import StarRating from "@/components/storefront/StarRating";
 import StorefrontLayout from "@/layouts/StorefrontLayout";
 import { usePublicStore } from "@/hooks/use-public-store";
 import { usePublicReviews } from "@/hooks/use-public-reviews";
+import { sanitizeText } from "@/lib/sanitize";
 
 function formatReviewDate(value: string): string {
   return new Intl.DateTimeFormat("en-NG", {
@@ -100,7 +101,7 @@ export default function PublicStoreReviews() {
               </div>
 
               <p className="mt-3 text-sm leading-relaxed text-gray-700 sm:mt-4">
-                {review.comment}
+                {sanitizeText(review.comment)}
               </p>
 
               {review.productName && (

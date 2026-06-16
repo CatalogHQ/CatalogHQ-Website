@@ -1,8 +1,14 @@
+import { BadRequestException } from '@nestjs/common';
 import { RawBodyRequest } from '@nestjs/common';
+
+export class MissingWebhookRawBodyError extends BadRequestException {
+  constructor() {
+    super('Missing raw webhook body for signature verification.');
+  }
+}
 
 export function getFlutterwaveWebhookRawBody(
   req: RawBodyRequest<Request>,
-  parsedBody: unknown,
 ): string {
   const raw = req.rawBody;
 
@@ -10,13 +16,5 @@ export function getFlutterwaveWebhookRawBody(
     return raw.toString('utf8');
   }
 
-  if (typeof raw === 'string') {
-    return raw;
-  }
-
-  if (parsedBody && typeof parsedBody === 'object') {
-    return JSON.stringify(parsedBody);
-  }
-
-  return '';
+  throw new MissingWebhookRawBodyError();
 }

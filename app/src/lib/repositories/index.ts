@@ -20,6 +20,10 @@ import { storeRepository as localStoreRepository } from "@/lib/repositories/loca
 
 const useApi = isApiMode();
 
+if (import.meta.env.PROD && !useApi) {
+  throw new Error("Production builds must set VITE_USE_API=true.");
+}
+
 export const authRepository = useApi ? apiAuthRepository : localAuthRepository;
 export const storeRepository = useApi ? apiStoreRepository : localStoreRepository;
 export const productRepository = useApi

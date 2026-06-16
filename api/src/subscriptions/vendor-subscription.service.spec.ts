@@ -36,6 +36,10 @@ describe('VendorSubscriptionService', () => {
     get: jest.fn().mockReturnValue('2'),
   };
 
+  const securityAudit = {
+    log: jest.fn().mockResolvedValue(undefined),
+  };
+
   let service: VendorSubscriptionService;
 
   beforeEach(() => {
@@ -46,6 +50,7 @@ describe('VendorSubscriptionService', () => {
       flutterwaveSubscriptionService as never,
       emailService as never,
       configService as never,
+      securityAudit as never,
     );
   });
 
@@ -60,11 +65,37 @@ describe('VendorSubscriptionService', () => {
       vendorId: 'vendor-1',
       planTier: 'starter',
       status: 'paid',
+      amountKobo: 300000,
     });
 
-    await service.activateFromPayment('sub_duplicate', {});
+    await service.activateFromPayment('sub_duplicate', {
+      amountKobo: 300000,
+      currency: 'NGN',
+    });
 
     expect(prisma.$transaction).not.toHaveBeenCalled();
+  });
+
+  it('rejects subscription activation when amount mismatches', async () => {
+    prisma.subscriptionPayment.findUnique.mockResolvedValue({
+      id: 'pay-1',
+      vendorId: 'vendor-1',
+      planTier: 'starter',
+      status: 'pending',
+      amountKobo: 300000,
+    });
+
+    await service.activateFromPayment('sub_underpaid', {
+      amountKobo: 100,
+      currency: 'NGN',
+    });
+
+    expect(prisma.$transaction).not.toHaveBeenCalled();
+    expect(securityAudit.log).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: 'subscription.amount_mismatch',
+      }),
+    );
   });
 
   it('expires grace subscriptions past graceEndsAt', async () => {

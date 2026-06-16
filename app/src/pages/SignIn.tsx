@@ -29,6 +29,7 @@ import { storeRepository } from "@/lib/repositories";
 import {
   getPostAuthDashboardPath,
 } from "@/lib/vendor-onboarding";
+import { safeReturnTo } from "@/lib/safe-navigation";
 import {
   signInSchema,
   verifySignUpCodeSchema,
@@ -69,9 +70,9 @@ export default function SignIn() {
   const completeSignIn = async (user: Awaited<ReturnType<typeof signIn>>) => {
     toast.success("Signed in successfully.");
 
-    const returnTo = searchParams.get("returnTo");
+    const returnTo = safeReturnTo(searchParams.get("returnTo"));
     if (returnTo) {
-      navigate(decodeURIComponent(returnTo));
+      navigate(returnTo);
       return;
     }
 

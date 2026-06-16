@@ -4,10 +4,12 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { OrderStatus, PaymentStatus, PlanTier, VendorVerificationStatus } from '@prisma/client';
+import { OrderStatus, PaymentStatus, PlanTier, User, VendorVerificationStatus } from '@prisma/client';
 import { PlanCatalogService } from '../plans/plan-catalog.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { PaymentsService } from '../payments/payments.service';
+import { SecurityAuditService } from '../security/security-audit.service';
+import { SecurityAuditAction } from '../security/security-audit.actions';
 import { VENDOR_VERIFICATION_DECIDED_EVENT } from './events/admin.events';
 import { VendorVerificationDecidedEvent } from './events/vendor-verification-decided.event';
 import {
@@ -35,7 +37,19 @@ export class AdminService {
     private readonly eventEmitter: EventEmitter2,
     private readonly paymentsService: PaymentsService,
     private readonly planCatalogService: PlanCatalogService,
+    private readonly securityAudit: SecurityAuditService,
   ) {}
+
+  async logAdminTotpEnabled(actor: User, ipAddress?: string): Promise<void> {
+    await this.securityAudit.log({
+      actorId: actor.id,
+      actorEmail: actor.email,
+      action: SecurityAuditAction.ADMIN_ENABLE_TOTP,
+      targetType: 'user',
+      targetId: actor.id,
+      ipAddress,
+    });
+  }
 
   private async getOrderAggregatesByStore(): Promise<
     Map<string, { orderCount: number; revenue: number }>
@@ -246,7 +260,11 @@ export class AdminService {
     return stores.map((store) => toAdminVerificationDto(store));
   }
 
-  async approveVerification(vendorId: string): Promise<void> {
+  async approveVerification(
+    vendorId: string,
+    actor: User,
+    ipAddress?: string,
+  ): Promise<void> {
     const store = await this.prisma.store.findUnique({ where: { vendorId } });
     if (!store || store.verificationStatus !== VendorVerificationStatus.pending) {
       throw new NotFoundException('Verification request not found.');
@@ -265,9 +283,23 @@ export class AdminService {
       VENDOR_VERIFICATION_DECIDED_EVENT,
       new VendorVerificationDecidedEvent(vendorId, true),
     );
+
+    await this.securityAudit.log({
+      actorId: actor.id,
+      actorEmail: actor.email,
+      action: SecurityAuditAction.ADMIN_APPROVE_VERIFICATION,
+      targetType: 'vendor',
+      targetId: vendorId,
+      ipAddress,
+    });
   }
 
-  async rejectVerification(vendorId: string, reason?: string): Promise<void> {
+  async rejectVerification(
+    vendorId: string,
+    reason: string | undefined,
+    actor: User,
+    ipAddress?: string,
+  ): Promise<void> {
     const store = await this.prisma.store.findUnique({ where: { vendorId } });
     if (!store || store.verificationStatus !== VendorVerificationStatus.pending) {
       throw new NotFoundException('Verification request not found.');
@@ -290,6 +322,18 @@ export class AdminService {
         reason?.trim() || 'Verification rejected by admin.',
       ),
     );
+
+    await this.securityAudit.log({
+      actorId: actor.id,
+      actorEmail: actor.email,
+      action: SecurityAuditAction.ADMIN_REJECT_VERIFICATION,
+      targetType: 'vendor',
+      targetId: vendorId,
+      ipAddress,
+      metadata: {
+        reason: reason?.trim() || 'Verification rejected by admin.',
+      },
+    });
   }
 
   async getRevenueAnalytics(preset: DatePreset): Promise<AdminRevenueByDayDto[]> {
@@ -374,7 +418,12 @@ export class AdminService {
     }));
   }
 
-  async updateVendorPlan(vendorId: string, planTier: PlanTier): Promise<AdminVendorDto> {
+  async updateVendorPlan(
+    vendorId: string,
+    planTier: PlanTier,
+    actor: User,
+    ipAddress?: string,
+  ): Promise<AdminVendorDto> {
     const store = await this.prisma.store.findUnique({
       where: { vendorId },
       include: { vendor: true },
@@ -389,6 +438,19 @@ export class AdminService {
       data: { planTier },
     });
 
+    await this.securityAudit.log({
+      actorId: actor.id,
+      actorEmail: actor.email,
+      action: SecurityAuditAction.ADMIN_UPDATE_VENDOR_PLAN,
+      targetType: 'vendor',
+      targetId: vendorId,
+      ipAddress,
+      metadata: {
+        previousPlanTier: store.vendor.planTier,
+        planTier,
+      },
+    });
+
     const aggregates = await this.getOrderAggregatesByStore();
     const stats = aggregates.get(vendorId) ?? { orderCount: 0, revenue: 0 };
 
@@ -399,7 +461,12 @@ export class AdminService {
     );
   }
 
-  async updateOrderStatus(orderId: string, status: OrderStatus): Promise<AdminPlatformOrderDto> {
+  async updateOrderStatus(
+    orderId: string,
+    status: OrderStatus,
+    actor: User,
+    ipAddress?: string,
+  ): Promise<AdminPlatformOrderDto> {
     const order = await this.prisma.order.findUnique({
       where: { id: orderId },
       include: { store: { select: { businessName: true, slug: true } } },
@@ -421,10 +488,28 @@ export class AdminService {
       data: { status },
     });
 
+    await this.securityAudit.log({
+      actorId: actor.id,
+      actorEmail: actor.email,
+      action: SecurityAuditAction.ADMIN_UPDATE_ORDER_STATUS,
+      targetType: 'order',
+      targetId: orderId,
+      ipAddress,
+      metadata: {
+        previousStatus: order.status,
+        status,
+        paymentRef: order.paymentRef,
+      },
+    });
+
     return toAdminPlatformOrderDto(updated, order.store);
   }
 
-  async confirmOrderPayment(orderId: string): Promise<AdminPlatformOrderDto> {
+  async confirmOrderPayment(
+    orderId: string,
+    actor: User,
+    ipAddress?: string,
+  ): Promise<AdminPlatformOrderDto> {
     const order = await this.prisma.order.findUnique({
       where: { id: orderId },
       include: { store: { select: { businessName: true, slug: true } } },
@@ -441,6 +526,20 @@ export class AdminService {
     if (!order.gatewayReference) {
       throw new BadRequestException('Order has no Flutterwave reference to verify.');
     }
+
+    await this.securityAudit.log({
+      actorId: actor.id,
+      actorEmail: actor.email,
+      action: SecurityAuditAction.ADMIN_CONFIRM_ORDER_PAYMENT,
+      targetType: 'order',
+      targetId: order.id,
+      ipAddress,
+      metadata: {
+        paymentRef: order.paymentRef,
+        gatewayReference: order.gatewayReference,
+        previousPaymentStatus: order.paymentStatus,
+      },
+    });
 
     await this.paymentsService.confirmPayment(order.gatewayReference);
 

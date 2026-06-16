@@ -2,7 +2,7 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as speakeasy from 'speakeasy';
 import * as QRCode from 'qrcode';
-import { encryptNIN, decryptNIN } from '../lib/encryption';
+import { encryptTotpSecret, decryptTotpSecret } from '../lib/encryption';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
@@ -25,7 +25,7 @@ export class AdminAuthService {
     await this.prisma.user.update({
       where: { id: userId },
       data: {
-        totpSecret: encryptNIN(secret.base32),
+        totpSecret: encryptTotpSecret(secret.base32),
         totpEnabled: false,
         totpVerifiedAt: null,
       },
@@ -56,7 +56,7 @@ export class AdminAuthService {
       return false;
     }
 
-    const secret = decryptNIN(user.totpSecret);
+    const secret = decryptTotpSecret(user.totpSecret);
     return speakeasy.totp.verify({
       secret,
       encoding: 'base32',

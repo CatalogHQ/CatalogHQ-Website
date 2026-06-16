@@ -90,11 +90,29 @@ async function bootstrap() {
     origin: allowedOrigins,
     credentials: true,
     methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Cookie'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'Accept',
+      'Cookie',
+      'x-csrf-token',
+      'X-CSRF-Token',
+    ],
     optionsSuccessStatus: 204,
   });
 
   app.enableShutdownHooks();
+
+  const redisUrl = configService.get<string>('REDIS_URL')?.trim();
+  if (redisUrl) {
+    logger.log('Rate limiting storage: Redis');
+  } else if (process.env.NODE_ENV === 'production') {
+    logger.error('REDIS_URL is not configured in production');
+  } else {
+    logger.warn(
+      'REDIS_URL is not set. Rate limits are in-memory only (single instance).',
+    );
+  }
 
   const port = configService.get<number>('PORT', 3000);
   await app.listen(port);

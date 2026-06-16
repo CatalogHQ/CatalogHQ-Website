@@ -1,7 +1,17 @@
+import {
+  deleteInMemoryValue,
+  getInMemoryValue,
+  setInMemoryValue,
+} from "@/lib/in-memory-session-store";
+
 const PREFIX = "cataloghq_order_phone_";
 
 function normalizePhone(phone: string): string {
   return phone.replace(/\D/g, "");
+}
+
+function storageKey(paymentRef: string): string {
+  return `${PREFIX}${paymentRef}`;
 }
 
 export function saveOrderCustomerPhone(
@@ -10,27 +20,14 @@ export function saveOrderCustomerPhone(
 ): void {
   const normalized = normalizePhone(phone);
   if (normalized.length >= 10) {
-    sessionStorage.setItem(`${PREFIX}${paymentRef}`, normalized);
+    setInMemoryValue(storageKey(paymentRef), normalized);
   }
 }
 
-/** @deprecated Use saveOrderCustomerPhone */
-export function saveOrderPhoneLastFour(
-  paymentRef: string,
-  phone: string,
-): void {
-  saveOrderCustomerPhone(paymentRef, phone);
-}
-
 export function loadOrderCustomerPhone(paymentRef: string): string | null {
-  return sessionStorage.getItem(`${PREFIX}${paymentRef}`);
+  return getInMemoryValue(storageKey(paymentRef));
 }
 
-/** @deprecated Use loadOrderCustomerPhone */
-export function loadOrderPhoneLastFour(paymentRef: string): string | null {
-  return loadOrderCustomerPhone(paymentRef);
-}
-
-export function buildOrderRefQuery(customerPhone: string): string {
-  return `?phone=${encodeURIComponent(normalizePhone(customerPhone))}`;
+export function clearOrderCustomerPhone(paymentRef: string): void {
+  deleteInMemoryValue(storageKey(paymentRef));
 }

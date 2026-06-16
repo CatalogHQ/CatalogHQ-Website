@@ -1,10 +1,16 @@
 import {
+  BadRequestException,
   ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { PlanTier } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import {
+  assertAllowedProductImageUrls,
+  getAllowedProductImageHosts,
+} from '../common/product-image-url.util';
 import { PlanCatalogService } from '../plans/plan-catalog.service';
 import { PlanEntitlementService } from '../plans/plan-entitlement.service';
 import { LowStockAlertService } from '../notifications/low-stock-alert.service';
@@ -28,10 +34,26 @@ export class ProductsService {
     private readonly planCatalogService: PlanCatalogService,
     private readonly planEntitlementService: PlanEntitlementService,
     private readonly lowStockAlertService: LowStockAlertService,
+    private readonly configService: ConfigService,
   ) {}
+
+  private validateProductImages(images: string[]): void {
+    const allowedHosts = getAllowedProductImageHosts(
+      this.configService.get<string>('CLOUDINARY_CLOUD_NAME'),
+    );
+
+    try {
+      assertAllowedProductImageUrls(images, allowedHosts);
+    } catch {
+      throw new BadRequestException(
+        'Product images must be HTTPS URLs from your configured upload CDN.',
+      );
+    }
+  }
 
   private normalizeInput(input: ProductInputDto) {
     const images = input.images ?? [];
+    this.validateProductImages(images);
     return {
       name: sanitizeUserText(input.name.trim()),
       description: sanitizeUserHtml((input.description ?? '').trim()),

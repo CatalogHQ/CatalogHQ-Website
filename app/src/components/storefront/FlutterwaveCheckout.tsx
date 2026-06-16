@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router";
 import { Loader2, Lock } from "lucide-react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -29,8 +30,7 @@ import {
   savePendingPaymentDetails,
 } from "@/lib/flutterwave-payment-methods";
 import {
-  buildOrderRefQuery,
-  saveOrderPhoneLastFour,
+  saveOrderCustomerPhone,
 } from "@/lib/order-phone-session";
 import { formatNaira } from "@/lib/format";
 import { computeCheckoutPricing } from "@/lib/flutterwave-fees";
@@ -97,6 +97,7 @@ export default function FlutterwaveCheckout({
   onSuccess,
   onReserve,
 }: FlutterwaveCheckoutProps) {
+  const navigate = useNavigate();
   const [processing, setProcessing] = useState(false);
   const vendorNet =
     unitPrice * selection.quantity + deliveryFee - discountAmount;
@@ -182,15 +183,15 @@ export default function FlutterwaveCheckout({
           virtualAccount: result.payment.virtualAccount,
           totalPaid: result.order.totalPaid,
         });
-        saveOrderPhoneLastFour(result.order.paymentRef, normalizedPhone);
+        saveOrderCustomerPhone(result.order.paymentRef, normalizedPhone);
         form.reset();
         onOpenChange(false);
-        window.location.href = `/s/${storeSlug}/order/${result.order.paymentRef}${buildOrderRefQuery(normalizedPhone)}`;
+        navigate(`/s/${storeSlug}/order/${result.order.paymentRef}`);
         return;
       }
 
       onSuccess(result.order);
-      saveOrderPhoneLastFour(
+      saveOrderCustomerPhone(
         result.order.paymentRef,
         values.customerPhone.trim(),
       );

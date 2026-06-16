@@ -5,7 +5,8 @@ import {
 } from '@nestjs/common';
 import { normalizeEmail } from '../common/email.util';
 import { PrismaService } from '../prisma/prisma.service';
-
+import { SecurityAuditAction } from '../security/security-audit.actions';
+import { SecurityAuditService } from '../security/security-audit.service';
 import { VendorStoreAccessService } from './vendor-store-access.service';
 
 @Injectable()
@@ -13,10 +14,11 @@ export class StoreStaffService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly vendorStoreAccess: VendorStoreAccessService,
+    private readonly securityAudit: SecurityAuditService,
   ) {}
 
-  async listMembers(storeId: string) {
-    await this.vendorStoreAccess.assertStoreOwner(storeId);
+  async listMembers(userId: string) {
+    const storeId = await this.vendorStoreAccess.assertStoreOwner(userId);
     const members = await this.prisma.storeMember.findMany({
       where: { storeId },
       orderBy: { createdAt: 'asc' },
@@ -37,8 +39,12 @@ export class StoreStaffService {
     }));
   }
 
-  async addMember(storeId: string, email: string, role: 'fulfiller' | 'owner') {
-    await this.vendorStoreAccess.assertStoreOwner(storeId);
+  async addMember(
+    userId: string,
+    email: string,
+    role: 'fulfiller' | 'owner',
+  ) {
+    const storeId = await this.vendorStoreAccess.assertStoreOwner(userId);
     const normalized = normalizeEmail(email);
     const user = await this.prisma.user.findUnique({
       where: { email: normalized },
@@ -58,6 +64,16 @@ export class StoreStaffService {
       update: { role },
     });
 
+    const actor = await this.prisma.user.findUnique({ where: { id: userId } });
+    await this.securityAudit.log({
+      actorId: userId,
+      actorEmail: actor?.email,
+      action: SecurityAuditAction.VENDOR_TEAM_MEMBER_ADDED,
+      targetType: 'store_member',
+      targetId: member.id,
+      metadata: { storeId, memberEmail: user.email, role },
+    });
+
     return {
       id: member.id,
       userId: member.userId,
@@ -67,8 +83,8 @@ export class StoreStaffService {
     };
   }
 
-  async removeMember(storeId: string, memberId: string) {
-    await this.vendorStoreAccess.assertStoreOwner(storeId);
+  async removeMember(userId: string, memberId: string) {
+    const storeId = await this.vendorStoreAccess.assertStoreOwner(userId);
     const member = await this.prisma.storeMember.findFirst({
       where: { id: memberId, storeId },
     });
@@ -83,10 +99,20 @@ export class StoreStaffService {
     if (deleted.count === 0) {
       throw new NotFoundException('Team member not found.');
     }
+
+    const actor = await this.prisma.user.findUnique({ where: { id: userId } });
+    await this.securityAudit.log({
+      actorId: userId,
+      actorEmail: actor?.email,
+      action: SecurityAuditAction.VENDOR_TEAM_MEMBER_REMOVED,
+      targetType: 'store_member',
+      targetId: memberId,
+      metadata: { storeId, removedUserId: member.userId },
+    });
   }
 
-  async listActivity(storeId: string) {
-    await this.vendorStoreAccess.assertStoreOwner(storeId);
+  async listActivity(userId: string) {
+    const storeId = await this.vendorStoreAccess.assertStoreOwner(userId);
     const logs = await this.prisma.activityLog.findMany({
       where: { storeId },
       orderBy: { createdAt: 'desc' },

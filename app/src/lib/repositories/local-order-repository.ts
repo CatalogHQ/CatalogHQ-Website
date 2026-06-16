@@ -165,13 +165,24 @@ export class LocalOrderRepository implements OrderRepository {
 
   async getByPaymentRef(
     paymentRef: string,
-    _phoneLastFour: string,
+    phoneLastFour: string,
   ): Promise<CustomerOrder | null> {
-    return (
+    const order =
       this.getOrders().find(
-        (order) => order.paymentRef.toUpperCase() === paymentRef.toUpperCase(),
-      ) ?? null
-    );
+        (entry) => entry.paymentRef.toUpperCase() === paymentRef.toUpperCase(),
+      ) ?? null;
+
+    if (!order) {
+      return null;
+    }
+
+    const normalizedInput = phoneLastFour.replace(/\D/g, "");
+    const normalizedOrder = order.customerPhone.replace(/\D/g, "");
+    if (!normalizedInput || normalizedInput !== normalizedOrder) {
+      return null;
+    }
+
+    return order;
   }
 
   async updateStatus(

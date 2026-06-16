@@ -3,11 +3,14 @@ import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import type { Request } from 'express';
 import { ExtractJwt, Strategy } from 'passport-jwt';
+import { User, UserRole } from '@prisma/client';
+import { AuthenticatedUser } from './authenticated-user.type';
 import { PrismaService } from '../prisma/prisma.service';
 
 type JwtPayload = {
   sub: string;
   sv?: number;
+  aso?: 1;
 };
 
 @Injectable()
@@ -26,6 +29,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       ]),
       ignoreExpiration: false,
       secretOrKey: configService.getOrThrow<string>('JWT_SECRET'),
+      algorithms: ['HS256'],
     });
   }
 
@@ -42,6 +46,11 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       throw new UnauthorizedException('Session expired. Please sign in again.');
     }
 
-    return user;
+    const adminSetupOnly =
+      user.role === UserRole.admin &&
+      !user.totpEnabled &&
+      payload.aso === 1;
+
+    return { ...user, adminSetupOnly } satisfies AuthenticatedUser;
   }
 }

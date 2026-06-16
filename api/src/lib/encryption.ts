@@ -3,19 +3,31 @@ import { createCipheriv, createDecipheriv, createHmac, randomBytes } from 'crypt
 const ALGORITHM = 'aes-256-gcm';
 const IV_LENGTH = 12;
 
-function getKey(): Buffer {
-  const key = process.env.NIN_ENCRYPTION_KEY;
+function readHexKey(envName: string, fallbackEnvName?: string): Buffer {
+  const primary = process.env[envName]?.trim();
+  const fallback = fallbackEnvName
+    ? process.env[fallbackEnvName]?.trim()
+    : undefined;
+  const key = primary || fallback;
   if (!key || key.length !== 64) {
     throw new Error(
-      'NIN_ENCRYPTION_KEY must be a 64-character hex string (32 bytes)',
+      `${envName}${fallbackEnvName ? ` or ${fallbackEnvName}` : ''} must be a 64-character hex string (32 bytes)`,
     );
   }
   return Buffer.from(key, 'hex');
 }
 
-export function encryptNIN(plaintext: string): string {
+function getNinKey(): Buffer {
+  return readHexKey('NIN_ENCRYPTION_KEY');
+}
+
+function getTotpKey(): Buffer {
+  return readHexKey('TOTP_ENCRYPTION_KEY', 'NIN_ENCRYPTION_KEY');
+}
+
+function encryptWithKey(plaintext: string, key: Buffer): string {
   const iv = randomBytes(IV_LENGTH);
-  const cipher = createCipheriv(ALGORITHM, getKey(), iv);
+  const cipher = createCipheriv(ALGORITHM, key, iv);
   const encrypted = Buffer.concat([
     cipher.update(plaintext, 'utf8'),
     cipher.final(),
@@ -24,27 +36,37 @@ export function encryptNIN(plaintext: string): string {
   return `${iv.toString('hex')}:${tag.toString('hex')}:${encrypted.toString('hex')}`;
 }
 
-export function decryptNIN(encryptedValue: string): string {
+function decryptWithKey(encryptedValue: string, key: Buffer): string {
   const [ivHex, tagHex, dataHex] = encryptedValue.split(':');
   if (!ivHex || !tagHex || !dataHex) {
-    throw new Error('Invalid encrypted NIN format');
+    throw new Error('Invalid encrypted value format');
   }
   const iv = Buffer.from(ivHex, 'hex');
   const tag = Buffer.from(tagHex, 'hex');
   const data = Buffer.from(dataHex, 'hex');
-  const decipher = createDecipheriv(ALGORITHM, getKey(), iv);
+  const decipher = createDecipheriv(ALGORITHM, key, iv);
   decipher.setAuthTag(tag);
   return decipher.update(data) + decipher.final('utf8');
 }
 
+export function encryptNIN(plaintext: string): string {
+  return encryptWithKey(plaintext, getNinKey());
+}
+
+export function decryptNIN(encryptedValue: string): string {
+  return decryptWithKey(encryptedValue, getNinKey());
+}
+
+export function encryptTotpSecret(plaintext: string): string {
+  return encryptWithKey(plaintext, getTotpKey());
+}
+
+export function decryptTotpSecret(encryptedValue: string): string {
+  return decryptWithKey(encryptedValue, getTotpKey());
+}
+
 export function hashNIN(plaintext: string): string {
-  const key = process.env.NIN_ENCRYPTION_KEY;
-  if (!key || key.length !== 64) {
-    throw new Error(
-      'NIN_ENCRYPTION_KEY must be a 64-character hex string (32 bytes)',
-    );
-  }
-  return createHmac('sha256', Buffer.from(key, 'hex'))
+  return createHmac('sha256', getNinKey())
     .update(plaintext)
     .digest('hex');
 }

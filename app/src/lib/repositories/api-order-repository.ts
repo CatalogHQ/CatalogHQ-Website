@@ -1,5 +1,4 @@
 import { apiClient } from "@/lib/api-client";
-import { buildOrderRefQuery } from "@/lib/order-phone-session";
 import type { OrderRepository } from "@/lib/repositories/order-repository";
 import type {
   CheckoutInput,
@@ -18,6 +17,10 @@ type UnreadCountResponse = {
   count: number;
   payoutCount: number;
 };
+
+function orderAccessBody(customerPhone: string): string {
+  return JSON.stringify({ phone: customerPhone });
+}
 
 export class ApiOrderRepository implements OrderRepository {
   async create(input: CustomerOrderInput): Promise<CustomerOrder> {
@@ -51,8 +54,11 @@ export class ApiOrderRepository implements OrderRepository {
     phoneLastFour: string,
   ): Promise<CustomerOrder> {
     const response = await apiClient<OrderResponse>(
-      `/orders/ref/${encodeURIComponent(paymentRef)}/verify${buildOrderRefQuery(phoneLastFour)}`,
-      { method: "POST" },
+      `/orders/ref/${encodeURIComponent(paymentRef)}/verify`,
+      {
+        method: "POST",
+        body: orderAccessBody(phoneLastFour),
+      },
     );
     return response.order;
   }
@@ -62,7 +68,11 @@ export class ApiOrderRepository implements OrderRepository {
     phoneLastFour: string,
   ): Promise<OrderReceipt> {
     return apiClient<OrderReceipt>(
-      `/orders/ref/${encodeURIComponent(paymentRef)}/receipt${buildOrderRefQuery(phoneLastFour)}`,
+      `/orders/ref/${encodeURIComponent(paymentRef)}/receipt`,
+      {
+        method: "POST",
+        body: orderAccessBody(phoneLastFour),
+      },
     );
   }
 
@@ -96,7 +106,11 @@ export class ApiOrderRepository implements OrderRepository {
   ): Promise<CustomerOrder | null> {
     try {
       const response = await apiClient<OrderResponse>(
-        `/orders/ref/${encodeURIComponent(paymentRef)}${buildOrderRefQuery(phoneLastFour)}`,
+        `/orders/ref/${encodeURIComponent(paymentRef)}/access`,
+        {
+          method: "POST",
+          body: orderAccessBody(phoneLastFour),
+        },
       );
       return response.order;
     } catch {

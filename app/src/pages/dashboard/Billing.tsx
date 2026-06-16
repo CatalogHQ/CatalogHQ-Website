@@ -24,6 +24,7 @@ import { usePlanCatalog } from "@/contexts/PlanCatalogContext";
 import { PLAN_TIER_LABELS, type PlanTier } from "@/data/plans";
 import { formatNaira } from "@/lib/format";
 import { subscriptionRepository } from "@/lib/repositories";
+import { isAllowedPaymentRedirectUrl } from "@/lib/safe-navigation";
 import type {
   SubscriptionPayment,
   VendorSubscription,
@@ -115,6 +116,9 @@ export default function Billing() {
     setCheckoutTier(planTier);
     try {
       const result = await subscriptionRepository.checkout({ planTier });
+      if (!isAllowedPaymentRedirectUrl(result.authorizationUrl)) {
+        throw new Error("Checkout URL is not from an allowed payment provider.");
+      }
       window.location.href = result.authorizationUrl;
     } catch (error) {
       toast.error(

@@ -4,6 +4,7 @@ import { VendorVerificationStatus } from '@prisma/client';
 import { FlutterwaveSubaccountService } from '../payments/flutterwave-subaccount.service';
 import { FlutterwaveTransferService } from '../payments/flutterwave-transfer.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { SecurityAuditService } from '../security/security-audit.service';
 import { VendorPayoutService } from './vendor-payout.service';
 
 describe('VendorPayoutService', () => {
@@ -27,6 +28,10 @@ describe('VendorPayoutService', () => {
     createNgnBankRecipient: jest.fn(),
   };
 
+  const securityAudit = {
+    log: jest.fn().mockResolvedValue(undefined),
+  };
+
   let service: VendorPayoutService;
 
   beforeEach(async () => {
@@ -38,6 +43,7 @@ describe('VendorPayoutService', () => {
         { provide: PrismaService, useValue: prisma },
         { provide: FlutterwaveSubaccountService, useValue: subaccountService },
         { provide: FlutterwaveTransferService, useValue: transferService },
+        { provide: SecurityAuditService, useValue: securityAudit },
       ],
     }).compile();
 

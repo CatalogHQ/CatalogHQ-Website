@@ -1,22 +1,12 @@
-import {
-  BadRequestException,
-  Body,
-  Controller,
-  Headers,
-  HttpCode,
-  Logger,
-  Post,
-  RawBodyRequest,
-  Req,
-} from '@nestjs/common';
+import { BadRequestException, Body, Controller, Headers, HttpCode, Logger, Post, RawBodyRequest, Req } from '@nestjs/common';
 import { SkipThrottle } from '@nestjs/throttler';
 import { Public } from '../common/decorators/public.decorator';
 import { VendorSubscriptionService } from '../subscriptions/vendor-subscription.service';
+import { FlutterwaveWebhookDto } from './dto/flutterwave-webhook.dto';
 import { FlutterwaveService } from './flutterwave.service';
 import { getFlutterwaveWebhookRawBody } from './flutterwave-webhook-raw-body.util';
 import {
   buildWebhookDedupeKey,
-  FlutterwaveWebhookPayload,
   isChargeCompletedEvent,
   isChargeFailedEvent,
   isFailedTransferStatus,
@@ -46,16 +36,16 @@ export class PaymentsController {
     @Req() req: RawBodyRequest<Request>,
     @Headers('flutterwave-signature') flutterwaveSignature: string | undefined,
     @Headers('verif-hash') verifHash: string | undefined,
-    @Body() body: FlutterwaveWebhookPayload,
+    @Body() body: FlutterwaveWebhookDto,
   ) {
-    const rawBody = getFlutterwaveWebhookRawBody(req, body);
+    const rawBody = getFlutterwaveWebhookRawBody(req);
 
     this.flutterwaveService.verifyWebhookSignature(rawBody, {
       flutterwaveSignature,
       verifHash,
     });
 
-    const normalized = normalizeFlutterwaveWebhook(body);
+    const normalized = normalizeFlutterwaveWebhook(body as Parameters<typeof normalizeFlutterwaveWebhook>[0]);
     if (!normalized) {
       throw new BadRequestException('Missing transaction reference');
     }
@@ -67,12 +57,15 @@ export class PaymentsController {
       return { received: true, note: 'Already processed' };
     }
 
-    void this.processFlutterwaveWebhook(normalized, dedupeKey).catch((error) => {
+    try {
+      await this.processFlutterwaveWebhook(normalized, dedupeKey);
+    } catch (error) {
       this.logger.error(
         `Flutterwave webhook processing failed for ${dedupeKey}: ${error instanceof Error ? error.message : 'unknown'}`,
       );
-      void this.paymentsService.releaseWebhook(dedupeKey);
-    });
+      await this.paymentsService.releaseWebhook(dedupeKey);
+      throw error;
+    }
 
     return { received: true };
   }

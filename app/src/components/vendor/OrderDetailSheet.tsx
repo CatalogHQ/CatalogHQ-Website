@@ -24,6 +24,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { hasFeature } from "@/data/plans";
 import { getDeliveryLabel } from "@/lib/delivery-types";
 import { formatNaira } from "@/lib/format";
+import { isAllowedPaymentRedirectUrl } from "@/lib/safe-navigation";
 import { orderRepository } from "@/lib/repositories";
 import { vendorToolsRepository } from "@/lib/repositories/vendor-tools-repository";
 import { isApiMode } from "@/lib/use-api";
@@ -103,6 +104,10 @@ export default function OrderDetailSheet({
     }
     try {
       const link = await vendorToolsRepository.getPaymentLink(order.id);
+      if (!isAllowedPaymentRedirectUrl(link.authorizationUrl)) {
+        toast.error("Payment link from the server is not from an allowed provider.");
+        return;
+      }
       await navigator.clipboard.writeText(link.authorizationUrl);
       toast.success("Payment link copied to clipboard.");
     } catch (error) {

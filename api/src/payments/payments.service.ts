@@ -1,4 +1,4 @@
-import { ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { ConflictException, Injectable, Logger, NotFoundException, ServiceUnavailableException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { OrderStatus, PaymentStatus, PayoutStatus, VendorPayoutMethod } from '@prisma/client';
@@ -17,6 +17,7 @@ import { FlutterwaveSubaccountService } from './flutterwave-subaccount.service';
 import { FlutterwaveTransferService, PAYOUT_WALLET_FEE_BUFFER_NGN } from './flutterwave-transfer.service';
 import {
   isVendorPayoutAmountEligible,
+  MAX_VENDOR_PAYOUTS_PER_HOUR,
   MIN_VENDOR_PAYOUT_NAIRA,
 } from './vendor-payout.constants';
 import {
@@ -26,6 +27,8 @@ import {
   VendorPayoutMode,
 } from './vendor-payout-mode.util';
 import { VendorPayoutRecordService } from './vendor-payout-record.service';
+import { SecurityAuditAction } from '../security/security-audit.actions';
+import { SecurityAuditService } from '../security/security-audit.service';
 
 @Injectable()
 export class PaymentsService {
@@ -40,6 +43,7 @@ export class PaymentsService {
     private readonly configService: ConfigService,
     private readonly lowStockAlertService: LowStockAlertService,
     private readonly vendorPayoutRecords: VendorPayoutRecordService,
+    private readonly securityAudit: SecurityAuditService,
   ) {}
 
   async claimWebhook(dedupeKey: string): Promise<boolean> {
@@ -153,8 +157,30 @@ export class PaymentsService {
       },
     );
 
+    const webhookOnlyConfirm = !verified && Boolean(webhookHint?.fromWebhook);
+
     if (!verified) {
       if (webhookHint?.fromWebhook) {
+        if (!this.allowWebhookOnlyPaymentConfirm()) {
+          this.logger.warn(
+            `Flutterwave API verify failed for ${verifyReference} (order ${order.paymentRef}); deferring confirmation until API verify succeeds.`,
+          );
+          await this.securityAudit.log({
+            action: SecurityAuditAction.PAYMENT_ORDER_VERIFY_DEFERRED,
+            targetType: 'order',
+            targetId: order.id,
+            metadata: {
+              paymentRef: order.paymentRef,
+              gatewayReference: verifyReference,
+              amount: order.totalPaid,
+              storeId: order.storeId,
+            },
+          });
+          throw new ServiceUnavailableException(
+            'Payment verification pending Flutterwave API confirmation.',
+          );
+        }
+
         this.logger.warn(
           `Flutterwave API verify inconclusive for ${verifyReference} (order ${order.paymentRef}); confirming from signed charge.completed webhook.`,
         );
@@ -205,6 +231,21 @@ export class PaymentsService {
     if (!confirmed) {
       return;
     }
+
+    await this.securityAudit.log({
+      action: webhookOnlyConfirm
+        ? SecurityAuditAction.PAYMENT_ORDER_WEBHOOK_ONLY
+        : SecurityAuditAction.PAYMENT_ORDER_CONFIRMED,
+      targetType: 'order',
+      targetId: order.id,
+      metadata: {
+        paymentRef: order.paymentRef,
+        gatewayReference: verifyReference,
+        amount: order.totalPaid,
+        storeId: order.storeId,
+        webhookOnly: webhookOnlyConfirm,
+      },
+    });
 
     const payoutMethod = this.resolvePayoutMethod(order.store.flutterwaveSubaccountId);
     await this.vendorPayoutRecords.ensureForPaidOrder(order.id, payoutMethod);
@@ -446,6 +487,24 @@ export class PaymentsService {
     }
 
     const requiredWalletBalance = order.vendorNet + PAYOUT_WALLET_FEE_BUFFER_NGN;
+    const hourlyPayouts = await this.prisma.vendorPayout.count({
+      where: {
+        storeId: order.storeId,
+        initiatedAt: { gte: new Date(Date.now() - 60 * 60 * 1000) },
+        status: { in: [PayoutStatus.processing, PayoutStatus.settled] },
+      },
+    });
+    if (hourlyPayouts >= MAX_VENDOR_PAYOUTS_PER_HOUR) {
+      this.logger.warn(
+        `Deferring vendor payout for order ${order.paymentRef}: hourly payout limit reached for store ${order.storeId}.`,
+      );
+      await this.vendorPayoutRecords.recordTransferDeferred(
+        order.id,
+        `Hourly payout limit of ${MAX_VENDOR_PAYOUTS_PER_HOUR} transfers reached.`,
+      );
+      return;
+    }
+
     const availableBalance = await this.transferService.getNgnAvailableBalance();
     if (
       availableBalance !== null &&
@@ -579,6 +638,13 @@ export class PaymentsService {
 
     await this.vendorPayoutRecords.recordSettledByReference(payoutReference);
 
+    await this.securityAudit.log({
+      action: SecurityAuditAction.PAYMENT_PAYOUT_SETTLED,
+      targetType: 'order',
+      targetId: order.id,
+      metadata: { payoutReference },
+    });
+
     this.eventEmitter.emit(
       PAYOUT_SETTLED_EVENT,
       new PayoutSettledEvent(order.id),
@@ -603,6 +669,13 @@ export class PaymentsService {
     });
 
     await this.vendorPayoutRecords.recordFailedByReference(payoutReference);
+
+    await this.securityAudit.log({
+      action: SecurityAuditAction.PAYMENT_PAYOUT_FAILED,
+      targetType: 'order',
+      targetId: order.id,
+      metadata: { payoutReference },
+    });
   }
 
   async getPaymentLink(orderId: string, vendorId: string): Promise<string> {
@@ -670,6 +743,23 @@ export class PaymentsService {
       reference:
         order.gatewayReference ?? buildFlutterwaveReference(order.paymentRef),
     };
+  }
+
+  private allowWebhookOnlyPaymentConfirm(): boolean {
+    const explicit = this.configService
+      .get<string>('PAYMENT_ALLOW_WEBHOOK_ONLY_CONFIRM')
+      ?.trim()
+      .toLowerCase();
+
+    if (explicit === 'true') {
+      return true;
+    }
+
+    if (explicit === 'false') {
+      return false;
+    }
+
+    return this.configService.get<string>('NODE_ENV') !== 'production';
   }
 }
 

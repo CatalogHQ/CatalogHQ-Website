@@ -1,5 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
-import { useSearchParams } from "react-router";
+import { useCallback, useState } from "react";
 import {
   loadOrderCustomerPhone,
   saveOrderCustomerPhone,
@@ -10,36 +9,9 @@ function normalizePhone(phone: string): string {
 }
 
 export function useOrderPhoneGate(paymentRef: string) {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const phoneFromUrl = searchParams.get("phone");
-
-  const [customerPhone, setCustomerPhone] = useState<string | null>(() => {
-    if (phoneFromUrl) {
-      const normalized = normalizePhone(phoneFromUrl);
-      if (normalized.length >= 10) {
-        saveOrderCustomerPhone(paymentRef, normalized);
-        return normalized;
-      }
-    }
-
-    return paymentRef ? loadOrderCustomerPhone(paymentRef) : null;
-  });
-
-  useEffect(() => {
-    if (!phoneFromUrl || !paymentRef) {
-      return;
-    }
-
-    const normalized = normalizePhone(phoneFromUrl);
-    if (normalized.length >= 10) {
-      saveOrderCustomerPhone(paymentRef, normalized);
-      setCustomerPhone(normalized);
-    }
-
-    const nextParams = new URLSearchParams(searchParams);
-    nextParams.delete("phone");
-    setSearchParams(nextParams, { replace: true });
-  }, [paymentRef, phoneFromUrl, searchParams, setSearchParams]);
+  const [customerPhone, setCustomerPhone] = useState<string | null>(() =>
+    paymentRef ? loadOrderCustomerPhone(paymentRef) : null,
+  );
 
   const onVerified = useCallback(
     (phone: string) => {

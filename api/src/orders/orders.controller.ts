@@ -15,6 +15,7 @@ import { Public } from '../common/decorators/public.decorator';
 import { RequireFeature } from '../common/decorators/plan-access.decorator';
 import { CustomerPhoneParamPipe } from '../common/pipes/customer-phone.param.pipe';
 import { PaymentRefPipe } from '../common/pipes/payment-ref.pipe';
+import { VendorStoreAccessService } from '../stores/vendor-store-access.service';
 import { AbandonedCartService } from './abandoned-cart.service';
 import { AbandonedCartDto } from './dto/abandoned-cart.dto';
 import { BulkUpdateOrdersDto } from './dto/bulk-update-orders.dto';
@@ -27,11 +28,17 @@ import { SearchOrdersQueryDto } from './dto/search-orders-query.dto';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
 import { OrdersService } from './orders.service';
 
+const ORDER_ACCESS_THROTTLE = {
+  default: { limit: 10, ttl: 60_000 },
+  'order-access-ip': { limit: 40, ttl: 60_000 },
+} as const;
+
 @Controller()
 export class OrdersController {
   constructor(
     private readonly ordersService: OrdersService,
     private readonly abandonedCartService: AbandonedCartService,
+    private readonly vendorStoreAccess: VendorStoreAccessService,
   ) {}
 
   @Public()
@@ -57,52 +64,55 @@ export class OrdersController {
   }
 
   @Public()
-  @Throttle({ default: { limit: 30, ttl: 60_000 } })
+  @Throttle({
+    default: { limit: 5, ttl: 60_000 },
+    'order-access-ip': { limit: 15, ttl: 60_000 },
+  })
   @Post('orders/abandoned-cart')
   trackAbandonedCart(@Body() dto: AbandonedCartDto) {
     return this.abandonedCartService.track(dto);
   }
 
   @Public()
-  @Throttle({ default: { limit: 10, ttl: 60_000 } })
-  @Get('orders/ref/:paymentRef')
+  @Throttle(ORDER_ACCESS_THROTTLE)
+  @Post('orders/ref/:paymentRef/access')
   async getByPaymentRef(
     @Param('paymentRef', PaymentRefPipe) paymentRef: string,
-    @Query() query: OrderRefQueryDto,
+    @Body() body: OrderRefQueryDto,
   ) {
     const order = await this.ordersService.getByPaymentRef(
       paymentRef,
-      query.phone,
+      body.phone,
     );
     return { order };
   }
 
   @Public()
-  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  @Throttle(ORDER_ACCESS_THROTTLE)
   @Post('orders/ref/:paymentRef/verify')
   async verifyPayment(
     @Param('paymentRef', PaymentRefPipe) paymentRef: string,
-    @Query() query: OrderRefQueryDto,
+    @Body() body: OrderRefQueryDto,
   ) {
     const order = await this.ordersService.verifyPayment(
       paymentRef,
-      query.phone,
+      body.phone,
     );
     return { order };
   }
 
   @Public()
-  @Throttle({ default: { limit: 10, ttl: 60_000 } })
-  @Get('orders/ref/:paymentRef/receipt')
+  @Throttle(ORDER_ACCESS_THROTTLE)
+  @Post('orders/ref/:paymentRef/receipt')
   getReceipt(
     @Param('paymentRef', PaymentRefPipe) paymentRef: string,
-    @Query() query: OrderRefQueryDto,
+    @Body() body: OrderRefQueryDto,
   ) {
-    return this.ordersService.getReceipt(paymentRef, query.phone);
+    return this.ordersService.getReceipt(paymentRef, body.phone);
   }
 
   @Public()
-  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  @Throttle(ORDER_ACCESS_THROTTLE)
   @Patch('orders/ref/:paymentRef/transfer')
   markTransfer(
     @Param('paymentRef', PaymentRefPipe) paymentRef: string,
@@ -117,31 +127,43 @@ export class OrdersController {
 
   @Get('stores/me/orders')
   @RequireFeature('order-management')
-  listMine(
+  async listMine(
     @CurrentUser() user: User,
     @Query() query: SearchOrdersQueryDto,
   ) {
-    return this.ordersService.listByStoreId(user.id, query.q);
+    const storeId = await this.vendorStoreAccess.resolveStoreId(user.id, [
+      'owner',
+      'fulfiller',
+    ]);
+    return this.ordersService.listByStoreId(storeId, query.q);
   }
 
   @Get('stores/me/orders/unread-count')
   async unreadCount(@CurrentUser() user: User) {
+    const storeId = await this.vendorStoreAccess.resolveStoreId(user.id, [
+      'owner',
+      'fulfiller',
+    ]);
     const [count, payoutCount] = await Promise.all([
-      this.ordersService.getUnreadCount(user.id),
-      this.ordersService.getUnreadPayoutCount(user.id),
+      this.ordersService.getUnreadCount(storeId),
+      this.ordersService.getUnreadPayoutCount(storeId),
     ]);
     return { count, payoutCount };
   }
 
   @Patch('stores/me/orders/:orderId/status')
   @RequireFeature('order-management')
-  updateStatus(
+  async updateStatus(
     @CurrentUser() user: User,
     @Param('orderId', ParseUUIDPipe) orderId: string,
     @Body() dto: UpdateOrderStatusDto,
   ) {
+    const storeId = await this.vendorStoreAccess.resolveStoreId(user.id, [
+      'owner',
+      'fulfiller',
+    ]);
     return this.ordersService.updateStatus(
-      user.id,
+      storeId,
       orderId,
       dto.status,
       user.id,
@@ -150,12 +172,16 @@ export class OrdersController {
 
   @Post('stores/me/orders/bulk-status')
   @RequireFeature('order-search')
-  bulkUpdateStatus(
+  async bulkUpdateStatus(
     @CurrentUser() user: User,
     @Body() dto: BulkUpdateOrdersDto,
   ) {
+    const storeId = await this.vendorStoreAccess.resolveStoreId(user.id, [
+      'owner',
+      'fulfiller',
+    ]);
     return this.ordersService.bulkUpdateStatus(
-      user.id,
+      storeId,
       dto.orderIds,
       dto.status,
       user.id,
@@ -163,22 +189,31 @@ export class OrdersController {
   }
 
   @Get('stores/me/orders/customer-count/:phone')
-  customerOrderCount(
+  async customerOrderCount(
     @CurrentUser() user: User,
     @Param('phone', CustomerPhoneParamPipe) phone: string,
   ) {
-    return this.ordersService.getCustomerOrderCount(user.id, phone);
+    const storeId = await this.vendorStoreAccess.resolveStoreId(user.id, [
+      'owner',
+      'fulfiller',
+    ]);
+    return this.ordersService.getCustomerOrderCount(storeId, phone);
   }
 
   @Post('stores/me/orders/mark-seen')
   async markSeen(@CurrentUser() user: User) {
-    await this.ordersService.markAllSeen(user.id);
+    const storeId = await this.vendorStoreAccess.resolveStoreId(user.id, [
+      'owner',
+      'fulfiller',
+    ]);
+    await this.ordersService.markAllSeen(storeId);
     return { success: true };
   }
 
   @Post('stores/me/payouts/mark-seen')
   async markPayoutsSeen(@CurrentUser() user: User) {
-    await this.ordersService.markAllPayoutsSeen(user.id);
+    const storeId = await this.vendorStoreAccess.assertStoreOwner(user.id);
+    await this.ordersService.markAllPayoutsSeen(storeId);
     return { success: true };
   }
 }

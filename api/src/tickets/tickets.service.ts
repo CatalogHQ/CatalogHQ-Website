@@ -5,6 +5,7 @@ import {
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { TicketStatus, TicketType } from '@prisma/client';
 import { normalizePhone } from '../common/phone.util';
+import { sanitizeUserText } from '../common/sanitize.util';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateTicketDto } from './dto/create-ticket.dto';
 import { UpdateTicketDto } from './dto/update-ticket.dto';
@@ -22,8 +23,8 @@ export class TicketsService {
   async createPublic(dto: CreateTicketDto): Promise<SupportTicketDto> {
     const ticket = await this.prisma.supportTicket.create({
       data: {
-        subject: dto.subject.trim(),
-        description: dto.description.trim(),
+        subject: sanitizeUserText(dto.subject),
+        description: sanitizeUserText(dto.description),
         type: TicketType.customer,
         contactName: dto.contactName.trim(),
         contactPhone: normalizePhone(dto.contactPhone),
@@ -45,8 +46,8 @@ export class TicketsService {
 
     const ticket = await this.prisma.supportTicket.create({
       data: {
-        subject: dto.subject.trim(),
-        description: dto.description.trim(),
+        subject: sanitizeUserText(dto.subject),
+        description: sanitizeUserText(dto.description),
         type: TicketType.vendor,
         contactName: dto.contactName.trim(),
         contactPhone: normalizePhone(dto.contactPhone),

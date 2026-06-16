@@ -236,7 +236,18 @@ describe('FlutterwaveService', () => {
     ).toThrow();
   });
 
-  it('validates legacy verif-hash header', () => {
+  it('validates legacy verif-hash header outside production', () => {
+    configService.get.mockImplementation((key: string, defaultValue?: string) => {
+      const values: Record<string, string> = {
+        FLUTTERWAVE_ENV: 'sandbox',
+        FLUTTERWAVE_SECRET_KEY: 'flw-secret-key',
+        FLUTTERWAVE_WEBHOOK_SECRET: 'webhook-secret',
+        FLUTTERWAVE_CALLBACK_BASE_URL: 'http://localhost:3000',
+        NODE_ENV: 'development',
+      };
+      return values[key] ?? defaultValue;
+    });
+
     const rawBody = '{"type":"charge.completed"}';
 
     expect(() =>
@@ -244,6 +255,25 @@ describe('FlutterwaveService', () => {
     ).not.toThrow();
     expect(() =>
       service.verifyWebhookSignature(rawBody, { verifHash: 'wrong-secret' }),
+    ).toThrow();
+  });
+
+  it('rejects legacy verif-hash header in production', () => {
+    configService.get.mockImplementation((key: string, defaultValue?: string) => {
+      const values: Record<string, string> = {
+        FLUTTERWAVE_ENV: 'production',
+        FLUTTERWAVE_SECRET_KEY: 'flw-secret-key',
+        FLUTTERWAVE_WEBHOOK_SECRET: 'webhook-secret',
+        FLUTTERWAVE_CALLBACK_BASE_URL: 'https://cataloghq.store',
+        NODE_ENV: 'production',
+      };
+      return values[key] ?? defaultValue;
+    });
+
+    const rawBody = '{"type":"charge.completed"}';
+
+    expect(() =>
+      service.verifyWebhookSignature(rawBody, { verifHash: 'webhook-secret' }),
     ).toThrow();
   });
 });

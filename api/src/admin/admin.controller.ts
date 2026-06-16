@@ -7,10 +7,13 @@ import {
   Patch,
   Post,
   Query,
+  Req,
   UseGuards,
   BadRequestException,
 } from '@nestjs/common';
 import { PlanTier, User } from '@prisma/client';
+import type { Request } from 'express';
+import { getClientIp } from '../common/client-ip.util';
 import { AdminGuard } from '../common/guards/admin.guard';
 import { PlanCatalogService } from '../plans/plan-catalog.service';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
@@ -57,9 +60,11 @@ export class AdminController {
   @AdminTotpOptional()
   async enableTotp(
     @CurrentUser() user: User,
+    @Req() req: Request,
     @Body() dto: EnableTotpDto,
   ) {
     await this.adminAuthService.enableTotp(user.id, dto.token);
+    await this.adminService.logAdminTotpEnabled(user, getClientIp(req));
     return { success: true };
   }
 
@@ -109,18 +114,31 @@ export class AdminController {
 
   @Post('verification/:vendorId/approve')
   async approveVerification(
+    @CurrentUser() user: User,
+    @Req() req: Request,
     @Param('vendorId', ParseUUIDPipe) vendorId: string,
   ) {
-    await this.adminService.approveVerification(vendorId);
+    await this.adminService.approveVerification(
+      vendorId,
+      user,
+      getClientIp(req),
+    );
     return { success: true };
   }
 
   @Post('verification/:vendorId/reject')
   async rejectVerification(
+    @CurrentUser() user: User,
+    @Req() req: Request,
     @Param('vendorId', ParseUUIDPipe) vendorId: string,
     @Body() dto: RejectVerificationDto,
   ) {
-    await this.adminService.rejectVerification(vendorId, dto.reason);
+    await this.adminService.rejectVerification(
+      vendorId,
+      dto.reason,
+      user,
+      getClientIp(req),
+    );
     return { success: true };
   }
 
@@ -141,23 +159,45 @@ export class AdminController {
 
   @Patch('vendors/:vendorId')
   updateVendor(
+    @CurrentUser() user: User,
+    @Req() req: Request,
     @Param('vendorId', ParseUUIDPipe) vendorId: string,
     @Body() dto: UpdateVendorDto,
   ) {
-    return this.adminService.updateVendorPlan(vendorId, dto.planTier);
+    return this.adminService.updateVendorPlan(
+      vendorId,
+      dto.planTier,
+      user,
+      getClientIp(req),
+    );
   }
 
   @Patch('orders/:orderId/status')
   updateOrderStatus(
+    @CurrentUser() user: User,
+    @Req() req: Request,
     @Param('orderId', ParseUUIDPipe) orderId: string,
     @Body() dto: AdminUpdateOrderStatusDto,
   ) {
-    return this.adminService.updateOrderStatus(orderId, dto.status);
+    return this.adminService.updateOrderStatus(
+      orderId,
+      dto.status,
+      user,
+      getClientIp(req),
+    );
   }
 
   @Post('orders/:orderId/confirm-payment')
-  confirmOrderPayment(@Param('orderId', ParseUUIDPipe) orderId: string) {
-    return this.adminService.confirmOrderPayment(orderId);
+  confirmOrderPayment(
+    @CurrentUser() user: User,
+    @Req() req: Request,
+    @Param('orderId', ParseUUIDPipe) orderId: string,
+  ) {
+    return this.adminService.confirmOrderPayment(
+      orderId,
+      user,
+      getClientIp(req),
+    );
   }
 
   @Get('plans')

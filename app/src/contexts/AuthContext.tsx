@@ -8,6 +8,7 @@ import {
   type ReactNode,
 } from "react";
 import { authRepository } from "@/lib/repositories";
+import { onSessionExpired } from "@/lib/api-client";
 import type { StoredUser } from "@/types/domain";
 
 type AuthContextValue = {
@@ -62,6 +63,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => onSessionExpired(() => setUser(null)), []);
 
   const initSignUp = useCallback(async (email: string, password: string) => {
     await authRepository.initSignUp(email, password);

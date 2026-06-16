@@ -15,6 +15,6 @@ import { VendorToolsService } from './vendor-tools.service';
   imports: [AuthModule, PaymentsModule, PlansModule, VerificationModule, EventEmitterModule],
   controllers: [StoresController],
   providers: [StoresService, VendorToolsService, StoreStaffService, VendorPayoutService, VendorStoreAccessService],
-  exports: [StoresService],
+  exports: [StoresService, VendorStoreAccessService],
 })
 export class StoresModule {}

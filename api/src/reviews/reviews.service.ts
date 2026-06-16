@@ -148,7 +148,7 @@ export class ReviewsService {
     await this.assertCustomerOrderAccess(paymentRef, dto.customerPhone, order);
 
     if (normalizePhone(dto.customerPhone) !== order.customerPhone) {
-      throw new BadRequestException('Phone number does not match this order.');
+      throw new NotFoundException('Order not found.');
     }
 
     const existing = await this.prisma.review.findUnique({

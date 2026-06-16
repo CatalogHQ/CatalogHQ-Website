@@ -21,6 +21,7 @@ import {
   buildWhatsAppUrl,
 } from "@/lib/order-message";
 import { formatNaira, normalizePhoneForWhatsApp } from "@/lib/format";
+import { sanitizeText } from "@/lib/sanitize";
 import ProductImageSwipeGallery from "@/components/storefront/ProductImageSwipeGallery";
 import { getProductImages } from "@/lib/product-utils";
 import { orderRepository, productRepository } from "@/lib/repositories";
@@ -330,7 +331,7 @@ export default function PublicProduct() {
 
               {product.description && (
                 <p className="max-w-prose text-sm leading-relaxed text-gray-600">
-                  {product.description}
+                  {sanitizeText(product.description)}
                 </p>
               )}
             </div>

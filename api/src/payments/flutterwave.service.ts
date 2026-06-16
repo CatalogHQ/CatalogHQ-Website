@@ -234,6 +234,12 @@ export class FlutterwaveService {
     },
   ): Promise<boolean> {
     if (!this.auth.isConfigured()) {
+      if (process.env.NODE_ENV === 'production') {
+        this.logger.error(
+          'Flutterwave auth is not configured; refusing to verify payment in production.',
+        );
+        return false;
+      }
       return true;
     }
 
@@ -487,6 +493,7 @@ export class FlutterwaveService {
 
     const flutterwaveSignature = headers.flutterwaveSignature?.trim();
     const verifHash = headers.verifHash?.trim();
+    const isProduction = this.configService.get<string>('NODE_ENV') === 'production';
 
     if (flutterwaveSignature) {
       const expectedHash = createHmac('sha256', this.webhookSecret)
@@ -504,7 +511,7 @@ export class FlutterwaveService {
       }
     }
 
-    if (verifHash) {
+    if (!isProduction && verifHash) {
       const secretBuffer = Buffer.from(this.webhookSecret);
       const verifBuffer = Buffer.from(verifHash);
 

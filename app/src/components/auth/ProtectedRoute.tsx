@@ -2,6 +2,7 @@ import { Navigate, useLocation } from "react-router";
 import { useAuth } from "@/contexts/AuthContext";
 import { Spinner } from "@/components/ui/spinner";
 
+/** UI-only gate; the API must enforce auth on every mutating request. */
 type ProtectedRouteProps = {
   children: React.ReactNode;
 };

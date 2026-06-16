@@ -23,7 +23,7 @@ export function buildStoreShareMessage(input: {
 }): string {
   const lines = [`🏪 ${input.storeName}`, ""];
   if (input.bio?.trim()) {
-    lines.push(input.bio.trim(), "");
+    lines.push(input.bio.trim().replace(/[\r\n]+/g, " "), "");
   }
   lines.push("Browse and pay securely:", input.storeUrl);
   return lines.join("\n");

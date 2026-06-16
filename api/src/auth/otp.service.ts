@@ -16,6 +16,8 @@ import { AuthResponse } from './auth.types';
 import { AuthService } from './auth.service';
 import { OtpRateLimitService } from './otp-rate-limit.service';
 import { OtpVerifyAttemptService } from './otp-verify-attempt.service';
+import { SecurityAuditAction } from '../security/security-audit.actions';
+import { SecurityAuditService } from '../security/security-audit.service';
 
 const OTP_TTL_MS = 10 * 60 * 1000;
 const SIGNUP_PENDING_TTL_MS = 30 * 60 * 1000;
@@ -30,6 +32,7 @@ export class OtpService {
     private readonly authService: AuthService,
     private readonly otpRateLimitService: OtpRateLimitService,
     private readonly otpVerifyAttemptService: OtpVerifyAttemptService,
+    private readonly securityAudit: SecurityAuditService,
   ) {}
 
   private generateCode(): string {
@@ -242,7 +245,7 @@ export class OtpService {
   async verifySignUp(
     email: string,
     code: string,
-  ): Promise<{ user: AuthResponse['user']; token: string }> {
+  ): Promise<{ user: AuthResponse['user']; token: string; refreshToken: string }> {
     const normalized = normalizeEmail(email);
 
     const pending = await this.prisma.signupPending.findUnique({
@@ -306,6 +309,7 @@ export class OtpService {
     email: string,
     code: string,
     newPassword: string,
+    ipAddress?: string,
   ): Promise<void> {
     const normalized = normalizeEmail(email);
     const user = await this.prisma.user.findUnique({
@@ -330,6 +334,15 @@ export class OtpService {
         passwordHash,
         sessionVersion: { increment: 1 },
       },
+    });
+
+    await this.authService.revokeAllRefreshTokens(user.id);
+
+    await this.securityAudit.log({
+      actorId: user.id,
+      actorEmail: user.email,
+      action: SecurityAuditAction.AUTH_PASSWORD_RESET,
+      ipAddress,
     });
   }
 }

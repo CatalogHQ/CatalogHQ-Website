@@ -1,4 +1,4 @@
-import { IsEmail, IsString, Length, MinLength } from 'class-validator';
+import { Matches, IsEmail, IsString, Length, MinLength } from 'class-validator';
 
 export class ResetPasswordDto {
   @IsEmail()
@@ -10,5 +10,8 @@ export class ResetPasswordDto {
 
   @IsString()
   @MinLength(8, { message: 'Password must be at least 8 characters' })
+  @Matches(/^(?=.*[A-Za-z])(?=.*\d).+$/, {
+    message: 'Password must include at least one letter and one number',
+  })
   newPassword!: string;
 }

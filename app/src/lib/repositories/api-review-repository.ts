@@ -1,5 +1,4 @@
 import { apiClient } from "@/lib/api-client";
-import { buildOrderRefQuery } from "@/lib/order-phone-session";
 import type { CreateReviewInput, OrderReviewStatus } from "@/lib/order-review";
 import type { Store } from "@/types/domain";
 import type { StoreRatingSummary, StoreReview } from "@/types/reviews";
@@ -22,7 +21,11 @@ export class ApiReviewRepository {
     phoneLastFour: string,
   ): Promise<OrderReviewStatus> {
     return apiClient<OrderReviewStatus>(
-      `/orders/ref/${encodeURIComponent(paymentRef)}/reviews${buildOrderRefQuery(phoneLastFour)}`,
+      `/orders/ref/${encodeURIComponent(paymentRef)}/reviews/status`,
+      {
+        method: "POST",
+        body: JSON.stringify({ phone: phoneLastFour }),
+      },
     );
   }
 

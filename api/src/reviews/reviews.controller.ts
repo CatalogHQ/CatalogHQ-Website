@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { Public } from '../common/decorators/public.decorator';
 import { PaymentRefPipe } from '../common/pipes/payment-ref.pipe';
@@ -27,13 +27,13 @@ export class ReviewsController {
 export class OrderReviewsController {
   constructor(private readonly reviewsService: ReviewsService) {}
 
-  @Get()
+  @Post('status')
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
   status(
     @Param('paymentRef', PaymentRefPipe) paymentRef: string,
-    @Query() query: OrderRefQueryDto,
+    @Body() body: OrderRefQueryDto,
   ) {
-    return this.reviewsService.getOrderReviewStatus(paymentRef, query.phone);
+    return this.reviewsService.getOrderReviewStatus(paymentRef, body.phone);
   }
 
   @Post()

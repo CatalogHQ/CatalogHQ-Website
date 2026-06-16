@@ -39,6 +39,7 @@ import { formatSizesSummary } from "@/lib/sizing-types";
 import { usePlanCatalog } from "@/contexts/PlanCatalogContext";
 import { PLAN_TIER_LABELS } from "@/data/plans";
 import { formatNaira } from "@/lib/format";
+import { sanitizeText } from "@/lib/sanitize";
 import { getProductPrimaryImage, parseColorsInput } from "@/lib/product-utils";
 import type { Product } from "@/types/domain";
 import type { ProductFormValues } from "@/lib/store-schemas";
@@ -196,7 +197,7 @@ export default function Products() {
                         </p>
                         {product.description && (
                           <p className="line-clamp-1 text-sm text-gray-500">
-                            {product.description}
+                            {sanitizeText(product.description)}
                           </p>
                         )}
                         {product.colors?.length > 0 && (

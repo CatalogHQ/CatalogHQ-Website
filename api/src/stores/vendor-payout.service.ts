@@ -4,6 +4,8 @@ import { FlutterwaveSubaccountService } from '../payments/flutterwave-subaccount
 import { FlutterwaveTransferService } from '../payments/flutterwave-transfer.service';
 import { normalizeNigerianBankCode } from '../payments/flutterwave-bank.util';
 import { PrismaService } from '../prisma/prisma.service';
+import { SecurityAuditAction } from '../security/security-audit.actions';
+import { SecurityAuditService } from '../security/security-audit.service';
 import { UpdatePayoutDto } from './dto/update-payout.dto';
 import { OrderDto, toOrderDto, toOrderDtoFromPayoutRecord } from '../orders/orders.mapper';
 
@@ -24,6 +26,7 @@ export class VendorPayoutService {
     private readonly prisma: PrismaService,
     private readonly subaccountService: FlutterwaveSubaccountService,
     private readonly transferService: FlutterwaveTransferService,
+    private readonly securityAudit: SecurityAuditService,
   ) {}
 
   async listBanks() {
@@ -69,6 +72,7 @@ export class VendorPayoutService {
   async updatePayoutAccount(
     vendorId: string,
     dto: UpdatePayoutDto,
+    actorUserId?: string,
   ): Promise<VendorPayoutAccountDto> {
     const store = await this.prisma.store.findUnique({
       where: { vendorId },
@@ -120,6 +124,23 @@ export class VendorPayoutService {
         payoutSetupAt: new Date(),
       },
     });
+
+    if (actorUserId) {
+      const actor = await this.prisma.user.findUnique({
+        where: { id: actorUserId },
+      });
+      await this.securityAudit.log({
+        actorId: actorUserId,
+        actorEmail: actor?.email,
+        action: SecurityAuditAction.VENDOR_PAYOUT_ACCOUNT_UPDATED,
+        targetType: 'store',
+        targetId: vendorId,
+        metadata: {
+          bankCode: bank.code,
+          accountLast4: accountNumber.slice(-4),
+        },
+      });
+    }
 
     return this.toPayoutAccountDto(updated);
   }

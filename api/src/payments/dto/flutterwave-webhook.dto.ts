@@ -26,6 +26,10 @@ class FlutterwaveWebhookDataDto {
 export class FlutterwaveWebhookDto {
   @IsOptional()
   @IsString()
+  id?: string;
+
+  @IsOptional()
+  @IsString()
   type?: string;
 
   @IsOptional()

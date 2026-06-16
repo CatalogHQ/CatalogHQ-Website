@@ -15,6 +15,7 @@ import { usePublicReviews } from "@/hooks/use-public-reviews";
 import { hasFeature } from "@/data/plans";
 import { buildStoreShareMessage, shareToWhatsAppStatus } from "@/lib/whatsapp-share";
 import { cn } from "@/lib/utils";
+import { sanitizeText } from "@/lib/sanitize";
 import type { PublicStoreView } from "@/types/domain";
 
 type StorefrontHeaderProps = {
@@ -114,7 +115,7 @@ export default function StorefrontHeader({ store }: StorefrontHeaderProps) {
                 </div>
 
                 <p className="text-sm leading-relaxed text-gray-600">
-                  {store.bio}
+                  {sanitizeText(store.bio)}
                 </p>
 
                 <StoreContactLinks

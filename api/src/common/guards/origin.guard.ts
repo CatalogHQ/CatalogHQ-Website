@@ -6,31 +6,14 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Reflector } from '@nestjs/core';
-import { IS_PUBLIC_KEY } from '../constants/metadata';
+import {
+  IS_PUBLIC_KEY,
+  REQUIRE_ORIGIN_KEY,
+} from '../constants/metadata';
+import { originMatchesAllowed, normalizeOrigins } from '../origin.util';
+import { requiresBrowserSessionProtection } from '../request-auth.util';
 
 const MUTATING_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
-
-function normalizeOrigins(raw: string): string[] {
-  return raw
-    .split(',')
-    .map((origin) =>
-      origin
-        .trim()
-        .replace(/^["']|["']$/g, '')
-        .replace(/\/$/, ''),
-    )
-    .filter(Boolean);
-}
-
-function originMatchesAllowed(value: string, allowedOrigins: string[]): boolean {
-  try {
-    const url = new URL(value);
-    const origin = url.origin.replace(/\/$/, '');
-    return allowedOrigins.includes(origin);
-  } catch {
-    return false;
-  }
-}
 
 @Injectable()
 export class OriginGuard implements CanActivate {
@@ -69,12 +52,16 @@ export class OriginGuard implements CanActivate {
       context.getHandler(),
       context.getClass(),
     ]);
-    if (isPublic) {
+    const requireOrigin = this.reflector.getAllAndOverride<boolean>(
+      REQUIRE_ORIGIN_KEY,
+      [context.getHandler(), context.getClass()],
+    );
+
+    if (isPublic && !requireOrigin) {
       return true;
     }
 
-    const hasSessionCookie = Boolean(request.cookies?.session);
-    if (!hasSessionCookie) {
+    if (!requireOrigin && !requiresBrowserSessionProtection(request)) {
       return true;
     }
 

@@ -25,6 +25,7 @@ import { UpsertStockLocationDto } from './dto/upsert-stock-location.dto';
 import { StoreStaffService } from './store-staff.service';
 import { StoresService } from './stores.service';
 import { VendorPayoutService } from './vendor-payout.service';
+import { VendorStoreAccessService } from './vendor-store-access.service';
 import { VendorToolsService } from './vendor-tools.service';
 
 @Controller('stores')
@@ -35,23 +36,27 @@ export class StoresController {
     private readonly storeStaffService: StoreStaffService,
     private readonly paymentsService: PaymentsService,
     private readonly vendorPayoutService: VendorPayoutService,
+    private readonly vendorStoreAccess: VendorStoreAccessService,
   ) {}
 
   @Get('me')
   @SkipSubscriptionGuard()
   async getMyStore(@CurrentUser() user: User) {
-    const store = await this.storesService.getByVendorId(user.id);
+    const storeId = await this.vendorStoreAccess.requireStore(user.id);
+    const store = await this.storesService.getByVendorId(storeId);
     return { store };
   }
 
   @Put('me')
-  saveDraft(@CurrentUser() user: User, @Body() dto: StoreSetupDto) {
-    return this.storesService.saveDraft(user.id, dto);
+  async saveDraft(@CurrentUser() user: User, @Body() dto: StoreSetupDto) {
+    const storeId = await this.vendorStoreAccess.assertStoreOwner(user.id);
+    return this.storesService.saveDraft(storeId, dto);
   }
 
   @Post('me/complete-setup')
-  completeSetup(@CurrentUser() user: User, @Body() dto: StoreSetupDto) {
-    return this.storesService.completeSetup(user.id, dto);
+  async completeSetup(@CurrentUser() user: User, @Body() dto: StoreSetupDto) {
+    const storeId = await this.vendorStoreAccess.assertStoreOwner(user.id);
+    return this.storesService.completeSetup(storeId, dto);
   }
 
   @Public()
@@ -72,63 +77,71 @@ export class StoresController {
   }
 
   @Get('me/quick-replies')
-  getQuickReplies(@CurrentUser() user: User) {
-    return this.vendorToolsService.getQuickReplies(user.id);
+  async getQuickReplies(@CurrentUser() user: User) {
+    const storeId = await this.vendorStoreAccess.assertStoreOwner(user.id);
+    return this.vendorToolsService.getQuickReplies(storeId);
   }
 
   @Put('me/quick-replies')
   @RequireFeature('quick-reply-templates')
-  saveQuickReplies(
+  async saveQuickReplies(
     @CurrentUser() user: User,
     @Body(ValidateBodyArrayPipe(QuickReplyDto))
     templates: QuickReplyDto[],
   ) {
-    return this.vendorToolsService.saveQuickReplies(user.id, templates);
+    const storeId = await this.vendorStoreAccess.assertStoreOwner(user.id);
+    return this.vendorToolsService.saveQuickReplies(storeId, templates);
   }
 
   @Get('me/delivery-zones')
-  getDeliveryZones(@CurrentUser() user: User) {
-    return this.vendorToolsService.getDeliveryZones(user.id);
+  async getDeliveryZones(@CurrentUser() user: User) {
+    const storeId = await this.vendorStoreAccess.assertStoreOwner(user.id);
+    return this.vendorToolsService.getDeliveryZones(storeId);
   }
 
   @Put('me/delivery-zones')
   @RequireFeature('delivery-zones')
-  saveDeliveryZones(
+  async saveDeliveryZones(
     @CurrentUser() user: User,
     @Body(ValidateBodyArrayPipe(DeliveryZoneDto))
     zones: DeliveryZoneDto[],
   ) {
-    return this.vendorToolsService.saveDeliveryZones(user.id, zones);
+    const storeId = await this.vendorStoreAccess.assertStoreOwner(user.id);
+    return this.vendorToolsService.saveDeliveryZones(storeId, zones);
   }
 
   @Get('me/discount-codes')
   @RequireFeature('discount-codes')
-  listDiscountCodes(@CurrentUser() user: User) {
-    return this.vendorToolsService.listDiscountCodes(user.id);
+  async listDiscountCodes(@CurrentUser() user: User) {
+    const storeId = await this.vendorStoreAccess.assertStoreOwner(user.id);
+    return this.vendorToolsService.listDiscountCodes(storeId);
   }
 
   @Post('me/discount-codes')
   @RequireFeature('discount-codes')
-  createDiscountCode(
+  async createDiscountCode(
     @CurrentUser() user: User,
     @Body() dto: CreateDiscountCodeDto,
   ) {
-    return this.vendorToolsService.createDiscountCode(user.id, dto);
+    const storeId = await this.vendorStoreAccess.assertStoreOwner(user.id);
+    return this.vendorToolsService.createDiscountCode(storeId, dto);
   }
 
   @Delete('me/discount-codes/:id')
   @RequireFeature('discount-codes')
-  deleteDiscountCode(
+  async deleteDiscountCode(
     @CurrentUser() user: User,
     @Param('id', ParseUUIDPipe) id: string,
   ) {
-    return this.vendorToolsService.deleteDiscountCode(user.id, id);
+    const storeId = await this.vendorStoreAccess.assertStoreOwner(user.id);
+    return this.vendorToolsService.deleteDiscountCode(storeId, id);
   }
 
   @Get('me/analytics/advanced')
   @RequireFeature('advanced-analytics')
-  advancedAnalytics(@CurrentUser() user: User) {
-    return this.vendorToolsService.getAnalytics(user.id);
+  async advancedAnalytics(@CurrentUser() user: User) {
+    const storeId = await this.vendorStoreAccess.assertStoreOwner(user.id);
+    return this.vendorToolsService.getAnalytics(storeId);
   }
 
   @Get('me/team')
@@ -167,58 +180,68 @@ export class StoresController {
   }
 
   @Get('me/payout')
-  getPayoutAccount(@CurrentUser() user: User) {
-    return this.vendorPayoutService.getPayoutAccount(user.id);
+  async getPayoutAccount(@CurrentUser() user: User) {
+    const storeId = await this.vendorStoreAccess.assertStoreOwner(user.id);
+    return this.vendorPayoutService.getPayoutAccount(storeId);
   }
 
   @Post('me/payout/resolve')
-  resolvePayoutAccount(
+  async resolvePayoutAccount(
     @CurrentUser() user: User,
     @Body() dto: UpdatePayoutDto,
   ) {
-    return this.vendorPayoutService.resolvePayoutAccount(user.id, dto);
+    const storeId = await this.vendorStoreAccess.assertStoreOwner(user.id);
+    return this.vendorPayoutService.resolvePayoutAccount(storeId, dto);
   }
 
   @Put('me/payout')
-  updatePayoutAccount(
+  async updatePayoutAccount(
     @CurrentUser() user: User,
     @Body() dto: UpdatePayoutDto,
   ) {
-    return this.vendorPayoutService.updatePayoutAccount(user.id, dto);
+    const storeId = await this.vendorStoreAccess.assertStoreOwner(user.id);
+    return this.vendorPayoutService.updatePayoutAccount(storeId, dto, user.id);
   }
 
   @Get('me/payouts')
-  listPayoutHistory(@CurrentUser() user: User) {
-    return this.vendorPayoutService.listPayoutHistory(user.id);
+  async listPayoutHistory(@CurrentUser() user: User) {
+    const storeId = await this.vendorStoreAccess.assertStoreOwner(user.id);
+    return this.vendorPayoutService.listPayoutHistory(storeId);
   }
 
   @Post('me/orders/:orderId/payment-link')
   @RequireFeature('payment-links')
-  getPaymentLink(
+  async getPaymentLink(
     @CurrentUser() user: User,
     @Param('orderId', ParseUUIDPipe) orderId: string,
   ) {
-    return this.paymentsService.getPaymentLinkResponse(orderId, user.id);
+    const storeId = await this.vendorStoreAccess.resolveStoreId(user.id, [
+      'owner',
+      'fulfiller',
+    ]);
+    return this.paymentsService.getPaymentLinkResponse(orderId, storeId);
   }
 
   @Get('me/products/:productId/stock-locations')
   @RequireFeature('multi-location-stock')
-  listStockLocations(
+  async listStockLocations(
     @CurrentUser() user: User,
     @Param('productId', ParseUUIDPipe) productId: string,
   ) {
-    return this.vendorToolsService.listStockLocations(user.id, productId);
+    const storeId = await this.vendorStoreAccess.assertStoreOwner(user.id);
+    return this.vendorToolsService.listStockLocations(storeId, productId);
   }
 
   @Put('me/products/:productId/stock-locations')
   @RequireFeature('multi-location-stock')
-  upsertStockLocation(
+  async upsertStockLocation(
     @CurrentUser() user: User,
     @Param('productId', ParseUUIDPipe) productId: string,
     @Body() dto: UpsertStockLocationDto,
   ) {
+    const storeId = await this.vendorStoreAccess.assertStoreOwner(user.id);
     return this.vendorToolsService.upsertStockLocation(
-      user.id,
+      storeId,
       productId,
       dto.locationName,
       dto.stock,

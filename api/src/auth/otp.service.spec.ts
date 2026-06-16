@@ -8,6 +8,7 @@ import { AuthService } from './auth.service';
 import { OtpRateLimitService } from './otp-rate-limit.service';
 import { OtpVerifyAttemptService } from './otp-verify-attempt.service';
 import { OtpService } from './otp.service';
+import { SecurityAuditService } from '../security/security-audit.service';
 
 describe('OtpService', () => {
   const prisma = {
@@ -34,6 +35,11 @@ describe('OtpService', () => {
 
   const authService = {
     createSession: jest.fn(),
+    revokeAllRefreshTokens: jest.fn().mockResolvedValue(undefined),
+  };
+
+  const securityAudit = {
+    log: jest.fn().mockResolvedValue(undefined),
   };
 
   const otpRateLimitService = {
@@ -60,6 +66,7 @@ describe('OtpService', () => {
         { provide: AuthService, useValue: authService },
         { provide: OtpRateLimitService, useValue: otpRateLimitService },
         { provide: OtpVerifyAttemptService, useValue: otpVerifyAttemptService },
+        { provide: SecurityAuditService, useValue: securityAudit },
       ],
     }).compile();
 

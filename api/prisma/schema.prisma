@@ -63,6 +63,23 @@ model User {
   store              Store?
   subscription       VendorSubscription?
   subscriptionPayments SubscriptionPayment[]
+  refreshTokens      RefreshToken[]
+}
+
+model RefreshToken {
+  id         String    @id @default(uuid())
+  userId     String
+  tokenHash  String    @unique
+  familyId   String
+  expiresAt  DateTime
+  replacedAt DateTime?
+  createdAt  DateTime  @default(now())
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([familyId])
+  @@index([expiresAt])
+  @@map("refresh_tokens")
 }
 
 model SignupPending {
@@ -467,4 +484,20 @@ model VendorPayout {
   @@index([storeId, status])
   @@index([flutterwaveReference])
   @@map("vendor_payouts")
+}
+
+model SecurityAuditLog {
+  id         String   @id @default(uuid())
+  actorId    String?
+  actorEmail String?
+  action     String
+  targetType String?
+  targetId   String?
+  metadata   Json?
+  ipAddress  String?
+  createdAt  DateTime @default(now())
+
+  @@index([actorId])
+  @@index([action, createdAt])
+  @@map("security_audit_logs")
 }

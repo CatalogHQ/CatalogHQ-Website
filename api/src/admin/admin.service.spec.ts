@@ -1,10 +1,11 @@
 import { NotFoundException } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Test, TestingModule } from '@nestjs/testing';
-import { VendorVerificationStatus } from '@prisma/client';
+import { VendorVerificationStatus, User } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { PaymentsService } from '../payments/payments.service';
 import { PlanCatalogService } from '../plans/plan-catalog.service';
+import { SecurityAuditService } from '../security/security-audit.service';
 import { AdminService } from './admin.service';
 
 describe('AdminService', () => {
@@ -40,6 +41,8 @@ describe('AdminService', () => {
     listAdminCatalog: jest.fn(),
   };
 
+  const securityAudit = { log: jest.fn().mockResolvedValue(undefined) };
+
   let service: AdminService;
 
   beforeEach(async () => {
@@ -52,6 +55,7 @@ describe('AdminService', () => {
         { provide: EventEmitter2, useValue: eventEmitter },
         { provide: PaymentsService, useValue: paymentsService },
         { provide: PlanCatalogService, useValue: planCatalogService },
+        { provide: SecurityAuditService, useValue: securityAudit },
       ],
     }).compile();
 
@@ -92,11 +96,17 @@ describe('AdminService', () => {
     expect(stats.failedPayments).toBe(1);
   });
 
+  const actor = {
+    id: 'admin-1',
+    email: 'admin@cataloghq.store',
+    role: 'admin',
+  } as User;
+
   it('rejects verification for unknown vendor', async () => {
     prisma.store.findUnique.mockResolvedValue(null);
 
     await expect(
-      service.rejectVerification('missing-vendor', 'Invalid NIN'),
+      service.rejectVerification('missing-vendor', 'Invalid NIN', actor),
     ).rejects.toBeInstanceOf(NotFoundException);
   });
 
@@ -110,9 +120,10 @@ describe('AdminService', () => {
       verificationStatus: VendorVerificationStatus.verified,
     });
 
-    await service.approveVerification('vendor-1');
+    await service.approveVerification('vendor-1', actor);
 
     expect(prisma.store.update).toHaveBeenCalled();
     expect(eventEmitter.emit).toHaveBeenCalled();
+    expect(securityAudit.log).toHaveBeenCalled();
   });
 });

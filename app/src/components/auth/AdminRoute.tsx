@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { Spinner } from "@/components/ui/spinner";
 
+/** UI-only gate; admin role and TOTP are enforced by the API, not this route wrapper. */
 type AdminRouteProps = {
   children: React.ReactNode;
 };

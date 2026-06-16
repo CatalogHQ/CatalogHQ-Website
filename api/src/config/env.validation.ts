@@ -22,6 +22,14 @@ class EnvironmentVariables {
   JWT_EXPIRES_IN?: string;
 
   @IsOptional()
+  @IsString()
+  JWT_ADMIN_EXPIRES_IN?: string;
+
+  @IsOptional()
+  @IsString()
+  JWT_REFRESH_EXPIRES_DAYS?: string;
+
+  @IsOptional()
   @IsNumber()
   PORT?: number;
 
@@ -32,6 +40,10 @@ class EnvironmentVariables {
   @IsOptional()
   @IsString()
   NODE_ENV?: string;
+
+  @IsOptional()
+  @IsString()
+  REDIS_URL?: string;
 
   @IsOptional()
   @IsString()
@@ -132,6 +144,14 @@ class EnvironmentVariables {
   @IsOptional()
   @IsString()
   NIN_ENCRYPTION_KEY?: string;
+
+  @IsOptional()
+  @IsString()
+  TOTP_ENCRYPTION_KEY?: string;
+
+  @IsOptional()
+  @IsString()
+  PAYMENT_ALLOW_WEBHOOK_ONLY_CONFIRM?: string;
 }
 
 export function validateEnv(config: Record<string, unknown>) {
@@ -145,6 +165,11 @@ export function validateEnv(config: Record<string, unknown>) {
 
   if (errors.length > 0) {
     throw new Error(errors.toString());
+  }
+
+  const jwtSecret = config.JWT_SECRET;
+  if (typeof jwtSecret !== 'string' || jwtSecret.length < 32) {
+    throw new Error('JWT_SECRET must be at least 32 characters');
   }
 
   if (config.NODE_ENV === 'production') {
@@ -174,6 +199,13 @@ export function validateEnv(config: Record<string, unknown>) {
       if (typeof value !== 'string' || !value.trim()) {
         throw new Error(`${key} is required in production`);
       }
+    }
+
+    const redisUrl = config.REDIS_URL;
+    if (typeof redisUrl !== 'string' || !redisUrl.trim()) {
+      throw new Error(
+        'REDIS_URL is required in production for shared rate limiting across instances',
+      );
     }
   }
 
