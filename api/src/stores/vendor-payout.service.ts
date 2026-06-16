@@ -1,7 +1,13 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { VendorVerificationStatus } from '@prisma/client';
 import { FlutterwaveSubaccountService } from '../payments/flutterwave-subaccount.service';
 import { FlutterwaveTransferService } from '../payments/flutterwave-transfer.service';
+import {
+  FLUTTERWAVE_VENDOR_PAYOUT_MODE_ENV,
+  isInstantVendorPayoutMode,
+  parseVendorPayoutMode,
+} from '../payments/vendor-payout-mode.util';
 import { normalizeNigerianBankCode } from '../payments/flutterwave-bank.util';
 import { PrismaService } from '../prisma/prisma.service';
 import { SecurityAuditAction } from '../security/security-audit.actions';
@@ -24,10 +30,19 @@ export type VendorPayoutAccountDto = {
 export class VendorPayoutService {
   constructor(
     private readonly prisma: PrismaService,
+    private readonly configService: ConfigService,
     private readonly subaccountService: FlutterwaveSubaccountService,
     private readonly transferService: FlutterwaveTransferService,
     private readonly securityAudit: SecurityAuditService,
   ) {}
+
+  private usesInstantVendorPayout(): boolean {
+    return isInstantVendorPayoutMode(
+      parseVendorPayoutMode(
+        this.configService.get<string>(FLUTTERWAVE_VENDOR_PAYOUT_MODE_ENV),
+      ),
+    );
+  }
 
   async listBanks() {
     return this.subaccountService.listBanks();
@@ -106,14 +121,16 @@ export class VendorPayoutService {
       },
     });
 
-    const subaccountId =
-      await this.subaccountService.createOrUpdateSubaccount(withBankDetails);
-
     const recipient = await this.transferService.createNgnBankRecipient(
       bank.code,
       accountNumber,
       withBankDetails.flutterwaveTransferRecipientId,
     );
+
+    const instantPayout = this.usesInstantVendorPayout();
+    const subaccountId = instantPayout
+      ? null
+      : await this.subaccountService.createOrUpdateSubaccount(withBankDetails);
 
     const updated = await this.prisma.store.update({
       where: { vendorId },
