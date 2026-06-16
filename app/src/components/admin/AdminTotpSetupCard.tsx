@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { totpCodeSchema } from "@/lib/auth-schemas";
+import { isValidOtpauthUrl } from "@/lib/otpauth-url";
 import { toast } from "sonner";
 
 type AdminTotpSetupCardProps = {
@@ -27,6 +28,9 @@ export default function AdminTotpSetupCard({ onEnabled }: AdminTotpSetupCardProp
         "/admin/totp/setup",
         { method: "POST" },
       );
+      if (!isValidOtpauthUrl(response.otpauthUrl)) {
+        throw new Error("Invalid 2FA setup response from server.");
+      }
       setOtpauthUrl(response.otpauthUrl);
       toast.success("Scan the QR code with your authenticator app.");
     } catch (error) {

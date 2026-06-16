@@ -35,6 +35,8 @@ import { UpdatePlanCatalogDto } from './dto/update-plan-catalog.dto';
 import { ListSecurityAuditQueryDto } from '../security/dto/list-security-audit-query.dto';
 import { SecurityAuditAction } from '../security/security-audit.actions';
 import { SecurityAuditService } from '../security/security-audit.service';
+import type { SecurityAuditActionId } from '../security/security-audit.actions';
+import { AuthenticatedUser } from '../auth/authenticated-user.type';
 
 function parsePlanTier(tier: string): PlanTier {
   if (!Object.values(PlanTier).includes(tier as PlanTier)) {
@@ -53,6 +55,21 @@ export class AdminController {
     private readonly adminAuthService: AdminAuthService,
     private readonly securityAuditService: SecurityAuditService,
   ) {}
+
+  private async auditAdminRead(
+    user: AuthenticatedUser,
+    req: Request,
+    action: SecurityAuditActionId,
+    metadata?: Record<string, unknown>,
+  ): Promise<void> {
+    await this.securityAuditService.log({
+      actorId: user.id,
+      actorEmail: user.email,
+      action,
+      ipAddress: getClientIp(req),
+      metadata,
+    });
+  }
 
   @Post('totp/setup')
   @AdminTotpOptional()
@@ -105,17 +122,23 @@ export class AdminController {
   }
 
   @Get('vendors')
-  listVendors() {
+  async listVendors(@CurrentUser() user: AuthenticatedUser, @Req() req: Request) {
+    await this.auditAdminRead(user, req, SecurityAuditAction.ADMIN_VIEW_VENDORS);
     return this.adminService.listVendors();
   }
 
   @Get('customers')
-  listCustomers() {
+  async listCustomers(
+    @CurrentUser() user: AuthenticatedUser,
+    @Req() req: Request,
+  ) {
+    await this.auditAdminRead(user, req, SecurityAuditAction.ADMIN_VIEW_CUSTOMERS);
     return this.adminService.listCustomers();
   }
 
   @Get('orders')
-  listOrders() {
+  async listOrders(@CurrentUser() user: AuthenticatedUser, @Req() req: Request) {
+    await this.auditAdminRead(user, req, SecurityAuditAction.ADMIN_VIEW_ORDERS);
     return this.adminService.listOrders();
   }
 
@@ -148,7 +171,15 @@ export class AdminController {
   }
 
   @Get('verification')
-  listVerificationQueue() {
+  async listVerificationQueue(
+    @CurrentUser() user: AuthenticatedUser,
+    @Req() req: Request,
+  ) {
+    await this.auditAdminRead(
+      user,
+      req,
+      SecurityAuditAction.ADMIN_VIEW_VERIFICATION_QUEUE,
+    );
     return this.adminService.listVerificationQueue();
   }
 

@@ -215,6 +215,16 @@ export function validateEnv(config: Record<string, unknown>) {
     if (config.ASHLAB_VERIFY_DEBUG === 'true') {
       throw new Error('ASHLAB_VERIFY_DEBUG cannot be enabled in production');
     }
+
+    if (config.PAYMENT_ALLOW_WEBHOOK_ONLY_CONFIRM === 'true') {
+      throw new Error(
+        'PAYMENT_ALLOW_WEBHOOK_ONLY_CONFIRM cannot be enabled in production',
+      );
+    }
+
+    if (config.ALLOW_DEV_PAYMENT_MOCKS === 'true') {
+      throw new Error('ALLOW_DEV_PAYMENT_MOCKS cannot be enabled in production');
+    }
   }
 
   const totpKey = config.TOTP_ENCRYPTION_KEY;

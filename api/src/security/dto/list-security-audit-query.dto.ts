@@ -42,7 +42,7 @@ export class ListSecurityAuditQueryDto {
 
   @IsOptional()
   @IsString()
-  @MaxLength(200)
+  @MaxLength(100)
   search?: string;
 
   @IsOptional()

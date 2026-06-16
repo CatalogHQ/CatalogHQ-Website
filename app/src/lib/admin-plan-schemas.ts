@@ -28,7 +28,17 @@ export const adminPlanDraftSchema = z.object({
     }),
   popular: z.boolean(),
   active: z.boolean(),
-  featureBulletsText: z.string(),
+  featureBulletsText: z
+    .string()
+    .max(10_000, "Feature list is too long")
+    .refine(
+      (text) =>
+        text
+          .split("\n")
+          .map((line) => line.trim())
+          .filter(Boolean).length <= 50,
+      { message: "Use at most 50 feature bullets" },
+    ),
 });
 
 export type AdminPlanDraftInput = z.infer<typeof adminPlanDraftSchema>;
@@ -51,7 +61,8 @@ export function parseAdminPlanDraft(draft: AdminPlanDraftInput) {
     sortOrder,
     featureBullets: parsed.featureBulletsText
       .split("\n")
-      .map((line) => line.trim())
-      .filter(Boolean),
+      .map((line) => line.trim().slice(0, 200))
+      .filter(Boolean)
+      .slice(0, 50),
   };
 }

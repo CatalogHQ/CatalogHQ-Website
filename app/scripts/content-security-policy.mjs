@@ -32,8 +32,10 @@ export function buildContentSecurityPolicy(apiUrl, options = {}) {
   return [
     "default-src 'self'",
     "script-src 'self'",
-    // Tailwind and component libraries inject inline styles; use nonces when migrating off unsafe-inline.
-  "style-src 'self' 'unsafe-inline'",
+    // CSP Level 3: block injected <style> tags; allow component style attributes (Radix/Tailwind).
+    "style-src 'self'",
+    "style-src-elem 'self'",
+    "style-src-attr 'unsafe-inline'",
     "font-src 'self'",
     `img-src ${imgSrc}`,
     `connect-src ${[...connectSrc].join(" ")}`,

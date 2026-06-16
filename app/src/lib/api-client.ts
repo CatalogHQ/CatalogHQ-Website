@@ -1,4 +1,5 @@
 import { ApiError } from "@/lib/api-error";
+import { sanitizeApiErrorMessage } from "@/lib/sanitize-api-error";
 import {
   applyCsrfTokenFromResponse,
   clearCsrfToken,
@@ -44,13 +45,17 @@ async function parseApiError(response: Response): Promise<ApiError> {
       ? payload.message.join(", ")
       : (payload.message ?? `Request failed (${response.status})`);
 
-    return new ApiError(message, response.status, payload.code);
+    return new ApiError(
+      sanitizeApiErrorMessage(message, response.status),
+      response.status,
+      payload.code,
+    );
   } catch {
     const trimmed = text.trim().slice(0, 200);
     const safeMessage =
       trimmed.startsWith("<") || trimmed.startsWith("<!")
         ? `Request failed (${response.status})`
-        : trimmed;
+        : sanitizeApiErrorMessage(trimmed, response.status);
 
     return new ApiError(safeMessage, response.status);
   }

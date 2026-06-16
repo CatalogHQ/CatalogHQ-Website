@@ -2,6 +2,7 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as speakeasy from 'speakeasy';
 import { encryptTotpSecret, decryptTotpSecret } from '../lib/encryption';
+import { assertValidOtpauthUrl } from '../lib/otpauth-url.util';
 import { PrismaService } from '../prisma/prisma.service';
 
 /** Only the current 30s TOTP step is accepted (no previous/next window). */
@@ -33,7 +34,7 @@ export class AdminAuthService {
       },
     });
 
-    return { otpauthUrl: secret.otpauth_url };
+    return { otpauthUrl: assertValidOtpauthUrl(secret.otpauth_url) };
   }
 
   async enableTotp(userId: string, token: string): Promise<void> {
