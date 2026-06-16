@@ -4,6 +4,9 @@ import * as speakeasy from 'speakeasy';
 import { encryptTotpSecret, decryptTotpSecret } from '../lib/encryption';
 import { PrismaService } from '../prisma/prisma.service';
 
+/** Only the current 30s TOTP step is accepted (no previous/next window). */
+const TOTP_VERIFY_WINDOW = 0;
+
 @Injectable()
 export class AdminAuthService {
   constructor(
@@ -55,11 +58,12 @@ export class AdminAuthService {
     }
 
     const secret = decryptTotpSecret(user.totpSecret);
+    const normalizedToken = token.trim();
     return speakeasy.totp.verify({
       secret,
       encoding: 'base32',
-      token,
-      window: 1,
+      token: normalizedToken,
+      window: TOTP_VERIFY_WINDOW,
     });
   }
 
