@@ -16,6 +16,7 @@ import TicketPriorityBadge from "@/components/admin/TicketPriorityBadge";
 import TicketStatusBadge from "@/components/admin/TicketStatusBadge";
 import type { AdminSupportTicket } from "@/data/admin-mock";
 import { adminRepository } from "@/lib/repositories";
+import { formatDateTimeEnNg } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 type FilterTab = "all" | "open" | "resolved";
@@ -185,7 +186,7 @@ export default function AdminTickets() {
                   )}
                 </TableCell>
                 <TableCell className="text-gray-600">
-                  {new Date(ticket.createdAt).toLocaleDateString("en-NG")}
+                  {formatDateTimeEnNg(ticket.createdAt)}
                 </TableCell>
               </TableRow>
             ))}

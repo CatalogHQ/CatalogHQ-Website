@@ -216,7 +216,7 @@ export default function Orders() {
                 <TableHead>Customer</TableHead>
                 <TableHead>You receive</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead className="hidden sm:table-cell">Date</TableHead>
+                <TableHead className="hidden sm:table-cell">Date & time</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>

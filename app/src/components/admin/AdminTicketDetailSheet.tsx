@@ -17,6 +17,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import TicketPriorityBadge from "@/components/admin/TicketPriorityBadge";
 import TicketStatusBadge from "@/components/admin/TicketStatusBadge";
+import { formatDateTimeEnNg } from "@/lib/format";
 import { sanitizeText } from "@/lib/sanitize";
 import type { AdminSupportTicket } from "@/data/admin-mock";
 
@@ -51,7 +52,7 @@ export default function AdminTicketDetailSheet({
         <SheetHeader>
           <SheetTitle>{ticket.subject}</SheetTitle>
           <SheetDescription>
-            Opened {new Date(ticket.createdAt).toLocaleString("en-NG")}
+            Opened {formatDateTimeEnNg(ticket.createdAt)}
           </SheetDescription>
         </SheetHeader>
 

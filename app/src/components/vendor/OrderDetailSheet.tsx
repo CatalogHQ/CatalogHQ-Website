@@ -23,7 +23,7 @@ import { OrderFeeBreakdown } from "@/components/vendor/FlutterwaveFeeBreakdown";
 import { useAuth } from "@/contexts/AuthContext";
 import { hasFeature } from "@/data/plans";
 import { getDeliveryLabel } from "@/lib/delivery-types";
-import { formatNaira } from "@/lib/format";
+import { formatNaira, formatDateTimeEnNg } from "@/lib/format";
 import { isAllowedPaymentRedirectUrl } from "@/lib/safe-navigation";
 import { orderRepository } from "@/lib/repositories";
 import { vendorToolsRepository } from "@/lib/repositories/vendor-tools-repository";
@@ -123,7 +123,7 @@ export default function OrderDetailSheet({
         <SheetHeader>
           <SheetTitle>{order.paymentRef}</SheetTitle>
           <SheetDescription>
-            Placed {new Date(order.createdAt).toLocaleString("en-NG")}
+            Placed {formatDateTimeEnNg(order.createdAt)}
           </SheetDescription>
         </SheetHeader>
 

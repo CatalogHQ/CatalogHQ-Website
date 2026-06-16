@@ -26,7 +26,7 @@ import type {
   AdminPlatformStats,
 } from "@/data/admin-mock";
 import { adminRepository } from "@/lib/repositories";
-import { formatNaira } from "@/lib/format";
+import { formatNaira, formatDateTimeEnNg } from "@/lib/format";
 import { isApiMode } from "@/lib/use-api";
 import { toast } from "sonner";
 
@@ -221,7 +221,7 @@ export default function AdminOverview() {
                   <TableHead>Total</TableHead>
                   <TableHead>Payment</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Date</TableHead>
+                  <TableHead>Date & time</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -240,7 +240,7 @@ export default function AdminOverview() {
                       <OrderStatusBadge status={order.status} />
                     </TableCell>
                     <TableCell className="text-gray-600">
-                      {new Date(order.createdAt).toLocaleDateString("en-NG")}
+                      {formatDateTimeEnNg(order.createdAt)}
                     </TableCell>
                   </TableRow>
                 ))}

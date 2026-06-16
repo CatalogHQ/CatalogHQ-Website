@@ -149,7 +149,7 @@ export default function AdminOrders() {
               <TableHead>Total</TableHead>
               <TableHead>Payment</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead>Date</TableHead>
+              <TableHead>Date & time</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
 import { adminRepository } from "@/lib/repositories";
+import { formatDateTimeEnNg } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { HealthDetailResponse } from "@/types/health-detail";
 
@@ -110,11 +111,7 @@ export default function AdminSystemHealth() {
                 </Badge>
               </div>
               <p className="text-sm text-muted-foreground">
-                Last checked:{" "}
-                {new Intl.DateTimeFormat(undefined, {
-                  dateStyle: "medium",
-                  timeStyle: "medium",
-                }).format(new Date(detail.timestamp))}
+                Last checked: {formatDateTimeEnNg(detail.timestamp)}
               </p>
             </CardContent>
           </Card>

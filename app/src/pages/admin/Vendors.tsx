@@ -25,7 +25,7 @@ import type { AdminVendor } from "@/data/admin-mock";
 import { PLAN_TIER_LABELS, type PlanTier } from "@/data/plans";
 import { adminRepository } from "@/lib/repositories";
 import type { AdminListDateRange } from "@/lib/admin-date-range";
-import { formatNaira } from "@/lib/format";
+import { formatNaira, formatDateTimeEnNg } from "@/lib/format";
 import { getStoreUrl } from "@/lib/slug";
 
 const PLAN_TIERS: PlanTier[] = ["starter", "pro", "growth", "business"];
@@ -206,7 +206,7 @@ export default function AdminVendors() {
                 <TableCell>{vendor.orderCount}</TableCell>
                 <TableCell>{formatNaira(vendor.revenue)}</TableCell>
                 <TableCell className="text-gray-600">
-                  {new Date(vendor.createdAt).toLocaleDateString("en-NG")}
+                  {formatDateTimeEnNg(vendor.createdAt)}
                 </TableCell>
                 <TableCell>
                   <a

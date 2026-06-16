@@ -15,7 +15,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
-import { maskNin } from "@/lib/format";
+import { maskNin, formatDateTimeEnNg } from "@/lib/format";
 import { vendorHasActiveSubscription } from "@/lib/vendor-onboarding";
 import {
   getVerificationStatusDescription,
@@ -140,9 +140,7 @@ export default function VendorVerificationCard({
             <div className="rounded-lg border bg-gray-50 px-3 py-2.5">
               <p className="text-gray-500">Verified on</p>
               <p className="mt-0.5 font-medium text-gray-900">
-                {new Date(store.verifiedAt).toLocaleDateString("en-NG", {
-                  dateStyle: "medium",
-                })}
+                {formatDateTimeEnNg(store.verifiedAt)}
               </p>
             </div>
           )}

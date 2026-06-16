@@ -249,7 +249,7 @@ export default function Payouts() {
               </p>
               {account.payoutSetupAt ? (
                 <p className="mt-1 text-xs text-gray-500">
-                  Linked {new Date(account.payoutSetupAt).toLocaleDateString("en-NG")}
+                  Linked {formatDateTimeEnNg(account.payoutSetupAt)}
                 </p>
               ) : null}
             </div>
@@ -408,7 +408,7 @@ export default function Payouts() {
                     <TableHead>Product</TableHead>
                     <TableHead>You receive</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead>Date</TableHead>
+                    <TableHead>Date & time</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>

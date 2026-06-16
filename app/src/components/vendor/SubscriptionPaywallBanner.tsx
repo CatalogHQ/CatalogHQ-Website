@@ -1,4 +1,5 @@
 import { Link } from "react-router";
+import { formatDateTimeEnNg } from "@/lib/format";
 import { useVendorEntitlements } from "@/hooks/use-vendor-entitlements";
 
 export default function SubscriptionPaywallBanner() {
@@ -14,11 +15,7 @@ export default function SubscriptionPaywallBanner() {
       <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
         <p className="font-medium">Subscription payment failed</p>
         <p className="mt-1">
-          Renew by{" "}
-          {new Date(graceEndsAt).toLocaleDateString("en-NG", {
-            dateStyle: "medium",
-          })}{" "}
-          to keep your store open.
+          Renew by {formatDateTimeEnNg(graceEndsAt)} to keep your store open.
         </p>
         <Link
           to="/dashboard/billing"

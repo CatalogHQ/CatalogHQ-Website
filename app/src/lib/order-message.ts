@@ -1,5 +1,5 @@
 import { getDeliveryLabel } from "@/lib/delivery-types";
-import { formatNaira } from "@/lib/format";
+import { formatNaira, formatDateTimeEnNg } from "@/lib/format";
 import { vendorNetFromOrderLine } from "@/lib/flutterwave-fees";
 import {
   ORDER_STATUS_LABELS,
@@ -20,10 +20,7 @@ export type OrderWhatsAppMessageOptions = {
 };
 
 function formatOrderDate(iso: string): string {
-  return new Date(iso).toLocaleString("en-NG", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  });
+  return formatDateTimeEnNg(iso);
 }
 
 function resolvePaymentLabel(order: CustomerOrder): string {

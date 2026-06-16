@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/popover";
 import OrderStatusBadge from "@/components/vendor/OrderStatusBadge";
 import { useVendor } from "@/contexts/VendorContext";
-import { formatNaira } from "@/lib/format";
+import { formatNaira, formatDateTimeEnNg } from "@/lib/format";
 
 function formatNotificationTime(iso: string): string {
   const date = new Date(iso);
@@ -22,10 +22,7 @@ function formatNotificationTime(iso: string): string {
   const diffHours = Math.floor(diffMins / 60);
   if (diffHours < 24) return `${diffHours}h ago`;
 
-  return date.toLocaleDateString("en-NG", {
-    month: "short",
-    day: "numeric",
-  });
+  return formatDateTimeEnNg(date);
 }
 
 export default function VendorOrderNotifications() {

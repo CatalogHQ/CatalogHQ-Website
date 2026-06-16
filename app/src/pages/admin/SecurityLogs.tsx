@@ -21,6 +21,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { adminRepository } from "@/lib/repositories";
+import { formatDateTimeEnNg } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type {
   SecurityAuditCategory,
@@ -40,13 +41,6 @@ const categoryTabs: { id: SecurityAuditCategory; label: string }[] = [
 
 function formatActionLabel(action: string): string {
   return action.replace(/\./g, " ").replace(/_/g, " ");
-}
-
-function formatTimestamp(value: string): string {
-  return new Intl.DateTimeFormat(undefined, {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(value));
 }
 
 function actionBadgeVariant(
@@ -210,7 +204,7 @@ export default function AdminSecurityLogs() {
                   onClick={() => setSelectedLog(log)}
                 >
                   <TableCell className="whitespace-nowrap text-sm">
-                    {formatTimestamp(log.createdAt)}
+                    {formatDateTimeEnNg(log.createdAt)}
                   </TableCell>
                   <TableCell>
                     <Badge variant={actionBadgeVariant(log.action)}>
@@ -275,7 +269,7 @@ export default function AdminSecurityLogs() {
               <SheetHeader>
                 <SheetTitle>Security event</SheetTitle>
                 <SheetDescription>
-                  {formatTimestamp(selectedLog.createdAt)}
+                  {formatDateTimeEnNg(selectedLog.createdAt)}
                 </SheetDescription>
               </SheetHeader>
               <div className="mt-6 space-y-4 text-sm">

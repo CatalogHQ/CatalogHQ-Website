@@ -18,7 +18,7 @@ import { Label } from "@/components/ui/label";
 import OrderStatusBadge from "@/components/vendor/OrderStatusBadge";
 import PaymentStatusBadge from "@/components/admin/PaymentStatusBadge";
 import { getDeliveryLabel } from "@/lib/delivery-types";
-import { formatNaira } from "@/lib/format";
+import { formatNaira, formatDateTimeEnNg } from "@/lib/format";
 import { adminRepository } from "@/lib/repositories";
 import { getStoreOrderUrl } from "@/lib/slug";
 import type { AdminPlatformOrder } from "@/data/admin-mock";
@@ -82,7 +82,7 @@ export default function AdminOrderDetailSheet({
           <SheetTitle className="font-mono">{order.paymentRef}</SheetTitle>
           <SheetDescription>
             {order.storeName} ·{" "}
-            {new Date(order.createdAt).toLocaleString("en-NG")}
+            {formatDateTimeEnNg(order.createdAt)}
           </SheetDescription>
         </SheetHeader>
 

@@ -22,7 +22,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { usePlanCatalog } from "@/contexts/PlanCatalogContext";
 import { PLAN_TIER_LABELS, type PlanTier } from "@/data/plans";
-import { formatNaira } from "@/lib/format";
+import { formatNaira, formatDateTimeEnNg } from "@/lib/format";
 import { subscriptionRepository } from "@/lib/repositories";
 import { isAllowedPaymentRedirectUrl } from "@/lib/safe-navigation";
 import type {
@@ -234,19 +234,13 @@ export default function Billing() {
           {subscription.currentPeriodEnd ? (
             <p className="text-sm text-gray-600">
               {subscription.cancelAtPeriodEnd ? "Access until" : "Renews on"}{" "}
-              {new Date(subscription.currentPeriodEnd).toLocaleDateString(
-                "en-NG",
-                { dateStyle: "medium" },
-              )}
+              {formatDateTimeEnNg(subscription.currentPeriodEnd)}
             </p>
           ) : null}
 
           {subscription.graceEndsAt ? (
             <p className="text-sm text-amber-800">
-              Grace period ends{" "}
-              {new Date(subscription.graceEndsAt).toLocaleDateString("en-NG", {
-                dateStyle: "medium",
-              })}
+              Grace period ends {formatDateTimeEnNg(subscription.graceEndsAt)}
             </p>
           ) : null}
 
@@ -317,7 +311,7 @@ export default function Billing() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Date</TableHead>
+                  <TableHead>Date & time</TableHead>
                   <TableHead>Plan</TableHead>
                   <TableHead>Amount</TableHead>
                   <TableHead>Status</TableHead>
@@ -327,7 +321,7 @@ export default function Billing() {
                 {payments.map((payment) => (
                   <TableRow key={payment.id}>
                     <TableCell>
-                      {new Date(payment.createdAt).toLocaleDateString("en-NG")}
+                      {formatDateTimeEnNg(payment.createdAt)}
                     </TableCell>
                     <TableCell>
                       {PLAN_TIER_LABELS[payment.planTier]}

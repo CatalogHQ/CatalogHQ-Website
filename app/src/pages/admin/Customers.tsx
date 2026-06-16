@@ -15,7 +15,7 @@ import AdminDateRangeFilter from "@/components/admin/AdminDateRangeFilter";
 import type { AdminCustomer } from "@/data/admin-mock";
 import { adminRepository } from "@/lib/repositories";
 import type { AdminListDateRange } from "@/lib/admin-date-range";
-import { formatNaira } from "@/lib/format";
+import { formatNaira, formatDateTimeEnNg } from "@/lib/format";
 
 export default function AdminCustomers() {
   const [customers, setCustomers] = useState<AdminCustomer[]>([]);
@@ -122,7 +122,7 @@ export default function AdminCustomers() {
                 <TableCell>{customer.orderCount}</TableCell>
                 <TableCell>{formatNaira(customer.totalSpent)}</TableCell>
                 <TableCell className="text-gray-600">
-                  {new Date(customer.lastOrderAt).toLocaleDateString("en-NG")}
+                  {formatDateTimeEnNg(customer.lastOrderAt)}
                 </TableCell>
               </TableRow>
             ))}

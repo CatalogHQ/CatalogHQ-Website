@@ -32,6 +32,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { BadgeCheck } from "lucide-react";
 import type { AdminVerificationRequest } from "@/data/admin-mock";
 import { adminRepository } from "@/lib/repositories";
+import { formatDateTimeEnNg } from "@/lib/format";
 import { getStoreUrl } from "@/lib/slug";
 
 export default function AdminVerification() {
@@ -140,11 +141,7 @@ export default function AdminVerification() {
                       {request.businessName}
                     </CardTitle>
                     <CardDescription>
-                      Submitted{" "}
-                      {new Date(request.submittedAt).toLocaleDateString(
-                        "en-NG",
-                        { dateStyle: "medium" },
-                      )}
+                      Submitted {formatDateTimeEnNg(request.submittedAt)}
                       {(request.city || request.state) && (
                         <>
                           {" "}
