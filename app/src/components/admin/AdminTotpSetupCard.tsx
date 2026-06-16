@@ -8,7 +8,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 
-export default function AdminTotpSetup() {
+type AdminTotpSetupCardProps = {
+  onEnabled?: () => void;
+};
+
+export default function AdminTotpSetupCard({ onEnabled }: AdminTotpSetupCardProps) {
   const navigate = useNavigate();
   const { refreshUser } = useAuth();
   const [otpauthUrl, setOtpauthUrl] = useState<string | null>(null);
@@ -43,7 +47,11 @@ export default function AdminTotpSetup() {
       });
       await refreshUser();
       toast.success("Two-factor authentication is now enabled.");
-      navigate("/admin");
+      if (onEnabled) {
+        onEnabled();
+      } else {
+        navigate("/admin");
+      }
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Invalid 2FA code.",
@@ -54,13 +62,11 @@ export default function AdminTotpSetup() {
   };
 
   return (
-    <div className="mx-auto max-w-md space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Admin 2FA setup</h1>
-        <p className="mt-1 text-sm text-gray-600">
-          Protect your admin account with an authenticator app.
-        </p>
-      </div>
+    <div className="space-y-4">
+      <p className="text-sm text-muted-foreground">
+        Protect your admin account with an authenticator app. You will need a
+        current code each time you sign in.
+      </p>
 
       <Button onClick={() => void handleSetup()} disabled={loading}>
         Generate QR code
@@ -88,7 +94,6 @@ export default function AdminTotpSetup() {
       <Button
         onClick={() => void handleEnable()}
         disabled={loading || token.length !== 6}
-        className="w-full"
       >
         Enable 2FA
       </Button>

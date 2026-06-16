@@ -36,12 +36,10 @@ export default function AdminRoute({ children }: AdminRouteProps) {
     return <Navigate to="/dashboard" replace />;
   }
 
-  const onTotpSetup =
-    location.pathname === "/admin/totp/setup" ||
-    location.pathname === "/admin/totp-setup";
+  const onAdminSettings = location.pathname === "/admin/settings";
 
-  if (user?.role === "admin" && user.totpEnabled === false && !onTotpSetup) {
-    return <Navigate to="/admin/totp/setup" replace />;
+  if (user?.role === "admin" && user.totpEnabled === false && !onAdminSettings) {
+    return <Navigate to="/admin/settings" replace />;
   }
 
   return children;

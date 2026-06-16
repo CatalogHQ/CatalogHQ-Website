@@ -30,7 +30,7 @@ export class AdminTotpGuard implements CanActivate {
 
     if (!user.totpEnabled) {
       throw new ForbiddenException(
-        'Admin 2FA setup is required. Complete setup at /admin/totp/setup.',
+        'Admin 2FA setup is required. Complete setup in Settings.',
       );
     }
 

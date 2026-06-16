@@ -13,6 +13,7 @@ import {
   CreditCard,
   ShieldAlert,
   Activity,
+  Settings,
 } from "lucide-react";
 import {
   Sidebar,
@@ -57,12 +58,18 @@ const navItems = [
   { title: "Plans", href: "/admin/plans", icon: CreditCard },
   { title: "System health", href: "/admin/system-health", icon: Activity },
   { title: "Security logs", href: "/admin/security-logs", icon: ShieldAlert },
+  { title: "Settings", href: "/admin/settings", icon: Settings },
 ];
 
 export default function AdminLayout() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { signOut } = useAuth();
+  const { signOut, user } = useAuth();
+  const totpSetupRequired =
+    user?.role === "admin" && user.totpEnabled === false;
+  const visibleNavItems = totpSetupRequired
+    ? navItems.filter((item) => item.href === "/admin/settings")
+    : navItems;
 
   const { pendingVerifications, openTickets } = useAdminBadges();
 
@@ -109,7 +116,7 @@ export default function AdminLayout() {
             <SidebarGroupLabel>Platform</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {navItems.map((item) => {
+                {visibleNavItems.map((item) => {
                   const badgeCount = getBadgeCount(item.badgeKey);
                   return (
                     <SidebarMenuItem key={item.href}>

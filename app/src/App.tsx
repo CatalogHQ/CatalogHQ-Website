@@ -29,7 +29,7 @@ import AdminAnalytics from './pages/admin/Analytics'
 import AdminPlans from './pages/admin/Plans'
 import AdminSecurityLogs from './pages/admin/SecurityLogs'
 import AdminSystemHealth from './pages/admin/SystemHealth'
-import AdminTotpSetup from './pages/admin/TotpSetup'
+import AdminSettings from './pages/admin/Settings'
 import PublicStore from './pages/storefront/PublicStore'
 import PublicProduct from './pages/storefront/PublicProduct'
 import PublicStoreReviews from './pages/storefront/PublicStoreReviews'
@@ -139,8 +139,9 @@ export default function App() {
         <Route path="plans" element={<AdminPlans />} />
         <Route path="security-logs" element={<AdminSecurityLogs />} />
         <Route path="system-health" element={<AdminSystemHealth />} />
-        <Route path="totp/setup" element={<AdminTotpSetup />} />
-        <Route path="totp-setup" element={<Navigate to="/admin/totp/setup" replace />} />
+        <Route path="settings" element={<AdminSettings />} />
+        <Route path="totp/setup" element={<Navigate to="/admin/settings" replace />} />
+        <Route path="totp-setup" element={<Navigate to="/admin/settings" replace />} />
       </Route>
 
       <Route path="*" element={<NotFound />} />
