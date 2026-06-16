@@ -1,7 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as speakeasy from 'speakeasy';
-import * as QRCode from 'qrcode';
 import { encryptTotpSecret, decryptTotpSecret } from '../lib/encryption';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -12,7 +11,7 @@ export class AdminAuthService {
     private readonly configService: ConfigService,
   ) {}
 
-  async setupTotp(userId: string): Promise<{ qrCodeDataUrl: string }> {
+  async setupTotp(userId: string): Promise<{ otpauthUrl: string }> {
     const secret = speakeasy.generateSecret({
       name: `CatalogHQ Admin (${userId})`,
       length: 32,
@@ -31,8 +30,7 @@ export class AdminAuthService {
       },
     });
 
-    const qrCodeDataUrl = await QRCode.toDataURL(secret.otpauth_url);
-    return { qrCodeDataUrl };
+    return { otpauthUrl: secret.otpauth_url };
   }
 
   async enableTotp(userId: string, token: string): Promise<void> {

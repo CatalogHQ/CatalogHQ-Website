@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
+import { QRCodeSVG } from "qrcode.react";
 import { apiClient } from "@/lib/api-client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -10,18 +11,18 @@ import { toast } from "sonner";
 export default function AdminTotpSetup() {
   const navigate = useNavigate();
   const { refreshUser } = useAuth();
-  const [qrCode, setQrCode] = useState<string | null>(null);
+  const [otpauthUrl, setOtpauthUrl] = useState<string | null>(null);
   const [token, setToken] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleSetup = async () => {
     setLoading(true);
     try {
-      const response = await apiClient<{ qrCodeDataUrl: string }>(
+      const response = await apiClient<{ otpauthUrl: string }>(
         "/admin/totp/setup",
         { method: "POST" },
       );
-      setQrCode(response.qrCodeDataUrl);
+      setOtpauthUrl(response.otpauthUrl);
       toast.success("Scan the QR code with your authenticator app.");
     } catch (error) {
       toast.error(
@@ -65,12 +66,10 @@ export default function AdminTotpSetup() {
         Generate QR code
       </Button>
 
-      {qrCode && (
-        <img
-          src={qrCode}
-          alt="TOTP QR code"
-          className="mx-auto h-48 w-48 rounded-lg border bg-white p-2"
-        />
+      {otpauthUrl && (
+        <div className="mx-auto flex h-48 w-48 items-center justify-center rounded-lg border bg-white p-2">
+          <QRCodeSVG value={otpauthUrl} size={176} level="M" />
+        </div>
       )}
 
       <div className="space-y-2">

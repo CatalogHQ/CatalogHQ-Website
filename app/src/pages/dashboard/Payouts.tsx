@@ -407,7 +407,6 @@ export default function Payouts() {
                     <TableHead>Ref</TableHead>
                     <TableHead>Product</TableHead>
                     <TableHead>You receive</TableHead>
-                    <TableHead>Customer paid</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Date</TableHead>
                   </TableRow>
@@ -422,7 +421,6 @@ export default function Payouts() {
                       <TableCell>
                         {formatNaira(order.vendorNet ?? 0)}
                       </TableCell>
-                      <TableCell>{formatNaira(order.totalPaid)}</TableCell>
                       <TableCell>
                         <Badge variant="outline">
                           {getPayoutStatusLabel(order, PAYOUT_STATUS_LABELS)}
