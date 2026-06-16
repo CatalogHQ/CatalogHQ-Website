@@ -1,45 +1,55 @@
 import {
   computeCheckoutPricing,
-  customerPriceForVendorNet,
+  CATALOGHQ_SERVICE_FEE_NGN,
+  customerTotalForVendorNet,
+  estimateFlutterwaveFee,
   estimateVendorNetFromCustomerTotal,
   FLUTTERWAVE_DOMESTIC_FEE_CAP_NGN,
-  roundCustomerPayAmount,
 } from './flutterwave-fees.util';
 
 describe('flutterwave-fees.util', () => {
-  it('adds fee on top so vendor receives the listed amount', () => {
+  it('adds Flutterwave fee and service fee so vendor receives the listed amount', () => {
     const pricing = computeCheckoutPricing(5000);
     expect(pricing.vendorNet).toBe(5000);
-    expect(pricing.customerTotal).toBe(5150);
-    expect(pricing.processingFee).toBe(150);
-    expect(estimateVendorNetFromCustomerTotal(pricing.customerTotal)).toBeGreaterThanOrEqual(
+    expect(pricing.serviceFee).toBe(CATALOGHQ_SERVICE_FEE_NGN);
+    expect(pricing.paymentProcessingFee).toBe(
+      estimateFlutterwaveFee(pricing.customerTotal),
+    );
+    expect(pricing.customerTotal).toBe(
+      pricing.vendorNet +
+        pricing.paymentProcessingFee +
+        pricing.serviceFee,
+    );
+    expect(estimateVendorNetFromCustomerTotal(pricing.customerTotal)).toBe(
       5000,
     );
   });
 
-  it('scales fee for multi-item vendor totals', () => {
+  it('uses minimum customer total for multi-item vendor totals', () => {
     const pricing = computeCheckoutPricing(5000);
-    expect(pricing.customerTotal).toBe(
-      roundCustomerPayAmount(customerPriceForVendorNet(5000)),
-    );
-    expect(pricing.processingFee).toBe(pricing.customerTotal - 5000);
-  });
-
-  it('rounds customer totals ending below 50 naira up to the next 50', () => {
-    expect(roundCustomerPayAmount(1020)).toBe(1050);
-    expect(roundCustomerPayAmount(1049)).toBe(1050);
-    expect(roundCustomerPayAmount(1050)).toBe(1050);
-    expect(roundCustomerPayAmount(5102)).toBe(5150);
-    expect(roundCustomerPayAmount(152000)).toBe(152000);
-  });
-
-  it('caps processing fee at NGN 2000', () => {
-    const pricing = computeCheckoutPricing(150_000);
+    expect(pricing.customerTotal).toBe(customerTotalForVendorNet(5000));
     expect(pricing.processingFee).toBe(
+      pricing.paymentProcessingFee + pricing.serviceFee,
+    );
+    expect(pricing.platformFee).toBe(CATALOGHQ_SERVICE_FEE_NGN);
+  });
+
+  it('charges a fixed service fee on a 300 naira item', () => {
+    const pricing = computeCheckoutPricing(300);
+    expect(pricing.serviceFee).toBe(20);
+    expect(pricing.paymentProcessingFee).toBe(7);
+    expect(pricing.customerTotal).toBe(327);
+    expect(pricing.vendorNet).toBe(300);
+  });
+
+  it('caps Flutterwave fee at NGN 2000', () => {
+    const pricing = computeCheckoutPricing(150_000);
+    expect(pricing.paymentProcessingFee).toBe(
       FLUTTERWAVE_DOMESTIC_FEE_CAP_NGN,
     );
-    expect(pricing.customerTotal).toBe(152_000);
-    expect(estimateVendorNetFromCustomerTotal(pricing.customerTotal)).toBeGreaterThanOrEqual(
+    expect(pricing.serviceFee).toBe(CATALOGHQ_SERVICE_FEE_NGN);
+    expect(pricing.customerTotal).toBe(152_020);
+    expect(estimateVendorNetFromCustomerTotal(pricing.customerTotal)).toBe(
       150_000,
     );
   });

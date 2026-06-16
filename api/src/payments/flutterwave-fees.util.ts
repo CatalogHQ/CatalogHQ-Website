@@ -2,9 +2,15 @@
 export const FLUTTERWAVE_DOMESTIC_FEE_RATE = 0.02;
 export const FLUTTERWAVE_DOMESTIC_FEE_CAP_NGN = 2000;
 
+/** Fixed CatalogHQ fee added to every checkout (platform commission). */
+export const CATALOGHQ_SERVICE_FEE_NGN = 20;
+
 export type CheckoutPricing = {
   vendorNet: number;
+  paymentProcessingFee: number;
+  serviceFee: number;
   processingFee: number;
+  platformFee: number;
   customerTotal: number;
 };
 
@@ -19,15 +25,23 @@ export function estimateFlutterwaveFee(customerTotalNgn: number): number {
 export function estimateVendorNetFromCustomerTotal(
   customerTotalNgn: number,
 ): number {
-  return Math.max(0, customerTotalNgn - estimateFlutterwaveFee(customerTotalNgn));
+  if (customerTotalNgn <= 0) return 0;
+  return Math.max(
+    0,
+    customerTotalNgn -
+      estimateFlutterwaveFee(customerTotalNgn) -
+      CATALOGHQ_SERVICE_FEE_NGN,
+  );
 }
 
-export function customerPriceForVendorNet(vendorNet: number): number {
+export function customerTotalForVendorNet(vendorNet: number): number {
   if (vendorNet <= 0) return 0;
 
-  let low = vendorNet;
+  const serviceFee = CATALOGHQ_SERVICE_FEE_NGN;
+  let low = vendorNet + serviceFee;
   let high =
     vendorNet +
+    serviceFee +
     FLUTTERWAVE_DOMESTIC_FEE_CAP_NGN +
     Math.max(100, Math.ceil(vendorNet * 0.05));
 
@@ -43,28 +57,19 @@ export function customerPriceForVendorNet(vendorNet: number): number {
   return low;
 }
 
-/** If the last two naira digits are below 50, round the amount up to the next 50. */
-export function roundCustomerPayAmount(amount: number): number {
-  if (amount <= 0) {
-    return 0;
-  }
-
-  const lastTwoDigits = amount % 100;
-  if (lastTwoDigits === 0 || lastTwoDigits >= 50) {
-    return amount;
-  }
-
-  return amount + (50 - lastTwoDigits);
-}
-
 export function computeCheckoutPricing(vendorNet: number): CheckoutPricing {
   const normalizedVendorNet = Math.max(0, vendorNet);
-  const rawCustomerTotal = customerPriceForVendorNet(normalizedVendorNet);
-  const customerTotal = roundCustomerPayAmount(rawCustomerTotal);
+  const customerTotal = customerTotalForVendorNet(normalizedVendorNet);
+  const paymentProcessingFee = estimateFlutterwaveFee(customerTotal);
+  const serviceFee =
+    normalizedVendorNet > 0 ? CATALOGHQ_SERVICE_FEE_NGN : 0;
 
   return {
     vendorNet: normalizedVendorNet,
-    processingFee: customerTotal - normalizedVendorNet,
+    paymentProcessingFee,
+    serviceFee,
+    processingFee: paymentProcessingFee + serviceFee,
+    platformFee: serviceFee,
     customerTotal,
   };
 }

@@ -1,5 +1,9 @@
 import { formatNaira } from "@/lib/format";
-import { computeCheckoutPricing } from "@/lib/flutterwave-fees";
+import {
+  CATALOGHQ_SERVICE_FEE_LABEL,
+  computeCheckoutPricing,
+  SECURE_PAYMENT_FEE_LABEL,
+} from "@/lib/flutterwave-fees";
 import { cn } from "@/lib/utils";
 
 type CheckoutPricingSummaryProps = {
@@ -9,7 +13,8 @@ type CheckoutPricingSummaryProps = {
   totalLabel?: string;
   /** Use persisted order totals instead of recomputing checkout fees. */
   confirmedTotals?: {
-    vatAmount: number;
+    paymentProcessingFee: number;
+    serviceFee: number;
     customerTotal: number;
   };
   showSubtotalLines?: {
@@ -30,7 +35,9 @@ export default function CheckoutPricingSummary({
 }: CheckoutPricingSummaryProps) {
   const computed = computeCheckoutPricing(vendorNetNgn);
   const vendorNet = computed.vendorNet;
-  const processingFee = confirmedTotals?.vatAmount ?? computed.processingFee;
+  const paymentProcessingFee =
+    confirmedTotals?.paymentProcessingFee ?? computed.paymentProcessingFee;
+  const serviceFee = confirmedTotals?.serviceFee ?? computed.serviceFee;
   const customerTotal = confirmedTotals?.customerTotal ?? computed.customerTotal;
 
   if (vendorNet <= 0) {
@@ -76,10 +83,16 @@ export default function CheckoutPricingSummary({
           )}
         </>
       )}
-      {showProcessingFee && processingFee > 0 && (
-        <div className="flex items-center justify-between text-gray-600">
-          <span>VAT</span>
-          <span>{formatNaira(processingFee)}</span>
+      {showProcessingFee && paymentProcessingFee > 0 && (
+        <div className="flex items-center justify-between gap-3 text-gray-600">
+          <span className="min-w-0">{SECURE_PAYMENT_FEE_LABEL}</span>
+          <span className="shrink-0">{formatNaira(paymentProcessingFee)}</span>
+        </div>
+      )}
+      {showProcessingFee && serviceFee > 0 && (
+        <div className="flex items-center justify-between gap-3 text-gray-600">
+          <span className="min-w-0">{CATALOGHQ_SERVICE_FEE_LABEL}</span>
+          <span className="shrink-0">{formatNaira(serviceFee)}</span>
         </div>
       )}
       <div className="flex items-center justify-between border-t border-gray-200 pt-2 text-base font-semibold text-gray-900">

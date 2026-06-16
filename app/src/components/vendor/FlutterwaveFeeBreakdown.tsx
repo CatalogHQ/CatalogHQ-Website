@@ -1,9 +1,16 @@
 import { formatNaira } from "@/lib/format";
 import {
+  CATALOGHQ_SERVICE_FEE_LABEL,
+  CATALOGHQ_SERVICE_FEE_NGN,
   computeCheckoutPricing,
   FLUTTERWAVE_FEE_SUMMARY,
+  SECURE_PAYMENT_FEE_LABEL,
   vendorNetFromOrderLine,
 } from "@/lib/flutterwave-fees";
+import {
+  orderPaymentProcessingFeeNgn,
+  orderServiceFeeNgn,
+} from "@/lib/order-pricing";
 import { cn } from "@/lib/utils";
 
 type FlutterwaveFeeBreakdownProps = {
@@ -23,14 +30,19 @@ export default function FlutterwaveFeeBreakdown({
     return null;
   }
 
-  const { vendorNet, processingFee, customerTotal } =
-    computeCheckoutPricing(vendorNetNgn);
+  const {
+    vendorNet,
+    paymentProcessingFee,
+    serviceFee,
+    customerTotal,
+  } = computeCheckoutPricing(vendorNetNgn);
 
   if (compact) {
     return (
       <p className={cn("text-xs text-gray-500", className)}>
-        Customer pays {formatNaira(customerTotal)} ({formatNaira(processingFee)}{" "}
-        processing fee)
+        Customer pays {formatNaira(customerTotal)} (
+        {formatNaira(paymentProcessingFee)} secure payment fee +{" "}
+        {formatNaira(serviceFee)} service fee)
       </p>
     );
   }
@@ -44,10 +56,12 @@ export default function FlutterwaveFeeBreakdown({
     >
       <p className="font-medium text-gray-900">Checkout pricing</p>
       <p className="mt-1 text-xs text-gray-500">
-        Your listed price is what you receive in full. Flutterwave adds a{" "}
-        {FLUTTERWAVE_FEE_SUMMARY} fee at checkout for secure card, transfer,
-        and wallet payments. Customers pay it, not you, so your payout is never
-        reduced and every sale stays confirmed on record.
+        Your listed price is what you receive in full. Customers pay a{" "}
+        {FLUTTERWAVE_FEE_SUMMARY}{" "}
+        {SECURE_PAYMENT_FEE_LABEL.toLowerCase()} plus a fixed{" "}
+        {formatNaira(CATALOGHQ_SERVICE_FEE_NGN)} {CATALOGHQ_SERVICE_FEE_LABEL.toLowerCase()}{" "}
+        at checkout. You are never charged these fees, and every sale stays
+        confirmed on record.
       </p>
       <dl className="mt-3 space-y-1.5 text-sm">
         <div className="flex items-center justify-between gap-3">
@@ -55,8 +69,14 @@ export default function FlutterwaveFeeBreakdown({
           <dd className="font-medium text-gray-900">{formatNaira(vendorNet)}</dd>
         </div>
         <div className="flex items-center justify-between gap-3">
-          <dt className="text-gray-600">Processing fee (customer pays)</dt>
-          <dd className="text-gray-700">+{formatNaira(processingFee)}</dd>
+          <dt className="min-w-0 text-gray-600">{SECURE_PAYMENT_FEE_LABEL}</dt>
+          <dd className="shrink-0 text-gray-700">
+            +{formatNaira(paymentProcessingFee)}
+          </dd>
+        </div>
+        <div className="flex items-center justify-between gap-3">
+          <dt className="text-gray-600">{CATALOGHQ_SERVICE_FEE_LABEL}</dt>
+          <dd className="text-gray-700">+{formatNaira(serviceFee)}</dd>
         </div>
         <div className="flex items-center justify-between gap-3 border-t border-gray-200 pt-1.5">
           <dt className="font-medium text-gray-900">Customer pays</dt>
@@ -79,11 +99,13 @@ export function OrderFeeBreakdown({
     deliveryFee?: number;
     discountAmount?: number;
     totalPaid: number;
+    platformFee?: number;
   };
   className?: string;
 }) {
   const vendorNet = vendorNetFromOrderLine(order);
-  const processingFee = Math.max(0, order.totalPaid - vendorNet);
+  const serviceFee = orderServiceFeeNgn(order);
+  const paymentProcessingFee = orderPaymentProcessingFeeNgn(order);
 
   return (
     <div
@@ -99,8 +121,14 @@ export function OrderFeeBreakdown({
           <dd className="font-medium text-gray-900">{formatNaira(vendorNet)}</dd>
         </div>
         <div className="flex items-center justify-between gap-3">
-          <dt className="text-gray-600">Processing fee</dt>
-          <dd className="text-gray-700">{formatNaira(processingFee)}</dd>
+          <dt className="min-w-0 text-gray-600">{SECURE_PAYMENT_FEE_LABEL}</dt>
+          <dd className="shrink-0 text-gray-700">
+            {formatNaira(paymentProcessingFee)}
+          </dd>
+        </div>
+        <div className="flex items-center justify-between gap-3">
+          <dt className="text-gray-600">{CATALOGHQ_SERVICE_FEE_LABEL}</dt>
+          <dd className="text-gray-700">{formatNaira(serviceFee)}</dd>
         </div>
         <div className="flex items-center justify-between gap-3 border-t border-gray-200 pt-1.5">
           <dt className="font-medium text-gray-900">Customer paid</dt>

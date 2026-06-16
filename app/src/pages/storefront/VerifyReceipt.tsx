@@ -14,7 +14,7 @@ import OrderPhoneGate from "@/components/storefront/OrderPhoneGate";
 import CheckoutPricingSummary from "@/components/storefront/CheckoutPricingSummary";
 import OrderStatusBadge from "@/components/vendor/OrderStatusBadge";
 import { useOrderPhoneGate } from "@/hooks/use-order-phone-gate";
-import { orderSubtotalNgn, orderVatNgn } from "@/lib/order-pricing";
+import { orderSubtotalNgn, orderPaymentProcessingFeeNgn, orderServiceFeeNgn } from "@/lib/order-pricing";
 import { orderRepository } from "@/lib/repositories";
 import type { OrderReceipt } from "@/types/orders";
 
@@ -121,7 +121,8 @@ export default function VerifyReceipt() {
               showProcessingFee
               totalLabel="Total paid"
               confirmedTotals={{
-                vatAmount: orderVatNgn(order),
+                paymentProcessingFee: orderPaymentProcessingFeeNgn(order),
+                serviceFee: orderServiceFeeNgn(order),
                 customerTotal: order.totalPaid,
               }}
             />

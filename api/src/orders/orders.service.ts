@@ -582,17 +582,16 @@ export class OrdersService {
     }
 
     vendorSubtotal = Math.max(0, vendorSubtotal - discountAmount);
-    const { customerTotal, vendorNet, processingFee } =
-      computeCheckoutPricing(vendorSubtotal);
+    const pricing = computeCheckoutPricing(vendorSubtotal);
 
     return {
       unitPrice,
       deliveryFee,
       discountAmount,
       discountCode,
-      totalPaid: customerTotal,
-      vendorNet,
-      platformFee: processingFee,
+      totalPaid: pricing.customerTotal,
+      vendorNet: pricing.vendorNet,
+      platformFee: pricing.serviceFee,
       discountRecordId,
     };
   }

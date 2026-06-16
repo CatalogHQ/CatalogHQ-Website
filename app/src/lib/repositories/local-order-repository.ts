@@ -36,7 +36,7 @@ function buildOrder(
   );
   const pricing = computeCheckoutPricing(vendorNet);
   const totalPaid = overrides?.totalPaid ?? pricing.customerTotal;
-  const platformFee = overrides?.platformFee ?? pricing.processingFee;
+  const platformFee = overrides?.platformFee ?? pricing.serviceFee;
   const paymentRef = overrides?.paymentRef ?? generatePaymentRef();
 
   return {

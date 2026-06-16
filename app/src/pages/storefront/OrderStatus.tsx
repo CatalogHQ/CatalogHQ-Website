@@ -25,7 +25,7 @@ import OrderPhoneGate from "@/components/storefront/OrderPhoneGate";
 import CheckoutPricingSummary from "@/components/storefront/CheckoutPricingSummary";
 import { useOrderPhoneGate } from "@/hooks/use-order-phone-gate";
 import { loadPendingPaymentDetails } from "@/lib/flutterwave-payment-methods";
-import { orderSubtotalNgn, orderVatNgn } from "@/lib/order-pricing";
+import { orderSubtotalNgn, orderPaymentProcessingFeeNgn, orderServiceFeeNgn } from "@/lib/order-pricing";
 import { orderRepository, reviewRepository } from "@/lib/repositories";
 import { hasFeature } from "@/data/plans";
 import {
@@ -462,7 +462,8 @@ export default function OrderStatusPage() {
               showProcessingFee
               totalLabel="Total paid"
               confirmedTotals={{
-                vatAmount: orderVatNgn(order),
+                paymentProcessingFee: orderPaymentProcessingFeeNgn(order),
+                serviceFee: orderServiceFeeNgn(order),
                 customerTotal: order.totalPaid,
               }}
             />

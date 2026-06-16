@@ -92,9 +92,9 @@ describe('OrdersService', () => {
     deliveryFee: 0,
     discountAmount: 0,
     discountCode: null,
-    totalPaid: 5150,
+    totalPaid: 5122,
     vendorNet: 5000,
-    platformFee: 102,
+    platformFee: 20,
     payoutStatus: PayoutStatus.split,
     customerName: 'Ada',
     customerPhone: '08012345678',
@@ -173,7 +173,7 @@ describe('OrdersService', () => {
       paymentMethod: 'bank_transfer',
     });
 
-    expect(result.totalPaid).toBe(5150);
+    expect(result.totalPaid).toBe(5122);
     expect(result.unitPrice).toBe(2500);
     expect(paymentsService.confirmPayment).toHaveBeenCalled();
   });
