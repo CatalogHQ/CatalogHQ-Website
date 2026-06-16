@@ -20,9 +20,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import VerificationStatusBadge from "@/components/admin/VerificationStatusBadge";
+import AdminDateRangeFilter from "@/components/admin/AdminDateRangeFilter";
 import type { AdminVendor } from "@/data/admin-mock";
 import { PLAN_TIER_LABELS, type PlanTier } from "@/data/plans";
 import { adminRepository } from "@/lib/repositories";
+import type { AdminListDateRange } from "@/lib/admin-date-range";
 import { formatNaira } from "@/lib/format";
 import { getStoreUrl } from "@/lib/slug";
 
@@ -31,6 +33,7 @@ const PLAN_TIERS: PlanTier[] = ["starter", "pro", "growth", "business"];
 export default function AdminVendors() {
   const [vendors, setVendors] = useState<AdminVendor[]>([]);
   const [search, setSearch] = useState("");
+  const [dateRange, setDateRange] = useState<AdminListDateRange>({});
   const [isLoading, setIsLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
@@ -40,7 +43,7 @@ export default function AdminVendors() {
     async function load() {
       setIsLoading(true);
       try {
-        const result = await adminRepository.listVendors();
+        const result = await adminRepository.listVendors(dateRange);
         if (!cancelled) {
           setVendors(result);
         }
@@ -62,7 +65,7 @@ export default function AdminVendors() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [dateRange]);
 
   const filteredVendors = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -109,9 +112,12 @@ export default function AdminVendors() {
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Vendors</h1>
         <p className="mt-1 text-gray-600">
-          All vendor accounts, plan tiers, and store performance.
+          All vendor accounts, plan tiers, and store performance. Date filter
+          uses joined date; order and revenue columns match the same range.
         </p>
       </div>
+
+      <AdminDateRangeFilter value={dateRange} onChange={setDateRange} />
 
       <div className="relative max-w-sm">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />

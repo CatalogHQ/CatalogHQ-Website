@@ -10,6 +10,7 @@ import {
   MessageSquare,
   BadgeCheck,
   BarChart3,
+  Wallet,
   Home,
   CreditCard,
   ShieldAlert,
@@ -43,6 +44,7 @@ const navItems = [
   { title: "Vendors", href: "/admin/vendors", icon: Store },
   { title: "Customers", href: "/admin/customers", icon: UserCircle },
   { title: "Orders", href: "/admin/orders", icon: ClipboardList },
+  { title: "Payouts", href: "/admin/payouts", icon: Wallet },
   {
     title: "Tickets",
     href: "/admin/tickets",

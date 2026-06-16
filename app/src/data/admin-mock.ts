@@ -52,6 +52,26 @@ export type AdminPlatformOrder = {
   createdAt: string;
 };
 
+export type AdminPlatformPayout = {
+  id: string;
+  orderId: string;
+  paymentRef: string;
+  storeName: string;
+  storeSlug: string;
+  amountNaira: number;
+  platformFeeNaira: number;
+  method: "instant_transfer" | "split";
+  status: "pending" | "processing" | "split" | "settled" | "failed";
+  bankName?: string;
+  accountNumberLast4?: string;
+  failureReason?: string;
+  flutterwaveReference?: string;
+  createdAt: string;
+  initiatedAt?: string;
+  settledAt?: string;
+  failedAt?: string;
+};
+
 export type AdminTicketStatus = "open" | "in_progress" | "resolved";
 export type AdminTicketType = "vendor" | "customer";
 export type AdminTicketPriority = "low" | "medium" | "high";
@@ -362,6 +382,54 @@ export const ADMIN_MOCK_ORDERS: AdminPlatformOrder[] = [
     status: "delivered",
     paymentStatus: "paid",
     createdAt: "2026-06-01T13:40:00.000Z",
+  },
+];
+
+export const ADMIN_MOCK_PAYOUTS: AdminPlatformPayout[] = [
+  {
+    id: "p1",
+    orderId: "o1",
+    paymentRef: "SHP-20260606-A3F2",
+    storeName: "Lagos Fabrics Co.",
+    storeSlug: "lagos-fabrics",
+    amountNaira: 50_000,
+    platformFeeNaira: 20,
+    method: "instant_transfer",
+    status: "settled",
+    bankName: "Access Bank",
+    accountNumberLast4: "4321",
+    flutterwaveReference: "TRF-p1",
+    createdAt: "2026-06-06T12:00:00.000Z",
+    initiatedAt: "2026-06-06T12:00:00.000Z",
+    settledAt: "2026-06-06T12:05:00.000Z",
+  },
+  {
+    id: "p2",
+    orderId: "o2",
+    paymentRef: "SHP-20260605-B7C1",
+    storeName: "Lagos Fabrics Co.",
+    storeSlug: "lagos-fabrics",
+    amountNaira: 38_000,
+    platformFeeNaira: 20,
+    method: "instant_transfer",
+    status: "processing",
+    bankName: "Access Bank",
+    accountNumberLast4: "4321",
+    createdAt: "2026-06-05T15:00:00.000Z",
+    initiatedAt: "2026-06-05T15:00:00.000Z",
+  },
+  {
+    id: "p3",
+    orderId: "o7",
+    paymentRef: "SHP-20260601-K6L7",
+    storeName: "Lagos Fabrics Co.",
+    storeSlug: "lagos-fabrics",
+    amountNaira: 27_500,
+    platformFeeNaira: 20,
+    method: "split",
+    status: "settled",
+    createdAt: "2026-06-01T14:00:00.000Z",
+    settledAt: "2026-06-01T14:10:00.000Z",
   },
 ];
 

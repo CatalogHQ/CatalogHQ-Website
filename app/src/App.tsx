@@ -23,6 +23,7 @@ import AdminOverview from './pages/admin/Overview'
 import AdminVendors from './pages/admin/Vendors'
 import AdminCustomers from './pages/admin/Customers'
 import AdminOrders from './pages/admin/Orders'
+import AdminPayouts from './pages/admin/Payouts'
 import AdminTickets from './pages/admin/Tickets'
 import AdminVerification from './pages/admin/Verification'
 import AdminAnalytics from './pages/admin/Analytics'
@@ -133,6 +134,7 @@ export default function App() {
         <Route path="vendors" element={<AdminVendors />} />
         <Route path="customers" element={<AdminCustomers />} />
         <Route path="orders" element={<AdminOrders />} />
+        <Route path="payouts" element={<AdminPayouts />} />
         <Route path="tickets" element={<AdminTickets />} />
         <Route path="verification" element={<AdminVerification />} />
         <Route path="analytics" element={<AdminAnalytics />} />

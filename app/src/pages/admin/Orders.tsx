@@ -13,10 +13,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import AdminOrderDetailSheet from "@/components/admin/AdminOrderDetailSheet";
+import AdminDateRangeFilter from "@/components/admin/AdminDateRangeFilter";
 import PaymentStatusBadge from "@/components/admin/PaymentStatusBadge";
 import OrderStatusBadge from "@/components/vendor/OrderStatusBadge";
 import type { AdminPlatformOrder } from "@/data/admin-mock";
 import { adminRepository } from "@/lib/repositories";
+import type { AdminListDateRange } from "@/lib/admin-date-range";
 import { formatNaira } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { PaymentStatus } from "@/types/orders";
@@ -27,6 +29,7 @@ export default function AdminOrders() {
   const [orders, setOrders] = useState<AdminPlatformOrder[]>([]);
   const [search, setSearch] = useState("");
   const [paymentFilter, setPaymentFilter] = useState<PaymentFilter>("all");
+  const [dateRange, setDateRange] = useState<AdminListDateRange>({});
   const [isLoading, setIsLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState<AdminPlatformOrder | null>(
     null,
@@ -38,7 +41,7 @@ export default function AdminOrders() {
     async function load() {
       setIsLoading(true);
       try {
-        const result = await adminRepository.listOrders();
+        const result = await adminRepository.listOrders(dateRange);
         if (!cancelled) {
           setOrders(result);
         }
@@ -60,7 +63,7 @@ export default function AdminOrders() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [dateRange]);
 
   const filteredOrders = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -104,6 +107,8 @@ export default function AdminOrders() {
           details.
         </p>
       </div>
+
+      <AdminDateRangeFilter value={dateRange} onChange={setDateRange} />
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="relative max-w-sm flex-1">

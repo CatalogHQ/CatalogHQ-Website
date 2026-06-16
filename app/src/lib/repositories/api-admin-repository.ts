@@ -4,12 +4,15 @@ import type {
   AdminCustomer,
   AdminPlanDistribution,
   AdminPlatformOrder,
+  AdminPlatformPayout,
   AdminPlatformStats,
   AdminRevenueByDay,
   AdminSupportTicket,
   AdminVendor,
   AdminVerificationRequest,
 } from "@/data/admin-mock";
+import type { AdminListDateRange } from "@/lib/admin-date-range";
+import { buildAdminDateRangeQuery } from "@/lib/admin-date-range";
 import type { OrderStatus } from "@/types/orders";
 import type {
   ListSecurityAuditParams,
@@ -33,16 +36,28 @@ export class ApiAdminRepository {
     return apiClient<AdminPlatformStats>("/admin/stats");
   }
 
-  listVendors(): Promise<AdminVendor[]> {
-    return apiClient<AdminVendor[]>("/admin/vendors");
+  listVendors(range: AdminListDateRange = {}): Promise<AdminVendor[]> {
+    return apiClient<AdminVendor[]>(
+      `/admin/vendors${buildAdminDateRangeQuery(range)}`,
+    );
   }
 
-  listCustomers(): Promise<AdminCustomer[]> {
-    return apiClient<AdminCustomer[]>("/admin/customers");
+  listCustomers(range: AdminListDateRange = {}): Promise<AdminCustomer[]> {
+    return apiClient<AdminCustomer[]>(
+      `/admin/customers${buildAdminDateRangeQuery(range)}`,
+    );
   }
 
-  listOrders(): Promise<AdminPlatformOrder[]> {
-    return apiClient<AdminPlatformOrder[]>("/admin/orders");
+  listOrders(range: AdminListDateRange = {}): Promise<AdminPlatformOrder[]> {
+    return apiClient<AdminPlatformOrder[]>(
+      `/admin/orders${buildAdminDateRangeQuery(range)}`,
+    );
+  }
+
+  listPayouts(range: AdminListDateRange = {}): Promise<AdminPlatformPayout[]> {
+    return apiClient<AdminPlatformPayout[]>(
+      `/admin/payouts${buildAdminDateRangeQuery(range)}`,
+    );
   }
 
   listTickets(): Promise<AdminSupportTicket[]> {

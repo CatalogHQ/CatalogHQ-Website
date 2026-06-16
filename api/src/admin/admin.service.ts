@@ -17,16 +17,22 @@ import {
   AdminCustomerDto,
   AdminPlanDistributionDto,
   AdminPlatformOrderDto,
+  AdminPlatformPayoutDto,
   AdminPlatformStatsDto,
   AdminRevenueByDayDto,
   AdminSupportTicketDto,
   AdminVendorDto,
   AdminVerificationRequestDto,
   toAdminPlatformOrderDto,
+  toAdminPlatformPayoutDto,
   toAdminTicketDto,
   toAdminVendorDto,
   toAdminVerificationDto,
 } from './admin.mapper';
+import {
+  buildCreatedAtFilter,
+  ParsedAdminDateRange,
+} from './admin-date-range.util';
 
 type DatePreset = '7d' | '30d' | '90d' | 'month';
 
@@ -51,12 +57,18 @@ export class AdminService {
     });
   }
 
-  private async getOrderAggregatesByStore(): Promise<
+  private async getOrderAggregatesByStore(
+    range?: ParsedAdminDateRange,
+  ): Promise<
     Map<string, { orderCount: number; revenue: number }>
   > {
+    const createdAt = buildCreatedAtFilter(range ?? {});
     const grouped = await this.prisma.order.groupBy({
       by: ['storeId'],
-      where: { status: { not: OrderStatus.cancelled } },
+      where: {
+        status: { not: OrderStatus.cancelled },
+        ...(createdAt ? { createdAt } : {}),
+      },
       _count: { _all: true },
       _sum: { totalPaid: true },
     });
@@ -159,9 +171,13 @@ export class AdminService {
     };
   }
 
-  async listVendors(): Promise<AdminVendorDto[]> {
+  async listVendors(range: ParsedAdminDateRange = {}): Promise<AdminVendorDto[]> {
+    const vendorCreatedAt = buildCreatedAtFilter(range);
     const [stores, aggregates] = await Promise.all([
       this.prisma.store.findMany({
+        where: vendorCreatedAt
+          ? { vendor: { createdAt: vendorCreatedAt } }
+          : undefined,
         include: {
           vendor: {
             include: { subscription: true },
@@ -169,7 +185,7 @@ export class AdminService {
         },
         orderBy: { vendor: { createdAt: 'desc' } },
       }),
-      this.getOrderAggregatesByStore(),
+      this.getOrderAggregatesByStore(range),
     ]);
 
     return stores.map((store) => {
@@ -178,10 +194,14 @@ export class AdminService {
     });
   }
 
-  async listCustomers(): Promise<AdminCustomerDto[]> {
+  async listCustomers(range: ParsedAdminDateRange = {}): Promise<AdminCustomerDto[]> {
+    const createdAt = buildCreatedAtFilter(range);
     const grouped = await this.prisma.order.groupBy({
       by: ['customerPhone'],
-      where: { status: { not: OrderStatus.cancelled } },
+      where: {
+        status: { not: OrderStatus.cancelled },
+        ...(createdAt ? { createdAt } : {}),
+      },
       _count: { _all: true },
       _sum: { totalPaid: true },
       _max: { createdAt: true },
@@ -195,6 +215,7 @@ export class AdminService {
       where: {
         customerPhone: { in: grouped.map((entry) => entry.customerPhone) },
         status: { not: OrderStatus.cancelled },
+        ...(createdAt ? { createdAt } : {}),
       },
       orderBy: { createdAt: 'desc' },
       distinct: ['customerPhone'],
@@ -223,13 +244,29 @@ export class AdminService {
       );
   }
 
-  async listOrders(): Promise<AdminPlatformOrderDto[]> {
+  async listOrders(range: ParsedAdminDateRange = {}): Promise<AdminPlatformOrderDto[]> {
+    const createdAt = buildCreatedAtFilter(range);
     const orders = await this.prisma.order.findMany({
+      where: createdAt ? { createdAt } : undefined,
       include: { store: { select: { businessName: true, slug: true } } },
       orderBy: { createdAt: 'desc' },
     });
 
     return orders.map((order) => toAdminPlatformOrderDto(order, order.store));
+  }
+
+  async listPayouts(range: ParsedAdminDateRange = {}): Promise<AdminPlatformPayoutDto[]> {
+    const createdAt = buildCreatedAtFilter(range);
+    const payouts = await this.prisma.vendorPayout.findMany({
+      where: createdAt ? { createdAt } : undefined,
+      include: {
+        order: { select: { paymentRef: true } },
+        store: { select: { businessName: true, slug: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return payouts.map(toAdminPlatformPayoutDto);
   }
 
   async listTickets(): Promise<AdminSupportTicketDto[]> {

@@ -31,6 +31,8 @@ import { UpdateTicketDto } from '../tickets/dto/update-ticket.dto';
 import { TicketsService } from '../tickets/tickets.service';
 import { UpdateVendorDto } from './dto/update-vendor.dto';
 import { AdminUpdateOrderStatusDto } from './dto/update-order-status.dto';
+import { AdminDateRangeQueryDto } from './dto/admin-date-range-query.dto';
+import { parseAdminDateRange } from './admin-date-range.util';
 import { UpdatePlanCatalogDto } from './dto/update-plan-catalog.dto';
 import { ListSecurityAuditQueryDto } from '../security/dto/list-security-audit-query.dto';
 import { SecurityAuditAction } from '../security/security-audit.actions';
@@ -122,24 +124,55 @@ export class AdminController {
   }
 
   @Get('vendors')
-  async listVendors(@CurrentUser() user: AuthenticatedUser, @Req() req: Request) {
-    await this.auditAdminRead(user, req, SecurityAuditAction.ADMIN_VIEW_VENDORS);
-    return this.adminService.listVendors();
+  async listVendors(
+    @CurrentUser() user: AuthenticatedUser,
+    @Req() req: Request,
+    @Query() query: AdminDateRangeQueryDto,
+  ) {
+    await this.auditAdminRead(user, req, SecurityAuditAction.ADMIN_VIEW_VENDORS, {
+      from: query.from ?? null,
+      to: query.to ?? null,
+    });
+    return this.adminService.listVendors(parseAdminDateRange(query));
   }
 
   @Get('customers')
   async listCustomers(
     @CurrentUser() user: AuthenticatedUser,
     @Req() req: Request,
+    @Query() query: AdminDateRangeQueryDto,
   ) {
-    await this.auditAdminRead(user, req, SecurityAuditAction.ADMIN_VIEW_CUSTOMERS);
-    return this.adminService.listCustomers();
+    await this.auditAdminRead(user, req, SecurityAuditAction.ADMIN_VIEW_CUSTOMERS, {
+      from: query.from ?? null,
+      to: query.to ?? null,
+    });
+    return this.adminService.listCustomers(parseAdminDateRange(query));
   }
 
   @Get('orders')
-  async listOrders(@CurrentUser() user: AuthenticatedUser, @Req() req: Request) {
-    await this.auditAdminRead(user, req, SecurityAuditAction.ADMIN_VIEW_ORDERS);
-    return this.adminService.listOrders();
+  async listOrders(
+    @CurrentUser() user: AuthenticatedUser,
+    @Req() req: Request,
+    @Query() query: AdminDateRangeQueryDto,
+  ) {
+    await this.auditAdminRead(user, req, SecurityAuditAction.ADMIN_VIEW_ORDERS, {
+      from: query.from ?? null,
+      to: query.to ?? null,
+    });
+    return this.adminService.listOrders(parseAdminDateRange(query));
+  }
+
+  @Get('payouts')
+  async listPayouts(
+    @CurrentUser() user: AuthenticatedUser,
+    @Req() req: Request,
+    @Query() query: AdminDateRangeQueryDto,
+  ) {
+    await this.auditAdminRead(user, req, SecurityAuditAction.ADMIN_VIEW_PAYOUTS, {
+      from: query.from ?? null,
+      to: query.to ?? null,
+    });
+    return this.adminService.listPayouts(parseAdminDateRange(query));
   }
 
   @Get('tickets')

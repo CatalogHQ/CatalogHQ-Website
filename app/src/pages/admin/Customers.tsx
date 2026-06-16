@@ -11,13 +11,16 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import AdminDateRangeFilter from "@/components/admin/AdminDateRangeFilter";
 import type { AdminCustomer } from "@/data/admin-mock";
 import { adminRepository } from "@/lib/repositories";
+import type { AdminListDateRange } from "@/lib/admin-date-range";
 import { formatNaira } from "@/lib/format";
 
 export default function AdminCustomers() {
   const [customers, setCustomers] = useState<AdminCustomer[]>([]);
   const [search, setSearch] = useState("");
+  const [dateRange, setDateRange] = useState<AdminListDateRange>({});
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -26,7 +29,7 @@ export default function AdminCustomers() {
     async function load() {
       setIsLoading(true);
       try {
-        const result = await adminRepository.listCustomers();
+        const result = await adminRepository.listCustomers(dateRange);
         if (!cancelled) {
           setCustomers(result);
         }
@@ -48,7 +51,7 @@ export default function AdminCustomers() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [dateRange]);
 
   const filteredCustomers = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -74,9 +77,12 @@ export default function AdminCustomers() {
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Customers</h1>
         <p className="mt-1 text-gray-600">
-          Unique buyers across all stores, derived from order history.
+          Unique buyers across all stores. Date filter shows customers with
+          orders in the selected range.
         </p>
       </div>
+
+      <AdminDateRangeFilter value={dateRange} onChange={setDateRange} />
 
       <div className="relative max-w-sm">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />

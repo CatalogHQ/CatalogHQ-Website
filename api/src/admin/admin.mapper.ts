@@ -3,9 +3,12 @@ import {
   OrderStatus,
   PaymentStatus,
   PlanTier,
+  PayoutStatus,
   Store,
   SupportTicket,
   User,
+  VendorPayout,
+  VendorPayoutMethod,
   VendorVerificationStatus,
 } from '@prisma/client';
 import { decryptNIN, isEncryptedNIN, maskNIN } from '../lib/encryption';
@@ -127,6 +130,26 @@ export type AdminBadgesDto = {
   openTickets: number;
 };
 
+export type AdminPlatformPayoutDto = {
+  id: string;
+  orderId: string;
+  paymentRef: string;
+  storeName: string;
+  storeSlug: string;
+  amountNaira: number;
+  platformFeeNaira: number;
+  method: VendorPayoutMethod;
+  status: PayoutStatus;
+  bankName?: string;
+  accountNumberLast4?: string;
+  failureReason?: string;
+  flutterwaveReference?: string;
+  createdAt: string;
+  initiatedAt?: string;
+  settledAt?: string;
+  failedAt?: string;
+};
+
 type StoreWithVendor = Store & {
   vendor: User & { subscription?: { status: string } | null };
 };
@@ -198,6 +221,33 @@ export function toAdminTicketDto(ticket: SupportTicket): AdminSupportTicketDto {
     orderRef: ticket.orderRef ?? undefined,
     createdAt: ticket.createdAt.toISOString(),
     updatedAt: ticket.updatedAt.toISOString(),
+  };
+}
+
+export function toAdminPlatformPayoutDto(
+  payout: VendorPayout & {
+    order: Pick<Order, 'paymentRef'>;
+    store: Pick<Store, 'businessName' | 'slug'>;
+  },
+): AdminPlatformPayoutDto {
+  return {
+    id: payout.id,
+    orderId: payout.orderId,
+    paymentRef: payout.order.paymentRef,
+    storeName: payout.store.businessName,
+    storeSlug: payout.store.slug,
+    amountNaira: payout.amountNaira,
+    platformFeeNaira: payout.platformFeeNaira,
+    method: payout.method,
+    status: payout.status,
+    bankName: payout.bankName ?? undefined,
+    accountNumberLast4: payout.accountNumberLast4 ?? undefined,
+    failureReason: payout.failureReason ?? undefined,
+    flutterwaveReference: payout.flutterwaveReference ?? undefined,
+    createdAt: payout.createdAt.toISOString(),
+    initiatedAt: payout.initiatedAt?.toISOString(),
+    settledAt: payout.settledAt?.toISOString(),
+    failedAt: payout.failedAt?.toISOString(),
   };
 }
 

@@ -2,6 +2,7 @@ import type { PlanTier } from "@/data/plans";
 import {
   ADMIN_MOCK_CUSTOMERS,
   ADMIN_MOCK_ORDERS,
+  ADMIN_MOCK_PAYOUTS,
   ADMIN_MOCK_REVENUE_BY_DAY,
   ADMIN_MOCK_STATS,
   ADMIN_MOCK_TICKETS,
@@ -13,6 +14,7 @@ import {
   type AdminCustomer,
   type AdminPlanDistribution,
   type AdminPlatformOrder,
+  type AdminPlatformPayout,
   type AdminPlatformStats,
   type AdminRevenueByDay,
   type AdminSupportTicket,
@@ -30,6 +32,10 @@ import type {
 } from "@/types/security-audit";
 import type { HealthDetailResponse } from "@/types/health-detail";
 import type { OrderStatus } from "@/types/orders";
+import {
+  isWithinAdminDateRange,
+  type AdminListDateRange,
+} from "@/lib/admin-date-range";
 
 export class LocalAdminRepository implements ApiAdminRepository {
   private verificationQueue = [...ADMIN_MOCK_VERIFICATION_QUEUE];
@@ -53,16 +59,79 @@ export class LocalAdminRepository implements ApiAdminRepository {
     });
   }
 
-  listVendors(): Promise<AdminVendor[]> {
-    return Promise.resolve(this.vendors);
+  listVendors(range: AdminListDateRange = {}): Promise<AdminVendor[]> {
+    return Promise.resolve(
+      this.vendors.filter((vendor) =>
+        isWithinAdminDateRange(vendor.createdAt, range),
+      ),
+    );
   }
 
-  listCustomers(): Promise<AdminCustomer[]> {
+  listCustomers(range: AdminListDateRange = {}): Promise<AdminCustomer[]> {
+    const ordersInRange = ADMIN_MOCK_ORDERS.filter(
+      (order) =>
+        order.status !== "cancelled" &&
+        isWithinAdminDateRange(order.createdAt, range),
+    );
+
+    const byPhone = new Map<
+      string,
+      { name: string; orderCount: number; totalSpent: number; lastOrderAt: string }
+    >();
+
+    for (const order of ordersInRange) {
+      const existing = byPhone.get(order.customerPhone);
+      if (!existing) {
+        byPhone.set(order.customerPhone, {
+          name: order.customerName,
+          orderCount: 1,
+          totalSpent: order.totalPaid,
+          lastOrderAt: order.createdAt,
+        });
+        continue;
+      }
+
+      existing.orderCount += 1;
+      existing.totalSpent += order.totalPaid;
+      if (order.createdAt > existing.lastOrderAt) {
+        existing.lastOrderAt = order.createdAt;
+        existing.name = order.customerName;
+      }
+    }
+
+    const customers = [...byPhone.entries()]
+      .map(([phone, stats]) => ({
+        id: phone,
+        name: stats.name,
+        phone,
+        orderCount: stats.orderCount,
+        totalSpent: stats.totalSpent,
+        lastOrderAt: stats.lastOrderAt,
+      }))
+      .sort(
+        (a, b) =>
+          new Date(b.lastOrderAt).getTime() - new Date(a.lastOrderAt).getTime(),
+      );
+
+    if (range.from || range.to) {
+      return Promise.resolve(customers);
+    }
+
     return Promise.resolve(ADMIN_MOCK_CUSTOMERS);
   }
 
-  listOrders(): Promise<AdminPlatformOrder[]> {
-    return Promise.resolve(this.orders);
+  listOrders(range: AdminListDateRange = {}): Promise<AdminPlatformOrder[]> {
+    return Promise.resolve(
+      this.orders.filter((order) => isWithinAdminDateRange(order.createdAt, range)),
+    );
+  }
+
+  listPayouts(range: AdminListDateRange = {}): Promise<AdminPlatformPayout[]> {
+    return Promise.resolve(
+      ADMIN_MOCK_PAYOUTS.filter((payout) =>
+        isWithinAdminDateRange(payout.createdAt, range),
+      ),
+    );
   }
 
   listTickets(): Promise<AdminSupportTicket[]> {
