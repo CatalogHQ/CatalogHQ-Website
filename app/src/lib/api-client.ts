@@ -1,5 +1,10 @@
 import { ApiError } from "@/lib/api-error";
-import { CSRF_HEADER_NAME, readCsrfTokenFromDocument } from "@/lib/csrf-token";
+import {
+  applyCsrfTokenFromResponse,
+  clearCsrfToken,
+  CSRF_HEADER_NAME,
+  readCsrfToken,
+} from "@/lib/csrf-token";
 
 const API_URL = import.meta.env.VITE_API_URL ?? "";
 export const SESSION_EXPIRED_EVENT = "cataloghq:session-expired";
@@ -56,7 +61,7 @@ function buildRequestHeaders(options: RequestInit): Headers {
     headers.set("Content-Type", "application/json");
   }
 
-  const csrfToken = readCsrfTokenFromDocument();
+  const csrfToken = readCsrfToken();
   if (
     csrfToken &&
     options.method &&
@@ -91,6 +96,7 @@ export function onSessionExpired(listener: () => void): () => void {
 }
 
 function notifySessionExpired(): void {
+  clearCsrfToken();
   if (typeof window !== "undefined") {
     window.dispatchEvent(new CustomEvent(SESSION_EXPIRED_EVENT));
   }
@@ -104,7 +110,13 @@ async function refreshAccessSession(): Promise<boolean> {
   refreshInFlight = (async () => {
     try {
       const response = await fetchApi("/auth/refresh", { method: "POST" });
-      return response.ok;
+      if (!response.ok) {
+        return false;
+      }
+
+      const payload = (await response.json()) as unknown;
+      applyCsrfTokenFromResponse(payload);
+      return true;
     } catch {
       return false;
     } finally {

@@ -38,10 +38,12 @@ export class AuthController {
     res: Response,
     accessToken: string,
     refreshToken: string,
-  ): void {
+  ): string {
+    const csrfToken = createCsrfToken();
     setSessionCookie(res, accessToken, this.configService);
     setRefreshCookie(res, refreshToken, this.configService);
-    setCsrfCookie(res, createCsrfToken(), this.configService);
+    setCsrfCookie(res, csrfToken, this.configService);
+    return csrfToken;
   }
 
   private clearAuthCookies(res: Response): void {
@@ -72,8 +74,12 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
   ) {
     const result = await this.otpService.verifySignUp(dto.email, dto.code);
-    this.issueAuthCookies(res, result.token, result.refreshToken);
-    return { user: result.user };
+    const csrfToken = this.issueAuthCookies(
+      res,
+      result.token,
+      result.refreshToken,
+    );
+    return { user: result.user, csrfToken };
   }
 
   @Public()
@@ -99,8 +105,12 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
   ) {
     const result = await this.authService.signIn(dto, getClientIp(req));
-    this.issueAuthCookies(res, result.token, result.refreshToken);
-    return { user: result.user };
+    const csrfToken = this.issueAuthCookies(
+      res,
+      result.token,
+      result.refreshToken,
+    );
+    return { user: result.user, csrfToken };
   }
 
   @Public()
@@ -116,8 +126,12 @@ export class AuthController {
       cookies?.[REFRESH_COOKIE_NAME],
       getClientIp(req),
     );
-    this.issueAuthCookies(res, result.token, result.refreshToken);
-    return { user: result.user };
+    const csrfToken = this.issueAuthCookies(
+      res,
+      result.token,
+      result.refreshToken,
+    );
+    return { user: result.user, csrfToken };
   }
 
   @Public()
@@ -145,8 +159,12 @@ export class AuthController {
 
   @Get('me')
   async me(@CurrentUser() user: User, @Res({ passthrough: true }) res: Response) {
-    setCsrfCookie(res, createCsrfToken(), this.configService);
-    return { user: await this.authService.toSafeUser(user) };
+    const csrfToken = createCsrfToken();
+    setCsrfCookie(res, csrfToken, this.configService);
+    return {
+      user: await this.authService.toSafeUser(user),
+      csrfToken,
+    };
   }
 
   @Post('signout')

@@ -1,4 +1,5 @@
 import { apiClient } from "@/lib/api-client";
+import { applyCsrfTokenFromResponse, clearCsrfToken } from "@/lib/csrf-token";
 import type { AuthRepository } from "@/lib/repositories/auth-repository";
 import type { StoredUser } from "@/types/domain";
 
@@ -6,10 +7,12 @@ type AuthApiUser = Omit<StoredUser, "passwordHash">;
 
 type AuthResponse = {
   user: AuthApiUser;
+  csrfToken?: string;
 };
 
 type MeResponse = {
   user: AuthApiUser;
+  csrfToken?: string;
 };
 
 function toStoredUser(user: AuthApiUser): StoredUser {
@@ -24,6 +27,7 @@ export class ApiAuthRepository implements AuthRepository {
   async getCurrentUser(): Promise<StoredUser | null> {
     try {
       const response = await apiClient<MeResponse>("/auth/me");
+      applyCsrfTokenFromResponse(response);
       return toStoredUser(response.user);
     } catch {
       return null;
@@ -53,6 +57,7 @@ export class ApiAuthRepository implements AuthRepository {
       method: "POST",
       body: JSON.stringify({ email, code }),
     });
+    applyCsrfTokenFromResponse(response);
     return toStoredUser(response.user);
   }
 
@@ -65,6 +70,7 @@ export class ApiAuthRepository implements AuthRepository {
       method: "POST",
       body: JSON.stringify({ email, password, totpCode }),
     });
+    applyCsrfTokenFromResponse(response);
     return toStoredUser(response.user);
   }
 
@@ -73,6 +79,8 @@ export class ApiAuthRepository implements AuthRepository {
       await apiClient("/auth/signout", { method: "POST" });
     } catch {
       // Cookie cleared server-side when request succeeds.
+    } finally {
+      clearCsrfToken();
     }
   }
 
