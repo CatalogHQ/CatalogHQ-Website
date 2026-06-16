@@ -26,7 +26,7 @@ const STATUS_LABELS: Record<AdminPlatformPayout["status"], string> = {
   pending: "Pending",
   processing: "Processing",
   split: "Split sent",
-  settled: "Settled",
+  settled: "Successful",
   failed: "Failed",
 };
 

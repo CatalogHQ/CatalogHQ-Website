@@ -66,6 +66,28 @@ describe('VendorPayoutRecordService', () => {
     );
   });
 
+  it('records instant transfer as settled when balance was confirmed', async () => {
+    prisma.vendorPayout.findUnique.mockResolvedValue({ attemptCount: 0 });
+
+    await service.recordInstantTransferSettled({
+      orderId: 'order-1',
+      transferId: 'trf_1',
+      reference: 'po-order1',
+      recipientId: 'rcb_vendor',
+    });
+
+    expect(prisma.vendorPayout.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        update: expect.objectContaining({
+          status: PayoutStatus.settled,
+          attemptCount: 1,
+          flutterwaveTransferId: 'trf_1',
+          vendorSeenAt: null,
+        }),
+      }),
+    );
+  });
+
   it('records transfer initiation with attempt count', async () => {
     prisma.vendorPayout.findUnique.mockResolvedValue({ attemptCount: 1 });
 

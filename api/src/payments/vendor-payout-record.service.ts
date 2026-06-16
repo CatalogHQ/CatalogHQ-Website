@@ -95,6 +95,61 @@ export class VendorPayoutRecordService {
     });
   }
 
+  async recordInstantTransferSettled(input: {
+    orderId: string;
+    transferId: string;
+    reference: string;
+    recipientId: string;
+    settledAt?: Date;
+  }): Promise<void> {
+    const order = await this.loadPaidOrder(input.orderId);
+    if (!order || order.vendorNet <= 0) {
+      return;
+    }
+
+    const settledAt = input.settledAt ?? new Date();
+    const bank = bankSnapshot(order.store);
+    const attemptCount =
+      ((
+        await this.prisma.vendorPayout.findUnique({
+          where: { orderId: order.id },
+          select: { attemptCount: true },
+        })
+      )?.attemptCount ?? 0) + 1;
+
+    await this.prisma.vendorPayout.upsert({
+      where: { orderId: order.id },
+      create: {
+        ...this.buildCreatePayload(order, VendorPayoutMethod.instant_transfer),
+        status: PayoutStatus.settled,
+        flutterwaveTransferId: input.transferId,
+        flutterwaveReference: input.reference,
+        attemptCount,
+        initiatedAt: settledAt,
+        settledAt,
+        failedAt: null,
+        failureReason: null,
+        vendorSeenAt: null,
+        ...bank,
+        flutterwaveRecipientId: input.recipientId,
+      },
+      update: {
+        method: VendorPayoutMethod.instant_transfer,
+        status: PayoutStatus.settled,
+        flutterwaveTransferId: input.transferId,
+        flutterwaveReference: input.reference,
+        attemptCount,
+        initiatedAt: settledAt,
+        settledAt,
+        failedAt: null,
+        failureReason: null,
+        vendorSeenAt: null,
+        ...bank,
+        flutterwaveRecipientId: input.recipientId,
+      },
+    });
+  }
+
   async recordTransferInitiated(input: {
     orderId: string;
     transferId: string;

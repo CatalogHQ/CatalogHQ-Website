@@ -51,7 +51,7 @@ const PAYOUT_STATUS_LABELS: Record<
   pending: "Pending",
   processing: "Transfer in progress",
   split: "Transfer sent",
-  settled: "Settled",
+  settled: "Successful",
   failed: "Failed",
 };
 

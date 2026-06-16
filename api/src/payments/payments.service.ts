@@ -532,6 +532,9 @@ export class PaymentsService {
     }
 
     const availableBalance = await this.transferService.getNgnAvailableBalance();
+    const hasConfirmedSufficientBalance =
+      availableBalance !== null &&
+      availableBalance >= requiredWalletBalance;
     if (
       availableBalance !== null &&
       availableBalance < requiredWalletBalance
@@ -558,6 +561,19 @@ export class PaymentsService {
           vendorId: order.storeId,
         },
       });
+
+      if (hasConfirmedSufficientBalance) {
+        await this.applyInstantPayoutSettlement({
+          orderId: order.id,
+          transferId: transfer.transferId,
+          reference: transfer.reference,
+          recipientId,
+        });
+        this.logger.log(
+          `Vendor payout settled immediately for order ${order.paymentRef}: ${transfer.transferId}`,
+        );
+        return;
+      }
 
       await this.prisma.order.update({
         where: { id: order.id },
@@ -638,6 +654,49 @@ export class PaymentsService {
         lowStockThreshold: product.lowStockThreshold,
       },
       product.stock + quantity,
+    );
+  }
+
+  private async applyInstantPayoutSettlement(input: {
+    orderId: string;
+    transferId: string;
+    reference: string;
+    recipientId: string;
+  }): Promise<void> {
+    const settledAt = new Date();
+
+    await this.prisma.order.update({
+      where: { id: input.orderId },
+      data: {
+        payoutStatus: PayoutStatus.settled,
+        payoutSettledAt: settledAt,
+        vendorPayoutSeenAt: null,
+        flutterwaveTransferId: input.transferId,
+        flutterwavePayoutReference: input.reference,
+      },
+    });
+
+    await this.vendorPayoutRecords.recordInstantTransferSettled({
+      orderId: input.orderId,
+      transferId: input.transferId,
+      reference: input.reference,
+      recipientId: input.recipientId,
+      settledAt,
+    });
+
+    await this.securityAudit.log({
+      action: SecurityAuditAction.PAYMENT_PAYOUT_SETTLED,
+      targetType: 'order',
+      targetId: input.orderId,
+      metadata: {
+        payoutReference: input.reference,
+        immediateOnInitiation: true,
+      },
+    });
+
+    this.eventEmitter.emit(
+      PAYOUT_SETTLED_EVENT,
+      new PayoutSettledEvent(input.orderId),
     );
   }
 
