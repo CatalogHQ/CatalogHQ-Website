@@ -194,6 +194,7 @@ export class VendorPayoutRecordService {
         settledAt,
         failedAt: null,
         failureReason: null,
+        vendorSeenAt: null,
       },
     });
   }

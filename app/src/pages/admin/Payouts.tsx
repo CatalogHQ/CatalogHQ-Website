@@ -17,7 +17,7 @@ import AdminDateRangeFilter from "@/components/admin/AdminDateRangeFilter";
 import type { AdminPlatformPayout } from "@/data/admin-mock";
 import { adminRepository } from "@/lib/repositories";
 import type { AdminListDateRange } from "@/lib/admin-date-range";
-import { formatNaira } from "@/lib/format";
+import { formatNaira, formatDateTimeEnNg } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 type PayoutStatusFilter = "all" | AdminPlatformPayout["status"];
@@ -190,15 +190,15 @@ export default function AdminPayouts() {
                 <TableCell className="text-sm text-gray-600">
                   {payout.bankName
                     ? `${payout.bankName}${payout.accountNumberLast4 ? ` ····${payout.accountNumberLast4}` : ""}`
-                    : "—"}
+                    : "-"}
                 </TableCell>
                 <TableCell className="text-gray-600">
-                  {new Date(payout.createdAt).toLocaleDateString("en-NG")}
+                  {formatDateTimeEnNg(payout.createdAt)}
                 </TableCell>
                 <TableCell className="text-gray-600">
                   {payout.settledAt
-                    ? new Date(payout.settledAt).toLocaleDateString("en-NG")
-                    : "—"}
+                    ? formatDateTimeEnNg(payout.settledAt)
+                    : "-"}
                 </TableCell>
               </TableRow>
             ))}

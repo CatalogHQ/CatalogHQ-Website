@@ -32,7 +32,7 @@ import OrderStatusBadge from "@/components/vendor/OrderStatusBadge";
 import { useAuth } from "@/contexts/AuthContext";
 import { useVendor } from "@/contexts/VendorContext";
 import { hasFeature } from "@/data/plans";
-import { formatNaira } from "@/lib/format";
+import { formatNaira, formatDateTimeEnNg } from "@/lib/format";
 import { vendorNetFromOrderLine } from "@/lib/flutterwave-fees";
 import { orderRepository } from "@/lib/repositories";
 import {
@@ -245,7 +245,7 @@ export default function Orders() {
                     <OrderStatusBadge status={order.status} />
                   </TableCell>
                   <TableCell className="hidden sm:table-cell text-gray-500">
-                    {new Date(order.createdAt).toLocaleDateString("en-NG")}
+                    {formatDateTimeEnNg(order.createdAt)}
                   </TableCell>
                 </TableRow>
               ))}

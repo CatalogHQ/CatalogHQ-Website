@@ -7,6 +7,16 @@ export function formatNaira(amount: number): string {
   }).format(amount);
 }
 
+const dateTimeFormatter = new Intl.DateTimeFormat("en-NG", {
+  dateStyle: "medium",
+  timeStyle: "short",
+});
+
+export function formatDateTimeEnNg(iso: string | Date): string {
+  const date = typeof iso === "string" ? new Date(iso) : iso;
+  return dateTimeFormatter.format(date);
+}
+
 export function maskNin(nin: string): string {
   if (nin.length <= 4) return nin;
   return `${"*".repeat(nin.length - 4)}${nin.slice(-4)}`;

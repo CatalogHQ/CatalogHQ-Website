@@ -575,11 +575,6 @@ export class PaymentsService {
         recipientId,
       });
 
-      this.eventEmitter.emit(
-        PAYOUT_SETTLED_EVENT,
-        new PayoutSettledEvent(order.id),
-      );
-
       this.logger.log(
         `Vendor payout initiated for order ${order.paymentRef}: ${transfer.transferId}`,
       );
@@ -659,15 +654,12 @@ export class PaymentsService {
       return;
     }
 
-    const alreadyNotified =
-      order.payoutStatus === PayoutStatus.processing &&
-      Boolean(order.flutterwaveTransferId);
-
     await this.prisma.order.update({
       where: { id: order.id },
       data: {
         payoutStatus: PayoutStatus.settled,
         payoutSettledAt: new Date(),
+        vendorPayoutSeenAt: null,
       },
     });
 
@@ -680,12 +672,10 @@ export class PaymentsService {
       metadata: { payoutReference },
     });
 
-    if (!alreadyNotified) {
-      this.eventEmitter.emit(
-        PAYOUT_SETTLED_EVENT,
-        new PayoutSettledEvent(order.id),
-      );
-    }
+    this.eventEmitter.emit(
+      PAYOUT_SETTLED_EVENT,
+      new PayoutSettledEvent(order.id),
+    );
   }
 
   async markPayoutFailed(payoutReference: string): Promise<void> {

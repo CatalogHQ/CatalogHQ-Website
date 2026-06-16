@@ -34,7 +34,7 @@ import {
 import { Spinner } from "@/components/ui/spinner";
 import VendorVerificationCard from "@/components/vendor/VendorVerificationCard";
 import { useVendor } from "@/contexts/VendorContext";
-import { formatNaira } from "@/lib/format";
+import { formatNaira, formatDateTimeEnNg } from "@/lib/format";
 import {
   getPayoutStatusLabel,
   MIN_VENDOR_PAYOUT_NAIRA,
@@ -427,7 +427,9 @@ export default function Payouts() {
                         </Badge>
                       </TableCell>
                       <TableCell className="text-gray-600">
-                        {new Date(order.createdAt).toLocaleDateString("en-NG")}
+                        {formatDateTimeEnNg(
+                          order.payoutSettledAt ?? order.createdAt,
+                        )}
                       </TableCell>
                     </TableRow>
                   ))}

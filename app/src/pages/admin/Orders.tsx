@@ -19,7 +19,7 @@ import OrderStatusBadge from "@/components/vendor/OrderStatusBadge";
 import type { AdminPlatformOrder } from "@/data/admin-mock";
 import { adminRepository } from "@/lib/repositories";
 import type { AdminListDateRange } from "@/lib/admin-date-range";
-import { formatNaira } from "@/lib/format";
+import { formatNaira, formatDateTimeEnNg } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { PaymentStatus } from "@/types/orders";
 
@@ -182,7 +182,7 @@ export default function AdminOrders() {
                   <OrderStatusBadge status={order.status} />
                 </TableCell>
                 <TableCell className="text-gray-600">
-                  {new Date(order.createdAt).toLocaleDateString("en-NG")}
+                  {formatDateTimeEnNg(order.createdAt)}
                 </TableCell>
               </TableRow>
             ))}

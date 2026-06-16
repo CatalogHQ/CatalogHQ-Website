@@ -29,12 +29,7 @@ function formatNotificationTime(iso: string): string {
 }
 
 export default function VendorOrderNotifications() {
-  const {
-    orders,
-    unreadNotificationCount,
-    refreshOrders,
-    markPayoutsSeen,
-  } = useVendor();
+  const { orders, unreadNotificationCount, refreshOrders } = useVendor();
 
   const unreadOrders = useMemo(
     () =>
@@ -60,7 +55,6 @@ export default function VendorOrderNotifications() {
       onOpenChange={(open) => {
         if (open) {
           void refreshOrders();
-          void markPayoutsSeen();
         }
       }}
     >
