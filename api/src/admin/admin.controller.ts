@@ -126,10 +126,24 @@ export class AdminController {
 
   @Patch('tickets/:id')
   async updateTicket(
+    @CurrentUser() user: User,
+    @Req() req: Request,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateTicketDto,
   ) {
     await this.ticketsService.updateByAdmin(id, dto);
+    await this.securityAuditService.log({
+      actorId: user.id,
+      actorEmail: user.email,
+      action: SecurityAuditAction.ADMIN_UPDATE_TICKET,
+      targetType: 'ticket',
+      targetId: id,
+      metadata: {
+        status: dto.status ?? null,
+        priority: dto.priority ?? null,
+      },
+      ipAddress: getClientIp(req),
+    });
     return this.adminService.getTicket(id);
   }
 
@@ -232,15 +246,43 @@ export class AdminController {
   }
 
   @Patch('plans/:tier')
-  updatePlan(
+  async updatePlan(
+    @CurrentUser() user: User,
+    @Req() req: Request,
     @Param('tier') tier: string,
     @Body() dto: UpdatePlanCatalogDto,
   ) {
-    return this.planCatalogService.updatePlan(parsePlanTier(tier), dto);
+    const parsedTier = parsePlanTier(tier);
+    const updated = await this.planCatalogService.updatePlan(parsedTier, dto);
+    await this.securityAuditService.log({
+      actorId: user.id,
+      actorEmail: user.email,
+      action: SecurityAuditAction.ADMIN_UPDATE_PLAN_CATALOG,
+      targetType: 'plan',
+      targetId: parsedTier,
+      metadata: { fields: Object.keys(dto) },
+      ipAddress: getClientIp(req),
+    });
+    return updated;
   }
 
   @Post('plans/:tier/reset-defaults')
-  resetPlanDefaults(@Param('tier') tier: string) {
-    return this.planCatalogService.resetPlanDefaults(parsePlanTier(tier));
+  async resetPlanDefaults(
+    @CurrentUser() user: User,
+    @Req() req: Request,
+    @Param('tier') tier: string,
+  ) {
+    const parsedTier = parsePlanTier(tier);
+    const updated =
+      await this.planCatalogService.resetPlanDefaults(parsedTier);
+    await this.securityAuditService.log({
+      actorId: user.id,
+      actorEmail: user.email,
+      action: SecurityAuditAction.ADMIN_RESET_PLAN_DEFAULTS,
+      targetType: 'plan',
+      targetId: parsedTier,
+      ipAddress: getClientIp(req),
+    });
+    return updated;
   }
 }

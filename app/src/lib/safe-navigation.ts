@@ -5,8 +5,16 @@ const ALLOWED_PAYMENT_HOSTS = new Set([
   "checkout.paystack.com",
 ]);
 
+function hasEncodedTraversal(value: string): boolean {
+  return /%2f|%5c|%00|%40/i.test(value);
+}
+
 export function safeReturnTo(value: string | null | undefined): string | null {
   if (!value) {
+    return null;
+  }
+
+  if (hasEncodedTraversal(value)) {
     return null;
   }
 
@@ -21,7 +29,16 @@ export function safeReturnTo(value: string | null | undefined): string | null {
     return null;
   }
 
-  if (decoded.includes("\\") || decoded.includes("\0")) {
+  if (
+    decoded.includes("\\") ||
+    decoded.includes("\0") ||
+    decoded.includes("@") ||
+    decoded.includes(":")
+  ) {
+    return null;
+  }
+
+  if (hasEncodedTraversal(decoded)) {
     return null;
   }
 

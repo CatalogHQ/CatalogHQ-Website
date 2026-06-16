@@ -5,7 +5,8 @@ import {
   Injectable,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { User, UserRole } from '@prisma/client';
+import { UserRole } from '@prisma/client';
+import { AuthenticatedUser } from '../auth/authenticated-user.type';
 import { ADMIN_TOTP_OPTIONAL_KEY } from '../common/constants/metadata';
 
 @Injectable()
@@ -21,7 +22,7 @@ export class AdminTotpGuard implements CanActivate {
       return true;
     }
 
-    const request = context.switchToHttp().getRequest<{ user?: User }>();
+    const request = context.switchToHttp().getRequest<{ user?: AuthenticatedUser }>();
     const user = request.user;
 
     if (!user || user.role !== UserRole.admin) {

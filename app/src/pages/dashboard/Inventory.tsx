@@ -32,6 +32,7 @@ import { getProductPrimaryImage } from "@/lib/product-utils";
 import { Input } from "@/components/ui/input";
 import { vendorToolsRepository } from "@/lib/repositories/vendor-tools-repository";
 import { isApiMode } from "@/lib/use-api";
+import { inventoryLocationSchema } from "@/lib/inventory-location-schemas";
 import { getProductLowStockThreshold } from "@/types/domain";
 
 const STATUS_LABELS = {
@@ -185,15 +186,33 @@ export default function Inventory() {
             <Button
               type="button"
               onClick={async () => {
-                if (!locationProductId || !locationName.trim()) return;
-                await vendorToolsRepository.upsertStockLocation(
-                  locationProductId,
-                  locationName.trim(),
-                  Number(locationStock) || 0,
-                );
-                toast.success("Stock location saved.");
-                setLocationName("");
-                setLocationStock("");
+                const parsed = inventoryLocationSchema.safeParse({
+                  productId: locationProductId,
+                  locationName: locationName,
+                  stockQty: Number(locationStock),
+                });
+
+                if (!parsed.success) {
+                  toast.error(parsed.error.issues[0]?.message ?? "Invalid input.");
+                  return;
+                }
+
+                try {
+                  await vendorToolsRepository.upsertStockLocation(
+                    parsed.data.productId,
+                    parsed.data.locationName,
+                    parsed.data.stockQty,
+                  );
+                  toast.success("Stock location saved.");
+                  setLocationName("");
+                  setLocationStock("");
+                } catch (error) {
+                  toast.error(
+                    error instanceof Error
+                      ? error.message
+                      : "Could not save stock location.",
+                  );
+                }
               }}
             >
               Save location

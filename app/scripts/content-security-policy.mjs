@@ -32,7 +32,8 @@ export function buildContentSecurityPolicy(apiUrl, options = {}) {
   return [
     "default-src 'self'",
     "script-src 'self'",
-    "style-src 'self' 'unsafe-inline'",
+    // Tailwind and component libraries inject inline styles; use nonces when migrating off unsafe-inline.
+  "style-src 'self' 'unsafe-inline'",
     "font-src 'self'",
     `img-src ${imgSrc}`,
     `connect-src ${[...connectSrc].join(" ")}`,

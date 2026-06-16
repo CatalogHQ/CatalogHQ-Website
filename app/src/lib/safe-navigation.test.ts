@@ -18,6 +18,16 @@ describe("safeReturnTo", () => {
     expect(safeReturnTo("/dashboard\\evil")).toBeNull();
     expect(safeReturnTo("/dashboard%00evil")).toBeNull();
   });
+
+  it("rejects paths with @ or protocol characters", () => {
+    expect(safeReturnTo("/@evil.example")).toBeNull();
+    expect(safeReturnTo("/dashboard:evil")).toBeNull();
+  });
+
+  it("rejects encoded traversal sequences", () => {
+    expect(safeReturnTo("/%2f%2fevil.example")).toBeNull();
+    expect(safeReturnTo("/dashboard%5c..")).toBeNull();
+  });
 });
 
 describe("isAllowedPaymentRedirectUrl", () => {

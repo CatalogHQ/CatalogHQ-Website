@@ -21,6 +21,8 @@ import { isApiMode } from "@/lib/use-api";
 import { apiPlanCatalogRepository } from "@/lib/repositories/api-plan-catalog-repository";
 import { localPlanCatalogRepository } from "@/lib/repositories/local-plan-catalog-repository";
 import type { PlanCatalogEntry } from "@/types/plan-catalog";
+import { z } from "zod";
+import { parseAdminPlanDraft } from "@/lib/admin-plan-schemas";
 
 const planCatalogRepository = isApiMode()
   ? apiPlanCatalogRepository
@@ -52,13 +54,6 @@ function toDraft(plan: PlanCatalogEntry): PlanDraft {
     active: plan.active,
     featureBulletsText: plan.featureBullets.join("\n"),
   };
-}
-
-function parseFeatureBullets(text: string): string[] {
-  return text
-    .split("\n")
-    .map((line) => line.trim())
-    .filter(Boolean);
 }
 
 export default function AdminPlans() {
@@ -101,34 +96,23 @@ export default function AdminPlans() {
     const draft = drafts[tier];
     if (!draft) return;
 
-    const monthlyPriceNaira = Number.parseInt(draft.monthlyPriceNaira, 10);
-    const productLimit = Number.parseInt(draft.productLimit, 10);
-    const sortOrder = Number.parseInt(draft.sortOrder, 10);
-
-    if (!Number.isFinite(monthlyPriceNaira) || monthlyPriceNaira < 0) {
-      toast.error("Enter a valid monthly price in naira.");
-      return;
-    }
-
-    if (!Number.isFinite(productLimit) || productLimit < 1) {
-      toast.error("Product limit must be at least 1.");
+    let payload;
+    try {
+      payload = parseAdminPlanDraft(draft);
+    } catch (error) {
+      toast.error(
+        error instanceof z.ZodError
+          ? (error.issues[0]?.message ?? "Check the plan fields and try again.")
+          : error instanceof Error
+            ? error.message
+            : "Check the plan fields and try again.",
+      );
       return;
     }
 
     setSavingTier(tier);
     try {
-      const updated = await planCatalogRepository.updatePlan(tier, {
-        name: draft.name.trim(),
-        monthlyPriceKobo: monthlyPriceNaira * 100,
-        priceSubtext: draft.priceSubtext.trim(),
-        tagline: draft.tagline.trim(),
-        cta: draft.cta.trim(),
-        popular: draft.popular,
-        active: draft.active,
-        productLimit,
-        sortOrder: Number.isFinite(sortOrder) ? sortOrder : undefined,
-        featureBullets: parseFeatureBullets(draft.featureBulletsText),
-      });
+      const updated = await planCatalogRepository.updatePlan(tier, payload);
 
       setPlans((current) =>
         current.map((plan) => (plan.id === tier ? updated : plan)),

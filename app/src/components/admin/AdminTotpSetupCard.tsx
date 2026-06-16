@@ -6,6 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { totpCodeSchema } from "@/lib/auth-schemas";
 import { toast } from "sonner";
 
 type AdminTotpSetupCardProps = {
@@ -38,12 +39,17 @@ export default function AdminTotpSetupCard({ onEnabled }: AdminTotpSetupCardProp
   };
 
   const handleEnable = async () => {
-    if (token.length !== 6) return;
+    const parsed = totpCodeSchema.safeParse(token);
+    if (!parsed.success) {
+      toast.error(parsed.error.issues[0]?.message ?? "Enter a 6-digit code.");
+      return;
+    }
+
     setLoading(true);
     try {
       await apiClient("/admin/totp/enable", {
         method: "POST",
-        body: JSON.stringify({ token }),
+        body: JSON.stringify({ token: parsed.data }),
       });
       await refreshUser();
       toast.success("Two-factor authentication is now enabled.");

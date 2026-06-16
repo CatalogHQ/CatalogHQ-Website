@@ -67,6 +67,10 @@ export const signInSchema = z.object({
     .or(z.literal("")),
 });
 
+export const totpCodeSchema = z
+  .string()
+  .regex(/^\d{6}$/, "Enter a 6-digit verification code");
+
 export const forgotPasswordRequestSchema = z.object({
   email: emailSchema,
 });

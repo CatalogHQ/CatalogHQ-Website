@@ -212,6 +212,9 @@ export function validateEnv(config: Record<string, unknown>) {
       );
     }
 
+    if (config.ASHLAB_VERIFY_DEBUG === 'true') {
+      throw new Error('ASHLAB_VERIFY_DEBUG cannot be enabled in production');
+    }
   }
 
   const totpKey = config.TOTP_ENCRYPTION_KEY;

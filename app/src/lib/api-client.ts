@@ -42,11 +42,17 @@ async function parseApiError(response: Response): Promise<ApiError> {
     };
     const message = Array.isArray(payload.message)
       ? payload.message.join(", ")
-      : (payload.message ?? text);
+      : (payload.message ?? `Request failed (${response.status})`);
 
     return new ApiError(message, response.status, payload.code);
   } catch {
-    return new ApiError(text, response.status);
+    const trimmed = text.trim().slice(0, 200);
+    const safeMessage =
+      trimmed.startsWith("<") || trimmed.startsWith("<!")
+        ? `Request failed (${response.status})`
+        : trimmed;
+
+    return new ApiError(safeMessage, response.status);
   }
 }
 

@@ -3,11 +3,7 @@ import { ConfigService } from '@nestjs/config';
 export function isNinVerifyDebugEnabled(
   configService: ConfigService,
 ): boolean {
-  if (configService.get<string>('ASHLAB_VERIFY_DEBUG') === 'true') {
-    return true;
-  }
-
-  return configService.get<string>('NODE_ENV') !== 'production';
+  return configService.get<string>('ASHLAB_VERIFY_DEBUG') === 'true';
 }
 
 export function maskNin(nin: string): string {

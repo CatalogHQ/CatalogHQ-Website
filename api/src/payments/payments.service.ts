@@ -128,9 +128,22 @@ export class PaymentsService {
       webhookHint?.amount !== undefined &&
       !flutterwaveAmountMatchesNaira(order.totalPaid, webhookHint.amount)
     ) {
-      this.logger.warn(
+      this.logger.error(
         `Payment amount mismatch for ${verifyReference}: expected ${order.totalPaid} NGN, got ${webhookHint.amount}`,
       );
+      await this.securityAudit.log({
+        action: SecurityAuditAction.PAYMENT_ORDER_AMOUNT_MISMATCH,
+        targetType: 'order',
+        targetId: order.id,
+        metadata: {
+          paymentRef: order.paymentRef,
+          gatewayReference: verifyReference,
+          expectedAmount: order.totalPaid,
+          receivedAmount: webhookHint.amount,
+          storeId: order.storeId,
+          fromWebhook: webhookHint.fromWebhook ?? false,
+        },
+      });
       return;
     }
 
@@ -138,9 +151,22 @@ export class PaymentsService {
       webhookHint?.currency !== undefined &&
       webhookHint.currency !== 'NGN'
     ) {
-      this.logger.warn(
+      this.logger.error(
         `Payment currency mismatch for ${verifyReference}: ${webhookHint.currency}`,
       );
+      await this.securityAudit.log({
+        action: SecurityAuditAction.PAYMENT_ORDER_CURRENCY_MISMATCH,
+        targetType: 'order',
+        targetId: order.id,
+        metadata: {
+          paymentRef: order.paymentRef,
+          gatewayReference: verifyReference,
+          expectedCurrency: 'NGN',
+          receivedCurrency: webhookHint.currency,
+          storeId: order.storeId,
+          fromWebhook: webhookHint.fromWebhook ?? false,
+        },
+      });
       return;
     }
 
@@ -757,20 +783,12 @@ export class PaymentsService {
   }
 
   private allowWebhookOnlyPaymentConfirm(): boolean {
-    const explicit = this.configService
-      .get<string>('PAYMENT_ALLOW_WEBHOOK_ONLY_CONFIRM')
-      ?.trim()
-      .toLowerCase();
-
-    if (explicit === 'true') {
-      return true;
-    }
-
-    if (explicit === 'false') {
-      return false;
-    }
-
-    return this.configService.get<string>('NODE_ENV') !== 'production';
+    return (
+      this.configService
+        .get<string>('PAYMENT_ALLOW_WEBHOOK_ONLY_CONFIRM')
+        ?.trim()
+        .toLowerCase() === 'true'
+    );
   }
 }
 

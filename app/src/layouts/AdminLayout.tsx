@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Link, Outlet, useLocation, useNavigate } from "react-router";
 import {
   LayoutDashboard,
@@ -64,12 +65,16 @@ const navItems = [
 export default function AdminLayout() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { signOut, user } = useAuth();
+  const { signOut, user, refreshUser } = useAuth();
   const totpSetupRequired =
     user?.role === "admin" && user.totpEnabled === false;
   const visibleNavItems = totpSetupRequired
     ? navItems.filter((item) => item.href === "/admin/settings")
     : navItems;
+
+  useEffect(() => {
+    void refreshUser();
+  }, [refreshUser]);
 
   const { pendingVerifications, openTickets } = useAdminBadges();
 

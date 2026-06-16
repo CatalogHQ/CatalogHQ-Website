@@ -109,7 +109,7 @@ export default function AdminSecurityLogs() {
   const handleSearch = (event: React.FormEvent) => {
     event.preventDefault();
     setOffset(0);
-    setSearch(searchInput.trim());
+    setSearch(searchInput.trim().slice(0, 100));
   };
 
   const handleCategoryChange = (nextCategory: SecurityAuditCategory) => {
@@ -170,6 +170,7 @@ export default function AdminSecurityLogs() {
             onChange={(event) => setSearchInput(event.target.value)}
             placeholder="Search by actor email, target ID, or IP address"
             className="pl-9"
+            maxLength={100}
           />
         </div>
         <Button type="submit" variant="secondary">
