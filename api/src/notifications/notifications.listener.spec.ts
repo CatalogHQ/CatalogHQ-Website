@@ -91,6 +91,7 @@ describe('NotificationsListener', () => {
       { type: 'order_created' },
     );
     const emailBody = emailService.sendEmail.mock.calls[0][2] as string;
+    expect(emailBody).toContain('Hi, Ada Fashion,');
     expect(emailBody).toContain('You receive:</strong> 15000 NGN');
     expect(emailBody).not.toContain('Customer paid');
   });
@@ -144,5 +145,7 @@ describe('NotificationsListener', () => {
       'Ada Fashion',
       { type: 'payout_settled' },
     );
+    const payoutEmailBody = emailService.sendEmail.mock.calls[0][2] as string;
+    expect(payoutEmailBody).toContain('Hi, Ada Fashion,');
   });
 });

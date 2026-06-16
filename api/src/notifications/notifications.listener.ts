@@ -33,6 +33,11 @@ const STATUS_LABELS: Record<string, string> = {
   cancelled: 'Cancelled',
 };
 
+function vendorEmailGreeting(storeName: string): string {
+  const label = storeName.trim() || 'there';
+  return `<p>Hi, ${label},</p>`;
+}
+
 @Injectable()
 export class NotificationsListener {
   private readonly logger = new Logger(NotificationsListener.name);
@@ -89,7 +94,7 @@ export class NotificationsListener {
 
     const storeName = store.businessName;
     const subject = `New order ${order.paymentRef} at ${storeName}`;
-    const htmlBody = `<p>Hi,</p><p>You have a new paid order at <strong>${storeName}</strong>.</p><ul><li><strong>Reference:</strong> ${order.paymentRef}</li><li><strong>Customer:</strong> ${order.customerName}</li><li><strong>Product:</strong> ${order.productName} x${order.quantity}</li><li><strong>You receive:</strong> ${vendorReceive} NGN</li></ul><p><a href="${dashboardUrl}">View orders in your dashboard</a></p><p>CatalogHQ Team</p>`;
+    const htmlBody = `${vendorEmailGreeting(storeName)}<p>You have a new paid order at <strong>${storeName}</strong>.</p><ul><li><strong>Reference:</strong> ${order.paymentRef}</li><li><strong>Customer:</strong> ${order.customerName}</li><li><strong>Product:</strong> ${order.productName} x${order.quantity}</li><li><strong>You receive:</strong> ${vendorReceive} NGN</li></ul><p><a href="${dashboardUrl}">View orders in your dashboard</a></p><p>CatalogHQ Team</p>`;
 
     try {
       await this.emailService.sendEmail(
@@ -135,7 +140,7 @@ export class NotificationsListener {
 
     const storeName = store.businessName;
     const subject = `Payout sent for order ${order.paymentRef}`;
-    const htmlBody = `<p>Hi,</p><p>A payout of <strong>${amountNaira} NGN</strong> for order <strong>${order.paymentRef}</strong> has been sent to your linked bank account.</p><ul><li><strong>Product:</strong> ${order.productName} x${order.quantity}</li><li><strong>Customer:</strong> ${order.customerName}</li><li><strong>Amount:</strong> ${amountNaira} NGN</li></ul><p><a href="${payoutsUrl}">View payouts in your dashboard</a></p><p>CatalogHQ Team</p>`;
+    const htmlBody = `${vendorEmailGreeting(storeName)}<p>A payout of <strong>${amountNaira} NGN</strong> for order <strong>${order.paymentRef}</strong> has been sent to your linked bank account.</p><ul><li><strong>Product:</strong> ${order.productName} x${order.quantity}</li><li><strong>Customer:</strong> ${order.customerName}</li><li><strong>Amount:</strong> ${amountNaira} NGN</li></ul><p><a href="${payoutsUrl}">View payouts in your dashboard</a></p><p>CatalogHQ Team</p>`;
 
     try {
       await this.emailService.sendEmail(
@@ -236,7 +241,7 @@ export class NotificationsListener {
         await this.emailService.sendEmail(
           user.email,
           'Your CatalogHQ store is verified',
-          `<p>Hi,</p><p>Great news! <strong>${storeName}</strong> has been verified on CatalogHQ. Your verified badge is now visible on your storefront.</p><p>CatalogHQ Team</p>`,
+          `${vendorEmailGreeting(storeName)}<p>Great news! <strong>${storeName}</strong> has been verified on CatalogHQ. Your verified badge is now visible on your storefront.</p><p>CatalogHQ Team</p>`,
           storeName,
           { type: 'vendor_verification' },
         );
@@ -254,7 +259,7 @@ export class NotificationsListener {
       await this.emailService.sendEmail(
         user.email,
         'CatalogHQ verification update',
-        `<p>Hi,</p><p>We could not approve verification for <strong>${storeName}</strong>.</p><p><strong>Reason:</strong> ${reason}</p><p>You can resubmit updated documents from your dashboard settings.</p><p>CatalogHQ Team</p>`,
+        `${vendorEmailGreeting(storeName)}<p>We could not approve verification for <strong>${storeName}</strong>.</p><p><strong>Reason:</strong> ${reason}</p><p>You can resubmit updated documents from your dashboard settings.</p><p>CatalogHQ Team</p>`,
         storeName,
         { type: 'vendor_verification' },
       );
