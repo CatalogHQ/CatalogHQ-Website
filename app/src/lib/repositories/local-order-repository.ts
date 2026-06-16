@@ -34,8 +34,9 @@ function buildOrder(
     0,
     unitPrice * input.quantity + deliveryFee - discountAmount,
   );
-  const totalPaid =
-    overrides?.totalPaid ?? computeCheckoutPricing(vendorNet).customerTotal;
+  const pricing = computeCheckoutPricing(vendorNet);
+  const totalPaid = overrides?.totalPaid ?? pricing.customerTotal;
+  const platformFee = overrides?.platformFee ?? pricing.processingFee;
   const paymentRef = overrides?.paymentRef ?? generatePaymentRef();
 
   return {
@@ -44,6 +45,8 @@ function buildOrder(
     deliveryFee,
     discountAmount,
     totalPaid,
+    platformFee,
+    vendorNet,
     id: overrides?.id ?? crypto.randomUUID(),
     paymentRef,
     status: overrides?.status ?? "paid",

@@ -22,8 +22,10 @@ import {
 } from "@/lib/order-message";
 import { canCustomerReviewOrder } from "@/lib/order-review";
 import OrderPhoneGate from "@/components/storefront/OrderPhoneGate";
+import CheckoutPricingSummary from "@/components/storefront/CheckoutPricingSummary";
 import { useOrderPhoneGate } from "@/hooks/use-order-phone-gate";
 import { loadPendingPaymentDetails } from "@/lib/flutterwave-payment-methods";
+import { orderSubtotalNgn, orderVatNgn } from "@/lib/order-pricing";
 import { orderRepository, reviewRepository } from "@/lib/repositories";
 import { hasFeature } from "@/data/plans";
 import {
@@ -455,10 +457,15 @@ export default function OrderStatusPage() {
                 {formatNaira(order.deliveryFee!)}
               </p>
             )}
-            <p>
-              <span className="text-gray-500">Total paid: </span>
-              <span className="font-semibold">{formatNaira(order.totalPaid)}</span>
-            </p>
+            <CheckoutPricingSummary
+              vendorNetNgn={orderSubtotalNgn(order)}
+              showProcessingFee
+              totalLabel="Total paid"
+              confirmedTotals={{
+                vatAmount: orderVatNgn(order),
+                customerTotal: order.totalPaid,
+              }}
+            />
           </CardContent>
         </Card>
 

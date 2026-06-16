@@ -310,6 +310,7 @@ export default function ProductOrderOptions({
         <div className="mb-4 lg:mb-0 lg:flex-1">
           <CheckoutPricingSummary
             vendorNetNgn={vendorNet}
+            showProcessingFee
             showSubtotalLines={{
               unitPrice: product.price,
               quantity,

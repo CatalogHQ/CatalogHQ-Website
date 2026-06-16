@@ -7,6 +7,11 @@ type CheckoutPricingSummaryProps = {
   className?: string;
   showProcessingFee?: boolean;
   totalLabel?: string;
+  /** Use persisted order totals instead of recomputing checkout fees. */
+  confirmedTotals?: {
+    vatAmount: number;
+    customerTotal: number;
+  };
   showSubtotalLines?: {
     unitPrice: number;
     quantity: number;
@@ -20,10 +25,13 @@ export default function CheckoutPricingSummary({
   className,
   showProcessingFee = false,
   totalLabel,
+  confirmedTotals,
   showSubtotalLines,
 }: CheckoutPricingSummaryProps) {
-  const { vendorNet, processingFee, customerTotal } =
-    computeCheckoutPricing(vendorNetNgn);
+  const computed = computeCheckoutPricing(vendorNetNgn);
+  const vendorNet = computed.vendorNet;
+  const processingFee = confirmedTotals?.vatAmount ?? computed.processingFee;
+  const customerTotal = confirmedTotals?.customerTotal ?? computed.customerTotal;
 
   if (vendorNet <= 0) {
     return null;

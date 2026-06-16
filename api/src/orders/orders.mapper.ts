@@ -40,7 +40,6 @@ export type PublicOrderDto = Omit<
   OrderDto,
   | 'internalNotes'
   | 'vendorNet'
-  | 'platformFee'
   | 'riderPhone'
   | 'vendorSeenAt'
   | 'gatewayReference'
@@ -51,7 +50,6 @@ export function toPublicOrderDto(order: Order): PublicOrderDto {
   const {
     internalNotes: _internalNotes,
     vendorNet: _vendorNet,
-    platformFee: _platformFee,
     riderPhone: _riderPhone,
     vendorSeenAt: _vendorSeenAt,
     gatewayReference: _gatewayReference,

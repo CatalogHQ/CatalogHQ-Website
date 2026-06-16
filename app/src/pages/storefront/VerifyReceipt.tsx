@@ -11,9 +11,10 @@ import {
 } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
 import OrderPhoneGate from "@/components/storefront/OrderPhoneGate";
+import CheckoutPricingSummary from "@/components/storefront/CheckoutPricingSummary";
 import OrderStatusBadge from "@/components/vendor/OrderStatusBadge";
 import { useOrderPhoneGate } from "@/hooks/use-order-phone-gate";
-import { formatNaira } from "@/lib/format";
+import { orderSubtotalNgn, orderVatNgn } from "@/lib/order-pricing";
 import { orderRepository } from "@/lib/repositories";
 import type { OrderReceipt } from "@/types/orders";
 
@@ -115,10 +116,15 @@ export default function VerifyReceipt() {
               <span className="text-gray-500">Status</span>
               <OrderStatusBadge status={order.status} />
             </div>
-            <div className="flex items-center justify-between">
-              <span className="text-gray-500">Amount</span>
-              <span className="font-semibold">{formatNaira(order.totalPaid)}</span>
-            </div>
+            <CheckoutPricingSummary
+              vendorNetNgn={orderSubtotalNgn(order)}
+              showProcessingFee
+              totalLabel="Total paid"
+              confirmedTotals={{
+                vatAmount: orderVatNgn(order),
+                customerTotal: order.totalPaid,
+              }}
+            />
             <div className="flex items-center justify-between">
               <span className="text-gray-500">Placed</span>
               <span>{new Date(order.createdAt).toLocaleString("en-NG")}</span>
