@@ -20,6 +20,7 @@ describe('VendorPayoutService', () => {
   const subaccountService = {
     listBanks: jest.fn(),
     resolveAccount: jest.fn(),
+    createOrUpdateSubaccount: jest.fn(),
   };
 
   const transferService = {
@@ -97,12 +98,14 @@ describe('VendorPayoutService', () => {
         payoutAccountNumber: '0123456789',
         payoutAccountName: 'Ada Lovelace',
         flutterwaveTransferRecipientId: 'rcb_VENDOR_1',
+        flutterwaveSubaccountId: 'RS_VENDOR_1',
         payoutSetupComplete: true,
         payoutSetupAt: new Date('2026-06-14T12:00:00.000Z'),
       });
     transferService.createNgnBankRecipient.mockResolvedValue({
       recipientId: 'rcb_VENDOR_1',
     });
+    subaccountService.createOrUpdateSubaccount.mockResolvedValue('RS_VENDOR_1');
 
     const result = await service.updatePayoutAccount('vendor-1', {
       bankCode: '044',
@@ -111,6 +114,7 @@ describe('VendorPayoutService', () => {
 
     expect(result.payoutSetupComplete).toBe(true);
     expect(result.flutterwaveTransferRecipientId).toBe('rcb_VENDOR_1');
+    expect(subaccountService.createOrUpdateSubaccount).toHaveBeenCalled();
     expect(transferService.createNgnBankRecipient).toHaveBeenCalledWith(
       '044',
       '0123456789',

@@ -9,6 +9,7 @@ import {
 } from '@prisma/client';
 import { FlutterwaveService } from '../payments/flutterwave.service';
 import { PaymentsService } from '../payments/payments.service';
+import { VendorPayoutRecordService } from '../payments/vendor-payout-record.service';
 import { LowStockAlertService } from '../notifications/low-stock-alert.service';
 import { PlanEntitlementService } from '../plans/plan-entitlement.service';
 import { PrismaService } from '../prisma/prisma.service';
@@ -59,6 +60,11 @@ describe('OrdersService', () => {
     assertCanAttempt: jest.fn().mockResolvedValue(undefined),
     recordFailedAttempt: jest.fn().mockResolvedValue(undefined),
     resetAttempts: jest.fn().mockResolvedValue(undefined),
+  };
+
+  const vendorPayoutRecords = {
+    markAllSeen: jest.fn().mockResolvedValue(undefined),
+    countUnreadSettled: jest.fn().mockResolvedValue(0),
   };
 
   let service: OrdersService;
@@ -113,6 +119,7 @@ describe('OrdersService', () => {
         { provide: EventEmitter2, useValue: eventEmitter },
         { provide: FlutterwaveService, useValue: flutterwave },
         { provide: PaymentsService, useValue: paymentsService },
+        { provide: VendorPayoutRecordService, useValue: vendorPayoutRecords },
         { provide: PlanEntitlementService, useValue: planEntitlementService },
         { provide: LowStockAlertService, useValue: lowStockAlertService },
         { provide: OrderAccessAttemptService, useValue: orderAccessAttempt },

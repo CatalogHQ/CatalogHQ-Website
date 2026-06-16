@@ -76,6 +76,11 @@ export type FlutterwaveInitResult = {
   };
 };
 
+export type FlutterwaveCheckoutSplit = {
+  subaccountId: string;
+  platformCommissionNaira: number;
+};
+
 class FlutterwaveRetryableError extends Error {
   constructor(message: string) {
     super(message);
@@ -143,6 +148,7 @@ export class FlutterwaveService {
     callbackPath: string;
     paymentMethod: FlutterwavePaymentMethod;
     metadata?: Record<string, unknown>;
+    split?: FlutterwaveCheckoutSplit;
   }): Promise<FlutterwaveInitResult> {
     if (!this.auth.isConfigured()) {
       return { authorizationUrl: null, reference: params.reference };
@@ -162,6 +168,7 @@ export class FlutterwaveService {
     amountNaira: number;
     reference: string;
     metadata?: Record<string, unknown>;
+    split?: FlutterwaveCheckoutSplit;
   }): Promise<FlutterwaveInitResult> {
     if (!this.secretKey?.trim()) {
       throw new InternalServerErrorException('Could not start payment.');
@@ -177,6 +184,16 @@ export class FlutterwaveService {
       bank_transfer_options: { expires: 3600 },
       ...(params.metadata ? { meta: params.metadata } : {}),
     };
+
+    if (params.split?.subaccountId) {
+      body.subaccounts = [
+        {
+          id: params.split.subaccountId,
+          transaction_charge_type: 'flat',
+          transaction_charge: Math.max(0, Math.round(params.split.platformCommissionNaira)),
+        },
+      ];
+    }
 
     const response = await this.requestV3BankTransferCharge(body);
     const authorization = extractV3BankTransferAuthorization(response);

@@ -158,6 +158,11 @@ enum PayoutStatus {
   failed
 }
 
+enum VendorPayoutMethod {
+  instant_transfer
+  split
+}
+
 model Store {
   vendorId                String                   @id
   vendor                  User                     @relation(fields: [vendorId], references: [id], onDelete: Cascade)
@@ -194,6 +199,7 @@ model Store {
   deliveryZones           Json                     @default("[]")
   products                Product[]
   orders                  Order[]
+  vendorPayouts           VendorPayout[]
   reviews                 Review[]
   discountCodes           DiscountCode[]
   storeMembers            StoreMember[]
@@ -424,8 +430,41 @@ model Order {
   vendorPayoutSeenAt  DateTime?
   stockHeldAt         DateTime?
   createdAt           DateTime      @default(now())
+  vendorPayout        VendorPayout?
 
   @@index([storeId])
   @@index([paymentRef])
   @@index([customerPhone])
+}
+
+model VendorPayout {
+  id                     String             @id @default(uuid())
+  orderId                String             @unique
+  order                  Order              @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  storeId                String
+  store                  Store              @relation(fields: [storeId], references: [vendorId], onDelete: Cascade)
+  amountNaira            Int
+  platformFeeNaira       Int                @default(0)
+  method                 VendorPayoutMethod
+  status                 PayoutStatus       @default(pending)
+  flutterwaveTransferId  String?
+  flutterwaveReference   String?            @unique
+  flutterwaveRecipientId String?
+  bankCode               String?
+  bankName               String?
+  accountNumberLast4     String?
+  accountName            String?
+  failureReason          String?
+  attemptCount           Int                @default(0)
+  initiatedAt            DateTime?
+  settledAt              DateTime?
+  failedAt               DateTime?
+  vendorSeenAt           DateTime?
+  createdAt              DateTime           @default(now())
+  updatedAt              DateTime           @updatedAt
+
+  @@index([storeId])
+  @@index([storeId, status])
+  @@index([flutterwaveReference])
+  @@map("vendor_payouts")
 }

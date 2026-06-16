@@ -1,7 +1,7 @@
 import { ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { OrderStatus, PaymentStatus, PayoutStatus } from '@prisma/client';
+import { OrderStatus, PaymentStatus, PayoutStatus, VendorPayoutMethod } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { ORDER_CREATED_EVENT } from '../orders/events/order.events';
 import { OrderCreatedEvent } from '../orders/events/order-created.event';
@@ -13,11 +13,19 @@ import { buildFlutterwaveReference } from './flutterwave-reference.util';
 import { resolveFlutterwavePayoutReference } from './flutterwave-payout-reference.util';
 import { buildFlutterwaveCheckoutEmail } from './flutterwave-payment-methods';
 import { FlutterwaveService } from './flutterwave.service';
+import { FlutterwaveSubaccountService } from './flutterwave-subaccount.service';
 import { FlutterwaveTransferService, PAYOUT_WALLET_FEE_BUFFER_NGN } from './flutterwave-transfer.service';
 import {
   isVendorPayoutAmountEligible,
   MIN_VENDOR_PAYOUT_NAIRA,
 } from './vendor-payout.constants';
+import {
+  FLUTTERWAVE_VENDOR_PAYOUT_MODE_ENV,
+  isInstantVendorPayoutMode,
+  parseVendorPayoutMode,
+  VendorPayoutMode,
+} from './vendor-payout-mode.util';
+import { VendorPayoutRecordService } from './vendor-payout-record.service';
 
 @Injectable()
 export class PaymentsService {
@@ -26,10 +34,12 @@ export class PaymentsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly flutterwave: FlutterwaveService,
+    private readonly subaccountService: FlutterwaveSubaccountService,
     private readonly transferService: FlutterwaveTransferService,
     private readonly eventEmitter: EventEmitter2,
     private readonly configService: ConfigService,
     private readonly lowStockAlertService: LowStockAlertService,
+    private readonly vendorPayoutRecords: VendorPayoutRecordService,
   ) {}
 
   async claimWebhook(dedupeKey: string): Promise<boolean> {
@@ -196,7 +206,17 @@ export class PaymentsService {
       return;
     }
 
-    await this.attemptVendorPayout(order.id);
+    const payoutMethod = this.resolvePayoutMethod(order.store.flutterwaveSubaccountId);
+    await this.vendorPayoutRecords.ensureForPaidOrder(order.id, payoutMethod);
+
+    if (
+      !this.usesInstantVendorPayout() &&
+      order.store.flutterwaveSubaccountId
+    ) {
+      await this.markSubaccountSplitPayout(order.id);
+    } else {
+      await this.attemptVendorPayout(order.id);
+    }
 
     this.eventEmitter.emit(
       ORDER_CREATED_EVENT,
@@ -270,6 +290,90 @@ export class PaymentsService {
     return null;
   }
 
+  private resolvePayoutMethod(
+    subaccountId: string | null | undefined,
+  ): VendorPayoutMethod {
+    if (!this.usesInstantVendorPayout() && subaccountId) {
+      return VendorPayoutMethod.split;
+    }
+    return VendorPayoutMethod.instant_transfer;
+  }
+
+  shouldSplitVendorPayoutAtCheckout(): boolean {
+    return !this.usesInstantVendorPayout();
+  }
+
+  usesInstantVendorPayout(): boolean {
+    return isInstantVendorPayoutMode(this.vendorPayoutMode());
+  }
+
+  private vendorPayoutMode(): VendorPayoutMode {
+    return parseVendorPayoutMode(
+      this.configService.get<string>(FLUTTERWAVE_VENDOR_PAYOUT_MODE_ENV),
+    );
+  }
+
+  async ensureVendorSubaccountForCheckout(storeId: string): Promise<string | null> {
+    const store = await this.prisma.store.findUnique({
+      where: { vendorId: storeId },
+    });
+
+    if (
+      !store?.payoutSetupComplete ||
+      !store.payoutBankCode ||
+      !store.payoutAccountNumber
+    ) {
+      return null;
+    }
+
+    if (store.flutterwaveSubaccountId) {
+      return store.flutterwaveSubaccountId;
+    }
+
+    const subaccountId =
+      await this.subaccountService.createOrUpdateSubaccount(store);
+
+    await this.prisma.store.update({
+      where: { vendorId: storeId },
+      data: { flutterwaveSubaccountId: subaccountId },
+    });
+
+    this.logger.log(
+      `Created Flutterwave split subaccount for vendor ${storeId}: ${subaccountId}`,
+    );
+
+    return subaccountId;
+  }
+
+  private async markSubaccountSplitPayout(orderId: string): Promise<void> {
+    const order = await this.prisma.order.findUnique({
+      where: { id: orderId },
+    });
+
+    if (!order || order.payoutStatus === PayoutStatus.settled) {
+      return;
+    }
+
+    await this.prisma.order.update({
+      where: { id: orderId },
+      data: {
+        payoutStatus: PayoutStatus.split,
+        payoutSettledAt: new Date(),
+      },
+    });
+
+    await this.vendorPayoutRecords.recordSplitSettlement(orderId);
+
+    this.eventEmitter.emit(
+      PAYOUT_SETTLED_EVENT,
+      new PayoutSettledEvent(orderId),
+    );
+
+    this.logger.log(
+      `Vendor payout split recorded for order ${order.paymentRef}: Flutterwave will settle to vendor bank.`,
+    );
+  }
+
   async attemptVendorPayout(orderId: string): Promise<void> {
     const order = await this.prisma.order.findUnique({
       where: { id: orderId },
@@ -281,6 +385,17 @@ export class PaymentsService {
     }
 
     if (order.payoutStatus === PayoutStatus.settled) {
+      return;
+    }
+
+    if (order.payoutStatus === PayoutStatus.split) {
+      return;
+    }
+
+    if (
+      order.store.flutterwaveSubaccountId &&
+      !this.usesInstantVendorPayout()
+    ) {
       return;
     }
 
@@ -317,18 +432,18 @@ export class PaymentsService {
       return;
     }
 
+    const payoutReference = resolveFlutterwavePayoutReference({
+      id: order.id,
+      flutterwavePayoutReference: order.flutterwavePayoutReference,
+      payoutStatus: order.payoutStatus,
+    });
+
     if (this.transferService.isConfigured() && isMockTransferRecipient(recipientId)) {
       this.logger.warn(
         `Skipping vendor payout for order ${order.paymentRef}: vendor must re-link payout bank to create a live Flutterwave recipient.`,
       );
       return;
     }
-
-    const payoutReference = resolveFlutterwavePayoutReference({
-      id: order.id,
-      flutterwavePayoutReference: order.flutterwavePayoutReference,
-      payoutStatus: order.payoutStatus,
-    });
 
     const requiredWalletBalance = order.vendorNet + PAYOUT_WALLET_FEE_BUFFER_NGN;
     const availableBalance = await this.transferService.getNgnAvailableBalance();
@@ -338,6 +453,10 @@ export class PaymentsService {
     ) {
       this.logger.warn(
         `Deferring vendor payout for order ${order.paymentRef}: Flutterwave available balance ${availableBalance} NGN is below required ${requiredWalletBalance} NGN (payout ${order.vendorNet} + fee buffer).`,
+      );
+      await this.vendorPayoutRecords.recordTransferDeferred(
+        order.id,
+        `Insufficient Flutterwave payout balance (${availableBalance} NGN available, ${requiredWalletBalance} NGN required).`,
       );
       return;
     }
@@ -364,12 +483,20 @@ export class PaymentsService {
         },
       });
 
+      await this.vendorPayoutRecords.recordTransferInitiated({
+        orderId: order.id,
+        transferId: transfer.transferId,
+        reference: transfer.reference,
+        recipientId,
+      });
+
       this.logger.log(
         `Vendor payout initiated for order ${order.paymentRef}: ${transfer.transferId}`,
       );
     } catch (error) {
+      const message = error instanceof Error ? error.message : 'unknown';
       this.logger.error(
-        `Vendor payout failed for order ${order.paymentRef}: ${error instanceof Error ? error.message : 'unknown'}`,
+        `Vendor payout failed for order ${order.paymentRef}: ${message}`,
       );
       await this.prisma.order.update({
         where: { id: order.id },
@@ -379,6 +506,11 @@ export class PaymentsService {
           flutterwavePayoutReference: payoutReference,
         },
       });
+      await this.vendorPayoutRecords.recordTransferFailed(
+        order.id,
+        payoutReference,
+        message,
+      );
     }
   }
 
@@ -445,6 +577,8 @@ export class PaymentsService {
       },
     });
 
+    await this.vendorPayoutRecords.recordSettledByReference(payoutReference);
+
     this.eventEmitter.emit(
       PAYOUT_SETTLED_EVENT,
       new PayoutSettledEvent(order.id),
@@ -467,6 +601,8 @@ export class PaymentsService {
         flutterwaveTransferId: null,
       },
     });
+
+    await this.vendorPayoutRecords.recordFailedByReference(payoutReference);
   }
 
   async getPaymentLink(orderId: string, vendorId: string): Promise<string> {

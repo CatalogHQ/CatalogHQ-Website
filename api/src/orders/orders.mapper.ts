@@ -1,4 +1,4 @@
-import { Order, OrderStatus, PaymentStatus, PayoutStatus } from '@prisma/client';
+import { Order, OrderStatus, PaymentStatus, PayoutStatus, VendorPayout } from '@prisma/client';
 
 export type OrderDto = {
   id: string;
@@ -95,5 +95,21 @@ export function toOrderDto(order: Order): OrderDto {
     payoutSettledAt: order.payoutSettledAt?.toISOString(),
     vendorPayoutSeenAt: order.vendorPayoutSeenAt?.toISOString(),
     createdAt: order.createdAt.toISOString(),
+  };
+}
+
+export function toOrderDtoFromPayoutRecord(
+  order: Order,
+  payout: VendorPayout,
+): OrderDto {
+  const dto = toOrderDto(order);
+  return {
+    ...dto,
+    vendorNet: payout.amountNaira,
+    platformFee: payout.platformFeeNaira,
+    payoutStatus: payout.status,
+    payoutSettledAt: payout.settledAt?.toISOString() ?? dto.payoutSettledAt,
+    vendorPayoutSeenAt: payout.vendorSeenAt?.toISOString() ?? dto.vendorPayoutSeenAt,
+    createdAt: payout.createdAt.toISOString(),
   };
 }

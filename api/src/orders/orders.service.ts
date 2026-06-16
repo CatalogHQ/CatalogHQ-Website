@@ -23,6 +23,7 @@ import { computeCheckoutPricing } from '../payments/flutterwave-fees.util';
 import { buildFlutterwaveCheckoutEmail } from '../payments/flutterwave-payment-methods';
 import { buildFlutterwaveReference } from '../payments/flutterwave-reference.util';
 import { PaymentsService } from '../payments/payments.service';
+import { VendorPayoutRecordService } from '../payments/vendor-payout-record.service';
 import { LowStockAlertService } from '../notifications/low-stock-alert.service';
 import { PlanEntitlementService } from '../plans/plan-entitlement.service';
 import { PrismaService } from '../prisma/prisma.service';
@@ -55,6 +56,7 @@ export class OrdersService {
     private readonly eventEmitter: EventEmitter2,
     private readonly flutterwave: FlutterwaveService,
     private readonly paymentsService: PaymentsService,
+    private readonly vendorPayoutRecords: VendorPayoutRecordService,
     private readonly planEntitlementService: PlanEntitlementService,
     private readonly lowStockAlertService: LowStockAlertService,
     private readonly orderAccessAttempt: OrderAccessAttemptService,
@@ -108,6 +110,10 @@ export class OrdersService {
     });
 
     if (this.flutterwave.isConfigured()) {
+      const splitSubaccountId = this.paymentsService.shouldSplitVendorPayoutAtCheckout()
+        ? await this.paymentsService.ensureVendorSubaccountForCheckout(dto.storeId)
+        : null;
+
       const init = await this.flutterwave.initializeTransaction({
         email: buildFlutterwaveCheckoutEmail(order.customerPhone),
         phone: order.customerPhone,
@@ -117,6 +123,14 @@ export class OrdersService {
         callbackPath: `/s/${storeSlug}/order/${order.paymentRef}?paid=1`,
         paymentMethod: dto.paymentMethod,
         metadata: { paymentRef: order.paymentRef, orderId: order.id },
+        ...(splitSubaccountId
+          ? {
+              split: {
+                subaccountId: splitSubaccountId,
+                platformCommissionNaira: order.platformFee,
+              },
+            }
+          : {}),
       });
 
       return {
@@ -414,14 +428,16 @@ export class OrdersService {
   }
 
   async markAllPayoutsSeen(storeId: string): Promise<void> {
+    const seenAt = new Date();
     await this.prisma.order.updateMany({
       where: {
         storeId,
         payoutStatus: PayoutStatus.settled,
         vendorPayoutSeenAt: null,
       },
-      data: { vendorPayoutSeenAt: new Date() },
+      data: { vendorPayoutSeenAt: seenAt },
     });
+    await this.vendorPayoutRecords.markAllSeen(storeId);
   }
 
   async getUnreadCount(storeId: string): Promise<number> {
@@ -431,6 +447,11 @@ export class OrdersService {
   }
 
   async getUnreadPayoutCount(storeId: string): Promise<number> {
+    const fromRecords = await this.vendorPayoutRecords.countUnreadSettled(storeId);
+    if (fromRecords > 0) {
+      return fromRecords;
+    }
+
     return this.prisma.order.count({
       where: {
         storeId,

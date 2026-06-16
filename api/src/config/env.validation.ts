@@ -1,5 +1,6 @@
 import { plainToInstance } from 'class-transformer';
 import {
+  IsIn,
   IsNotEmpty,
   IsNumber,
   IsOptional,
@@ -91,6 +92,10 @@ class EnvironmentVariables {
   @IsOptional()
   @IsString()
   FLUTTERWAVE_SECRET_KEY?: string;
+
+  @IsOptional()
+  @IsIn(['instant', 'split'])
+  FLUTTERWAVE_VENDOR_PAYOUT_MODE?: string;
 
   @IsOptional()
   @IsString()

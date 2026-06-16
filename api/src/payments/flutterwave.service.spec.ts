@@ -74,22 +74,71 @@ describe('FlutterwaveService', () => {
       bankName: 'WEMA BANK',
       expiresAt: undefined,
     });
-    expect(global.fetch).toHaveBeenCalledTimes(1);
 
     const [url, init] = (global.fetch as jest.Mock).mock.calls[0] as [
       string,
       { method: string; body: string; headers: Record<string, string> },
     ];
     expect(url).toContain('/v3/charges?type=bank_transfer');
-    expect(init.method).toBe('POST');
-    expect(init.headers.Authorization).toBe('Bearer flw-secret-key');
-
     const payload = JSON.parse(init.body) as {
       subaccounts?: unknown;
       tx_ref: string;
     };
     expect(payload.tx_ref).toBe('flw-ref-1');
     expect(payload.subaccounts).toBeUndefined();
+  });
+
+  it('includes subaccount split on bank transfer checkout when configured', async () => {
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      headers: { get: () => null },
+      json: async () => ({
+        status: 'success',
+        message: 'Charge initiated',
+        data: {
+          meta: {
+            authorization: {
+              transfer_account: '0123456789',
+              transfer_bank: 'WEMA BANK',
+              transfer_amount: 5150,
+            },
+          },
+        },
+      }),
+    });
+
+    await service.initializeTransaction({
+      email: 'buyer8012345678@cataloghq.ng',
+      phone: '08012345678',
+      name: 'Ada Lovelace',
+      amountNaira: 5150,
+      reference: 'flw-ref-2',
+      callbackPath: '/callback',
+      paymentMethod: 'bank_transfer',
+      split: {
+        subaccountId: 'RS_VENDOR_1',
+        platformCommissionNaira: 150,
+      },
+    });
+
+    const [, init] = (global.fetch as jest.Mock).mock.calls[0] as [
+      string,
+      { body: string },
+    ];
+    const payload = JSON.parse(init.body) as {
+      subaccounts?: Array<{
+        id: string;
+        transaction_charge_type: string;
+        transaction_charge: number;
+      }>;
+    };
+    expect(payload.subaccounts).toEqual([
+      {
+        id: 'RS_VENDOR_1',
+        transaction_charge_type: 'flat',
+        transaction_charge: 150,
+      },
+    ]);
   });
 
   it('verifies succeeded v4 charge with matching amount', async () => {

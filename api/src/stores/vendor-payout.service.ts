@@ -5,7 +5,7 @@ import { FlutterwaveTransferService } from '../payments/flutterwave-transfer.ser
 import { normalizeNigerianBankCode } from '../payments/flutterwave-bank.util';
 import { PrismaService } from '../prisma/prisma.service';
 import { UpdatePayoutDto } from './dto/update-payout.dto';
-import { OrderDto, toOrderDto } from '../orders/orders.mapper';
+import { OrderDto, toOrderDto, toOrderDtoFromPayoutRecord } from '../orders/orders.mapper';
 
 export type VendorPayoutAccountDto = {
   bankCode?: string;
@@ -102,6 +102,9 @@ export class VendorPayoutService {
       },
     });
 
+    const subaccountId =
+      await this.subaccountService.createOrUpdateSubaccount(withBankDetails);
+
     const recipient = await this.transferService.createNgnBankRecipient(
       bank.code,
       accountNumber,
@@ -111,6 +114,7 @@ export class VendorPayoutService {
     const updated = await this.prisma.store.update({
       where: { vendorId },
       data: {
+        flutterwaveSubaccountId: subaccountId,
         flutterwaveTransferRecipientId: recipient.recipientId,
         payoutSetupComplete: true,
         payoutSetupAt: new Date(),
@@ -121,6 +125,16 @@ export class VendorPayoutService {
   }
 
   async listPayoutHistory(vendorId: string): Promise<OrderDto[]> {
+    const payouts = await this.prisma.vendorPayout.findMany({
+      where: { storeId: vendorId },
+      include: { order: true },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    if (payouts.length > 0) {
+      return payouts.map((payout) => toOrderDtoFromPayoutRecord(payout.order, payout));
+    }
+
     const orders = await this.prisma.order.findMany({
       where: {
         storeId: vendorId,

@@ -1,8 +1,14 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { PaymentStatus, PayoutStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { PaymentsService } from './payments.service';
+import {
+  FLUTTERWAVE_VENDOR_PAYOUT_MODE_ENV,
+  isInstantVendorPayoutMode,
+  parseVendorPayoutMode,
+} from './vendor-payout-mode.util';
 import { MIN_VENDOR_PAYOUT_NAIRA } from './vendor-payout.constants';
 
 const MAX_RETRY_ORDERS = 25;
@@ -14,6 +20,7 @@ export class VendorPayoutRetryService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly paymentsService: PaymentsService,
+    private readonly configService: ConfigService,
   ) {}
 
   @Cron(CronExpression.EVERY_5_MINUTES)
@@ -26,6 +33,9 @@ export class VendorPayoutRetryService {
         store: {
           payoutSetupComplete: true,
           flutterwaveTransferRecipientId: { not: null },
+          ...(this.usesInstantVendorPayout()
+            ? {}
+            : { flutterwaveSubaccountId: null }),
         },
       },
       select: { id: true, paymentRef: true },
@@ -48,5 +58,13 @@ export class VendorPayoutRetryService {
         );
       }
     }
+  }
+
+  private usesInstantVendorPayout(): boolean {
+    return isInstantVendorPayoutMode(
+      parseVendorPayoutMode(
+        this.configService.get<string>(FLUTTERWAVE_VENDOR_PAYOUT_MODE_ENV),
+      ),
+    );
   }
 }
