@@ -143,7 +143,7 @@ UPDATE "User" SET role = 'admin' WHERE phone = '08012345678';
 | GET | `/stores/me` | Bearer | Vendor store |
 | PUT | `/stores/me` | Bearer | Save store draft |
 | POST | `/stores/me/complete-setup` | Bearer | Finish setup |
-| GET | `/stores/slug/:slug/available` | No | Slug availability |
+| GET | `/stores/me/slug/:slug/available` | Bearer | Slug availability (authenticated) |
 | GET | `/stores/public/:slug` | No | Public storefront data |
 | GET | `/stores/me/products` | Bearer | List vendor products |
 | POST | `/stores/me/products` | Bearer | Create product |

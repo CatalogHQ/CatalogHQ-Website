@@ -5,8 +5,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
 import {
   Form,
   FormControl,
@@ -46,7 +44,6 @@ export default function SignIn() {
   const { signIn, verifySignUp, resendSignUpOtp } = useAuth();
   const [loading, setLoading] = useState(false);
   const [resending, setResending] = useState(false);
-  const [rememberMe, setRememberMe] = useState(false);
   const [pendingVerification, setPendingVerification] = useState(false);
   const [pendingEmail, setPendingEmail] = useState("");
   const [pendingPassword, setPendingPassword] = useState("");
@@ -287,22 +284,7 @@ export default function SignIn() {
             )}
           />
 
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-2">
-              <Checkbox
-                id="remember"
-                checked={rememberMe}
-                onCheckedChange={(checked) =>
-                  setRememberMe(checked === true)
-                }
-              />
-              <Label
-                htmlFor="remember"
-                className="text-sm font-normal text-gray-600"
-              >
-                Remember me
-              </Label>
-            </div>
+          <div className="flex justify-end">
             <button
               type="button"
               onClick={() => navigate("/forgot-password")}

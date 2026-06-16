@@ -12,6 +12,8 @@ export const SecurityAuditAction = {
   ADMIN_UPDATE_ORDER_STATUS: 'admin.update_order_status',
   ADMIN_CONFIRM_ORDER_PAYMENT: 'admin.confirm_order_payment',
   ADMIN_ENABLE_TOTP: 'admin.enable_totp',
+  ADMIN_VIEW_HEALTH: 'admin.view_health',
+  ADMIN_VIEW_SECURITY_LOGS: 'admin.view_security_logs',
   PAYMENT_ORDER_CONFIRMED: 'payment.order_confirmed',
   PAYMENT_ORDER_WEBHOOK_ONLY: 'payment.order_webhook_only_confirm',
   PAYMENT_ORDER_VERIFY_DEFERRED: 'payment.order_verify_deferred',

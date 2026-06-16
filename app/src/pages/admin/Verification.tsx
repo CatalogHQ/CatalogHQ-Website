@@ -159,7 +159,7 @@ export default function AdminVerification() {
                   <a
                     href={getStoreUrl(request.slug)}
                     target="_blank"
-                    rel="noreferrer"
+                    rel="noopener noreferrer"
                     className="inline-flex items-center gap-1 text-sm text-whatsapp-green hover:text-whatsapp-dark"
                   >
                     View store

@@ -206,7 +206,7 @@ export default function AdminVendors() {
                   <a
                     href={getStoreUrl(vendor.slug)}
                     target="_blank"
-                    rel="noreferrer"
+                    rel="noopener noreferrer"
                     className="inline-flex text-whatsapp-green hover:text-whatsapp-dark"
                     title="View storefront"
                   >

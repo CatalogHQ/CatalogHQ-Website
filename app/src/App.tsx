@@ -27,6 +27,8 @@ import AdminTickets from './pages/admin/Tickets'
 import AdminVerification from './pages/admin/Verification'
 import AdminAnalytics from './pages/admin/Analytics'
 import AdminPlans from './pages/admin/Plans'
+import AdminSecurityLogs from './pages/admin/SecurityLogs'
+import AdminSystemHealth from './pages/admin/SystemHealth'
 import AdminTotpSetup from './pages/admin/TotpSetup'
 import PublicStore from './pages/storefront/PublicStore'
 import PublicProduct from './pages/storefront/PublicProduct'
@@ -135,6 +137,8 @@ export default function App() {
         <Route path="verification" element={<AdminVerification />} />
         <Route path="analytics" element={<AdminAnalytics />} />
         <Route path="plans" element={<AdminPlans />} />
+        <Route path="security-logs" element={<AdminSecurityLogs />} />
+        <Route path="system-health" element={<AdminSystemHealth />} />
         <Route path="totp/setup" element={<AdminTotpSetup />} />
         <Route path="totp-setup" element={<Navigate to="/admin/totp/setup" replace />} />
       </Route>

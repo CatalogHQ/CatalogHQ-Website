@@ -53,7 +53,7 @@ export default function VendorSupportCard({
             asChild
             className="bg-whatsapp-green hover:bg-whatsapp-green/90"
           >
-            <a href={whatsappUrl} target="_blank" rel="noreferrer">
+            <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">
               <MessageCircle className="mr-2 h-4 w-4" />
               WhatsApp support
             </a>
@@ -114,7 +114,7 @@ export default function VendorSupportCard({
             asChild
             className="bg-whatsapp-green hover:bg-whatsapp-green/90"
           >
-            <a href={whatsappUrl} target="_blank" rel="noreferrer">
+            <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">
               <MessageCircle className="mr-2 h-4 w-4" />
               Message on WhatsApp
             </a>

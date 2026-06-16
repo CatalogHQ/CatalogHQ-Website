@@ -7,7 +7,6 @@ import {
   ParseUUIDPipe,
   Post,
   Put,
-  Query,
 } from '@nestjs/common';
 import { User } from '@prisma/client';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
@@ -59,13 +58,13 @@ export class StoresController {
     return this.storesService.completeSetup(storeId, dto);
   }
 
-  @Public()
-  @Get('slug/:slug/available')
-  async isSlugAvailable(
+  @Get('me/slug/:slug/available')
+  @SkipSubscriptionGuard()
+  async isMySlugAvailable(
+    @CurrentUser() user: User,
     @Param('slug') slug: string,
-    @Query('excludeVendorId') excludeVendorId?: string,
   ) {
-    const taken = await this.storesService.isSlugTaken(slug, excludeVendorId);
+    const taken = await this.storesService.isSlugTaken(slug, user.id);
     return { available: !taken };
   }
 

@@ -44,7 +44,7 @@ export default function StoreLinkCard({
             Copy link
           </Button>
           <Button type="button" variant="outline" className="gap-2" asChild>
-            <a href={storeUrl} target="_blank" rel="noreferrer">
+            <a href={storeUrl} target="_blank" rel="noopener noreferrer">
               <ExternalLink className="h-4 w-4" />
               Preview store
             </a>

@@ -24,6 +24,11 @@ import type {
   ApiAdminRepository,
   DatePreset,
 } from "@/lib/repositories/api-admin-repository";
+import type {
+  ListSecurityAuditParams,
+  SecurityAuditLogList,
+} from "@/types/security-audit";
+import type { HealthDetailResponse } from "@/types/health-detail";
 import type { OrderStatus } from "@/types/orders";
 
 export class LocalAdminRepository implements ApiAdminRepository {
@@ -66,6 +71,33 @@ export class LocalAdminRepository implements ApiAdminRepository {
 
   listVerificationQueue(): Promise<AdminVerificationRequest[]> {
     return Promise.resolve(this.verificationQueue);
+  }
+
+  listSecurityLogs(
+    params: ListSecurityAuditParams = {},
+  ): Promise<SecurityAuditLogList> {
+    const limit = params.limit ?? 50;
+    const offset = params.offset ?? 0;
+
+    return Promise.resolve({
+      items: [],
+      total: 0,
+      limit,
+      offset,
+    });
+  }
+
+  getHealthDetail(): Promise<HealthDetailResponse> {
+    return Promise.resolve({
+      status: "ok",
+      timestamp: new Date().toISOString(),
+      environment: "development",
+      checks: {
+        database: { status: "up" },
+        redis: { status: "up", configured: false, storage: "memory" },
+        rateLimitStorage: "memory",
+      },
+    });
   }
 
   approveVerification(vendorId: string): Promise<void> {

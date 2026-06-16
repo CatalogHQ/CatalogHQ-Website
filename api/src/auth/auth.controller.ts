@@ -51,6 +51,7 @@ export class AuthController {
   }
 
   @Public()
+  @RequireOrigin()
   @Throttle({ auth: { limit: 5, ttl: 60_000 } })
   @Post('signup')
   async signUp(@Body() dto: SignUpDto, @Req() req: Request) {
@@ -76,6 +77,7 @@ export class AuthController {
   }
 
   @Public()
+  @RequireOrigin()
   @Throttle({ auth: { limit: 5, ttl: 60_000 } })
   @Post('signup/resend-otp')
   async resendSignUpOtp(@Body() dto: SignInDto, @Req() req: Request) {
@@ -119,6 +121,7 @@ export class AuthController {
   }
 
   @Public()
+  @RequireOrigin()
   @Throttle({ auth: { limit: 5, ttl: 60_000 } })
   @Post('forgot-password')
   async forgotPassword(@Body() dto: ForgotPasswordDto, @Req() req: Request) {
@@ -127,6 +130,7 @@ export class AuthController {
   }
 
   @Public()
+  @RequireOrigin()
   @Throttle({ auth: { limit: 5, ttl: 300_000 } })
   @Post('reset-password')
   async resetPassword(@Body() dto: ResetPasswordDto, @Req() req: Request) {

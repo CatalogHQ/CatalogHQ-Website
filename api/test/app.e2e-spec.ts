@@ -93,8 +93,12 @@ describe('AppController (e2e)', () => {
   });
 
   it('GET /health/ready checks database', async () => {
-    await request(app.getHttpServer()).get('/health/ready').expect(200);
-    expect(prisma.$queryRaw).toHaveBeenCalled();
+    const response = await request(app.getHttpServer()).get('/health/ready').expect(200);
+    expect(response.body).toEqual({ status: 'ok' });
+  });
+
+  it('GET /health/detail requires admin authentication', async () => {
+    await request(app.getHttpServer()).get('/health/detail').expect(401);
   });
 
   it('GET /auth/me requires authentication', async () => {

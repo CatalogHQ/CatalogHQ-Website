@@ -22,6 +22,7 @@ import {
   formatFlutterwaveV3PhoneNumber,
 } from './flutterwave-bank-transfer.util';
 import { flutterwaveAmountMatchesNaira } from './flutterwave-amount.util';
+import { isDevPaymentMocksEnabled, isProductionEnv } from '../common/env.util';
 
 const FLUTTERWAVE_POST_MAX_ATTEMPTS = 3;
 const FLUTTERWAVE_RETRY_BASE_MS = 300;
@@ -234,13 +235,14 @@ export class FlutterwaveService {
     },
   ): Promise<boolean> {
     if (!this.auth.isConfigured()) {
-      if (process.env.NODE_ENV === 'production') {
+      if (isProductionEnv(this.configService)) {
         this.logger.error(
           'Flutterwave auth is not configured; refusing to verify payment in production.',
         );
         return false;
       }
-      return true;
+
+      return isDevPaymentMocksEnabled(this.configService);
     }
 
     const references = [

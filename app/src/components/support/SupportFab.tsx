@@ -113,7 +113,7 @@ export default function SupportFab({
                 asChild
                 className="w-full bg-whatsapp-green hover:bg-whatsapp-green/90"
               >
-                <a href={whatsappUrl} target="_blank" rel="noreferrer">
+                <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">
                   <MessageCircle className="mr-2 h-4 w-4" />
                   WhatsApp (urgent)
                 </a>

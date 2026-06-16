@@ -1,5 +1,6 @@
 import type { CookieOptions, Response } from 'express';
 import { ConfigService } from '@nestjs/config';
+import { getRefreshCookieMaxAgeMs } from './refresh-token-cookie.util';
 
 export function getSessionCookieOptions(
   configService: ConfigService,
@@ -9,7 +10,7 @@ export function getSessionCookieOptions(
     httpOnly: true,
     secure: isProduction,
     sameSite: isProduction ? 'none' : 'lax',
-    maxAge: 7 * 24 * 60 * 60 * 1000,
+    maxAge: getRefreshCookieMaxAgeMs(configService),
     path: '/',
   };
 }

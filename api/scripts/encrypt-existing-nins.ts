@@ -3,6 +3,7 @@
  * Run from api/: npx ts-node scripts/encrypt-existing-nins.ts
  */
 import { PrismaClient } from '@prisma/client';
+import { initializeEncryptionKeysFromEnv } from '../src/lib/encryption-keys';
 import {
   encryptNIN,
   hashNIN,
@@ -12,6 +13,7 @@ import {
 const prisma = new PrismaClient();
 
 async function main() {
+  initializeEncryptionKeysFromEnv(process.env);
   const stores = await prisma.store.findMany({
     select: { vendorId: true, nin: true },
   });

@@ -16,6 +16,7 @@ import { PlanCatalogService } from '../plans/plan-catalog.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { PingramEmailService } from '../notifications/pingram-email.service';
 import { SecurityAuditAction } from '../security/security-audit.actions';
+import { normalizeFlutterwaveAmountToNaira } from '../payments/flutterwave-amount.util';
 import { SecurityAuditService } from '../security/security-audit.service';
 import { FlutterwaveSubscriptionService } from './flutterwave-subscription.service';
 import { SubscriptionCheckoutDto } from './dto/subscription-checkout.dto';
@@ -185,35 +186,35 @@ export class VendorSubscriptionService {
       return this.getSubscription(vendorId);
     }
 
-    const verified =
+    const verification =
       await this.flutterwaveSubscriptionService.verifySubscriptionPayment(
         reference,
       );
 
-    if (!verified) {
+    if (!verification.successful) {
       throw new BadRequestException(
         'Payment not confirmed yet. Wait a moment and refresh, or try again.',
       );
     }
 
+    const expectedNaira = payment.amountKobo / 100;
+    const verifiedAmountNaira = normalizeFlutterwaveAmountToNaira(
+      verification.amountNaira,
+      expectedNaira,
+    );
+
+    if (verifiedAmountNaira === undefined) {
+      throw new BadRequestException(
+        'Could not verify subscription payment amount.',
+      );
+    }
+
     await this.activateFromPayment(reference, {
-      currency: 'NGN',
-      amountKobo: payment.amountKobo,
+      currency: verification.currency ?? 'NGN',
+      amountKobo: Math.round(verifiedAmountNaira * 100),
     });
 
     return this.getSubscription(vendorId);
-  }
-
-  async confirmMockCheckout(vendorId: string, reference: string): Promise<void> {
-    if (!reference.startsWith(SUBSCRIPTION_REFERENCE_PREFIX)) {
-      return;
-    }
-
-    await this.activateFromPayment(
-      reference,
-      { currency: 'NGN' },
-      { skipAmountVerification: true },
-    );
   }
 
   private subscriptionAmountMatches(

@@ -32,6 +32,9 @@ import { TicketsService } from '../tickets/tickets.service';
 import { UpdateVendorDto } from './dto/update-vendor.dto';
 import { AdminUpdateOrderStatusDto } from './dto/update-order-status.dto';
 import { UpdatePlanCatalogDto } from './dto/update-plan-catalog.dto';
+import { ListSecurityAuditQueryDto } from '../security/dto/list-security-audit-query.dto';
+import { SecurityAuditAction } from '../security/security-audit.actions';
+import { SecurityAuditService } from '../security/security-audit.service';
 
 function parsePlanTier(tier: string): PlanTier {
   if (!Object.values(PlanTier).includes(tier as PlanTier)) {
@@ -48,6 +51,7 @@ export class AdminController {
     private readonly ticketsService: TicketsService,
     private readonly planCatalogService: PlanCatalogService,
     private readonly adminAuthService: AdminAuthService,
+    private readonly securityAuditService: SecurityAuditService,
   ) {}
 
   @Post('totp/setup')
@@ -71,6 +75,28 @@ export class AdminController {
   @Get('badges')
   getBadges() {
     return this.adminService.getBadges();
+  }
+
+  @Get('security-logs')
+  async listSecurityLogs(
+    @CurrentUser() user: User,
+    @Req() req: Request,
+    @Query() query: ListSecurityAuditQueryDto,
+  ) {
+    await this.securityAuditService.log({
+      actorId: user.id,
+      actorEmail: user.email,
+      action: SecurityAuditAction.ADMIN_VIEW_SECURITY_LOGS,
+      metadata: {
+        category: query.category,
+        search: query.search ?? null,
+        limit: query.limit,
+        offset: query.offset,
+      },
+      ipAddress: getClientIp(req),
+    });
+
+    return this.securityAuditService.list(query);
   }
 
   @Get('stats')

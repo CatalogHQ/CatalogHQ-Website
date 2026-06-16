@@ -1,5 +1,5 @@
 import { BadRequestException, Body, Controller, Headers, HttpCode, Logger, Post, RawBodyRequest, Req } from '@nestjs/common';
-import { SkipThrottle } from '@nestjs/throttler';
+import { Throttle } from '@nestjs/throttler';
 import { Public } from '../common/decorators/public.decorator';
 import { VendorSubscriptionService } from '../subscriptions/vendor-subscription.service';
 import { FlutterwaveWebhookDto } from './dto/flutterwave-webhook.dto';
@@ -29,7 +29,7 @@ export class PaymentsController {
   ) {}
 
   @Public()
-  @SkipThrottle()
+  @Throttle({ webhook: { limit: 300, ttl: 60_000 } })
   @HttpCode(200)
   @Post('flutterwave/webhook')
   async flutterwaveWebhook(

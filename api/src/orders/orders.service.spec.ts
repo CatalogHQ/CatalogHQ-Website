@@ -1,4 +1,5 @@
 import { BadRequestException, NotFoundException, UnprocessableEntityException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Test, TestingModule } from '@nestjs/testing';
 import {
@@ -67,6 +68,14 @@ describe('OrdersService', () => {
     countUnreadSettled: jest.fn().mockResolvedValue(0),
   };
 
+  const configService = {
+    get: jest.fn((key: string) => {
+      if (key === 'NODE_ENV') return 'test';
+      if (key === 'ALLOW_DEV_PAYMENT_MOCKS') return 'true';
+      return undefined;
+    }),
+  };
+
   let service: OrdersService;
 
   const paidOrder = {
@@ -123,6 +132,7 @@ describe('OrdersService', () => {
         { provide: PlanEntitlementService, useValue: planEntitlementService },
         { provide: LowStockAlertService, useValue: lowStockAlertService },
         { provide: OrderAccessAttemptService, useValue: orderAccessAttempt },
+        { provide: ConfigService, useValue: configService },
       ],
     }).compile();
 

@@ -14,6 +14,7 @@ describe('VendorSubscriptionService', () => {
     },
     user: {
       update: jest.fn(),
+      findUnique: jest.fn(),
     },
     $transaction: jest.fn(),
   };
@@ -26,6 +27,7 @@ describe('VendorSubscriptionService', () => {
   const flutterwaveSubscriptionService = {
     createSubscriptionCheckout: jest.fn(),
     cancelSubscription: jest.fn(),
+    verifySubscriptionPayment: jest.fn(),
   };
 
   const emailService = {
@@ -96,6 +98,71 @@ describe('VendorSubscriptionService', () => {
         action: 'subscription.amount_mismatch',
       }),
     );
+  });
+
+  it('confirmCheckout verifies Flutterwave amount before activation', async () => {
+    prisma.subscriptionPayment.findUnique.mockResolvedValue({
+      id: 'pay-1',
+      vendorId: 'vendor-1',
+      planTier: 'starter',
+      status: 'pending',
+      amountKobo: 300000,
+    });
+    flutterwaveSubscriptionService.verifySubscriptionPayment.mockResolvedValue({
+      successful: true,
+      amountNaira: 3000,
+      currency: 'NGN',
+    });
+    prisma.$transaction.mockImplementation(async (callback: (tx: unknown) => Promise<void>) =>
+      callback({
+        subscriptionPayment: { update: jest.fn() },
+        vendorSubscription: { upsert: jest.fn() },
+        user: { update: jest.fn() },
+      }),
+    );
+    prisma.user.findUnique.mockResolvedValue({
+      id: 'vendor-1',
+      planTier: 'starter',
+      subscriptionExempt: false,
+      subscription: {
+        vendorId: 'vendor-1',
+        status: 'active',
+        planTier: 'starter',
+        currentPeriodStart: new Date(),
+        currentPeriodEnd: new Date(),
+        graceEndsAt: null,
+        cancelAtPeriodEnd: false,
+        canceledAt: null,
+        lastPaymentAt: new Date(),
+        lastPaymentReference: 'sub_checkout_1',
+      },
+    });
+
+    await service.confirmCheckout('vendor-1', 'sub_checkout_1');
+
+    expect(flutterwaveSubscriptionService.verifySubscriptionPayment).toHaveBeenCalledWith(
+      'sub_checkout_1',
+    );
+    expect(prisma.$transaction).toHaveBeenCalled();
+  });
+
+  it('confirmCheckout rejects when Flutterwave amount is missing', async () => {
+    prisma.subscriptionPayment.findUnique.mockResolvedValue({
+      id: 'pay-1',
+      vendorId: 'vendor-1',
+      planTier: 'starter',
+      status: 'pending',
+      amountKobo: 300000,
+    });
+    flutterwaveSubscriptionService.verifySubscriptionPayment.mockResolvedValue({
+      successful: true,
+      amountNaira: undefined,
+      currency: 'NGN',
+    });
+
+    await expect(
+      service.confirmCheckout('vendor-1', 'sub_checkout_2'),
+    ).rejects.toThrow('Could not verify subscription payment amount.');
   });
 
   it('expires grace subscriptions past graceEndsAt', async () => {

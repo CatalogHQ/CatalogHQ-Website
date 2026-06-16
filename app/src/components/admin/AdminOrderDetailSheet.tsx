@@ -197,7 +197,7 @@ export default function AdminOrderDetailSheet({
             <a
               href={getStoreOrderUrl(order.storeSlug, order.paymentRef)}
               target="_blank"
-              rel="noreferrer"
+              rel="noopener noreferrer"
             >
               Open buyer order page
             </a>

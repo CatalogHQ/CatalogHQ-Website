@@ -1,29 +1,11 @@
 import { createCipheriv, createDecipheriv, createHmac, randomBytes } from 'crypto';
+import {
+  getNinEncryptionKey,
+  getTotpEncryptionKey,
+} from './encryption-keys';
 
 const ALGORITHM = 'aes-256-gcm';
 const IV_LENGTH = 12;
-
-function readHexKey(envName: string, fallbackEnvName?: string): Buffer {
-  const primary = process.env[envName]?.trim();
-  const fallback = fallbackEnvName
-    ? process.env[fallbackEnvName]?.trim()
-    : undefined;
-  const key = primary || fallback;
-  if (!key || key.length !== 64) {
-    throw new Error(
-      `${envName}${fallbackEnvName ? ` or ${fallbackEnvName}` : ''} must be a 64-character hex string (32 bytes)`,
-    );
-  }
-  return Buffer.from(key, 'hex');
-}
-
-function getNinKey(): Buffer {
-  return readHexKey('NIN_ENCRYPTION_KEY');
-}
-
-function getTotpKey(): Buffer {
-  return readHexKey('TOTP_ENCRYPTION_KEY', 'NIN_ENCRYPTION_KEY');
-}
 
 function encryptWithKey(plaintext: string, key: Buffer): string {
   const iv = randomBytes(IV_LENGTH);
@@ -50,23 +32,23 @@ function decryptWithKey(encryptedValue: string, key: Buffer): string {
 }
 
 export function encryptNIN(plaintext: string): string {
-  return encryptWithKey(plaintext, getNinKey());
+  return encryptWithKey(plaintext, getNinEncryptionKey());
 }
 
 export function decryptNIN(encryptedValue: string): string {
-  return decryptWithKey(encryptedValue, getNinKey());
+  return decryptWithKey(encryptedValue, getNinEncryptionKey());
 }
 
 export function encryptTotpSecret(plaintext: string): string {
-  return encryptWithKey(plaintext, getTotpKey());
+  return encryptWithKey(plaintext, getTotpEncryptionKey());
 }
 
 export function decryptTotpSecret(encryptedValue: string): string {
-  return decryptWithKey(encryptedValue, getTotpKey());
+  return decryptWithKey(encryptedValue, getTotpEncryptionKey());
 }
 
 export function hashNIN(plaintext: string): string {
-  return createHmac('sha256', getNinKey())
+  return createHmac('sha256', getNinEncryptionKey())
     .update(plaintext)
     .digest('hex');
 }

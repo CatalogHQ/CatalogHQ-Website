@@ -1,6 +1,10 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { buildContentSecurityPolicy } from "./content-security-policy.mjs";
+import {
+  buildApacheHtaccess,
+  buildContentSecurityPolicy,
+  DEPLOY_SECURITY_HEADERS,
+} from "./content-security-policy.mjs";
 
 const appRoot = resolve(import.meta.dirname, "..");
 
@@ -39,10 +43,21 @@ const csp = buildContentSecurityPolicy(apiUrl);
 const vercelPath = resolve(appRoot, "vercel.json");
 const vercelConfig = JSON.parse(readFileSync(vercelPath, "utf8"));
 
+const extraHeaders = [
+  { key: "Strict-Transport-Security", value: DEPLOY_SECURITY_HEADERS.hsts },
+];
+
 for (const group of vercelConfig.headers ?? []) {
   for (const header of group.headers ?? []) {
     if (header.key === "Content-Security-Policy") {
       header.value = csp;
+    }
+  }
+
+  const existing = new Set((group.headers ?? []).map((header) => header.key));
+  for (const header of extraHeaders) {
+    if (!existing.has(header.key)) {
+      group.headers.push(header);
     }
   }
 }
@@ -55,7 +70,18 @@ nginx = nginx.replace(
   /add_header Content-Security-Policy "[^"]+" always;/,
   `add_header Content-Security-Policy "${csp}" always;`,
 );
+
+if (!nginx.includes("Strict-Transport-Security")) {
+  nginx = nginx.replace(
+    'add_header X-Frame-Options "DENY" always;',
+    `add_header Strict-Transport-Security "${DEPLOY_SECURITY_HEADERS.hsts}" always;\n        add_header X-Frame-Options "DENY" always;`,
+  );
+}
+
 writeFileSync(nginxPath, nginx);
+
+const htaccessPath = resolve(appRoot, "public/.htaccess");
+writeFileSync(htaccessPath, buildApacheHtaccess(csp));
 
 console.log(
   `sync-deploy-headers: CSP connect-src aligned with VITE_API_URL=${apiUrl ?? "(unset)"}`,

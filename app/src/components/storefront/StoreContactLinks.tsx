@@ -32,7 +32,7 @@ export default function StoreContactLinks({
         size="sm"
         className="h-8 bg-whatsapp-green text-xs hover:bg-whatsapp-green/90 sm:text-sm"
       >
-        <a href={whatsappUrl} target="_blank" rel="noreferrer">
+        <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">
           <WhatsAppIcon className="mr-1.5" />
           WhatsApp
         </a>
@@ -52,7 +52,7 @@ export default function StoreContactLinks({
           <a
             href={link.href}
             target="_blank"
-            rel="noreferrer"
+            rel="noopener noreferrer"
             aria-label={`${link.label} @${link.handle}`}
             title={`${link.label} @${link.handle}`}
           >

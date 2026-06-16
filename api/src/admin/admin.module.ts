@@ -13,6 +13,6 @@ import { AdminService } from './admin.service';
   imports: [AuthModule, CommonModule, TicketsModule, PaymentsModule, PlansModule],
   controllers: [AdminController],
   providers: [AdminService, AdminAuthService, AdminTotpGuard],
-  exports: [AdminAuthService],
+  exports: [AdminAuthService, AdminTotpGuard],
 })
 export class AdminModule {}

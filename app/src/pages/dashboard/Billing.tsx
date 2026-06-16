@@ -49,6 +49,8 @@ export default function Billing() {
   const [payments, setPayments] = useState<SubscriptionPayment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [checkoutTier, setCheckoutTier] = useState<PlanTier | null>(null);
+  const [pendingReference, setPendingReference] = useState<string | null>(null);
+  const [isConfirming, setIsConfirming] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -89,28 +91,42 @@ export default function Billing() {
   useEffect(() => {
     const status = searchParams.get("status");
     const reference = searchParams.get("reference");
-    if (status !== "success") {
+    if (status !== "success" || !reference?.startsWith("sub_")) {
       return;
     }
 
-    void (async () => {
-      try {
-        if (reference) {
-          await subscriptionRepository.confirm(reference);
-        }
-        await refreshUser();
-        const sub = await subscriptionRepository.getSubscription();
-        setSubscription(sub);
-        toast.success("Subscription activated. Your store is now open.");
-      } catch (error) {
-        toast.error(
-          error instanceof Error
-            ? error.message
-            : "Payment received but activation is still pending.",
-        );
-      }
-    })();
-  }, [searchParams, refreshUser]);
+    const storageKey = `subscription_confirm_${reference}`;
+    if (sessionStorage.getItem(storageKey) === "done") {
+      return;
+    }
+
+    setPendingReference(reference);
+  }, [searchParams]);
+
+  const handleConfirmPayment = async () => {
+    if (!pendingReference) {
+      return;
+    }
+
+    setIsConfirming(true);
+    try {
+      await subscriptionRepository.confirm(pendingReference);
+      sessionStorage.setItem(`subscription_confirm_${pendingReference}`, "done");
+      setPendingReference(null);
+      await refreshUser();
+      const sub = await subscriptionRepository.getSubscription();
+      setSubscription(sub);
+      toast.success("Subscription activated. Your store is now open.");
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Payment received but activation is still pending.",
+      );
+    } finally {
+      setIsConfirming(false);
+    }
+  };
 
   const handleCheckout = async (planTier: PlanTier) => {
     setCheckoutTier(planTier);
@@ -165,6 +181,26 @@ export default function Billing() {
           and premium features.
         </p>
       </div>
+
+      {pendingReference ? (
+        <Card className="border-whatsapp-green/40 bg-whatsapp-green/5">
+          <CardHeader>
+            <CardTitle className="text-base">Complete your subscription</CardTitle>
+            <CardDescription>
+              If you finished payment on Flutterwave, confirm activation below.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button
+              className="bg-whatsapp-green hover:bg-whatsapp-green/90"
+              disabled={isConfirming}
+              onClick={() => void handleConfirmPayment()}
+            >
+              {isConfirming ? "Confirming..." : "Confirm payment and activate"}
+            </Button>
+          </CardContent>
+        </Card>
+      ) : null}
 
       <Card>
         <CardHeader>

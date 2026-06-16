@@ -11,6 +11,8 @@ import {
   BarChart3,
   Home,
   CreditCard,
+  ShieldAlert,
+  Activity,
 } from "lucide-react";
 import {
   Sidebar,
@@ -53,6 +55,8 @@ const navItems = [
   },
   { title: "Analytics", href: "/admin/analytics", icon: BarChart3 },
   { title: "Plans", href: "/admin/plans", icon: CreditCard },
+  { title: "System health", href: "/admin/system-health", icon: Activity },
+  { title: "Security logs", href: "/admin/security-logs", icon: ShieldAlert },
 ];
 
 export default function AdminLayout() {

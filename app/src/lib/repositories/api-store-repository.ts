@@ -40,17 +40,10 @@ export class ApiStoreRepository implements StoreRepository {
     return response.store;
   }
 
-  async isSlugTaken(
-    slug: string,
-    excludeVendorId?: string,
-  ): Promise<boolean> {
-    const params = new URLSearchParams();
-    if (excludeVendorId) {
-      params.set("excludeVendorId", excludeVendorId);
-    }
-    const query = params.toString();
+  async isSlugTaken(slug: string, excludeVendorId?: string): Promise<boolean> {
+    void excludeVendorId;
     const response = await apiClient<SlugAvailabilityResponse>(
-      `/stores/slug/${encodeURIComponent(slug)}/available${query ? `?${query}` : ""}`,
+      `/stores/me/slug/${encodeURIComponent(slug)}/available`,
     );
     return !response.available;
   }

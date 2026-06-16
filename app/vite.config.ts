@@ -5,14 +5,19 @@ import { defineConfig, loadEnv, type PluginOption } from "vite"
 
 const require = createRequire(import.meta.url)
 const { buildCspMetaTag } = require("./scripts/content-security-policy.mjs") as {
-  buildCspMetaTag: (apiUrl?: string) => string
+  buildCspMetaTag: (
+    apiUrl?: string,
+    options?: { allowDataImages?: boolean },
+  ) => string
 }
 
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "")
-  const cspMetaTag = buildCspMetaTag(env.VITE_API_URL)
   const isDev = mode === "development"
+  const cspMetaTag = buildCspMetaTag(env.VITE_API_URL, {
+    allowDataImages: isDev,
+  })
   const inspectPlugin: PluginOption | null = isDev
     ? (require("kimi-plugin-inspect-react") as { inspectAttr: () => PluginOption }).inspectAttr()
     : null

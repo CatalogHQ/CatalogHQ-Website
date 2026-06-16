@@ -140,7 +140,7 @@ export default function DashboardLayout() {
               <a
                 href={getStoreUrl(store.slug)}
                 target="_blank"
-                rel="noreferrer"
+                rel="noopener noreferrer"
               >
                 <ExternalLink className="h-4 w-4" />
                 View store
@@ -182,7 +182,7 @@ export default function DashboardLayout() {
               <a
                 href={getStoreUrl(store.slug)}
                 target="_blank"
-                rel="noreferrer"
+                rel="noopener noreferrer"
               >
                 View store
               </a>

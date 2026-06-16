@@ -10,6 +10,7 @@ import { ConfigService } from '@nestjs/config';
 import { PlanTier } from '@prisma/client';
 import { PlanCatalogService } from '../plans/plan-catalog.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { isDevPaymentMocksEnabled } from '../common/env.util';
 
 type V3Response<T> = {
   status: string;
@@ -35,6 +36,12 @@ export type SubscriptionCheckoutResult = {
   authorizationUrl: string;
   reference: string;
   flutterwaveSubscriptionId?: string;
+};
+
+export type SubscriptionPaymentVerification = {
+  successful: boolean;
+  amountNaira?: number;
+  currency?: string;
 };
 
 @Injectable()
@@ -185,17 +192,33 @@ export class FlutterwaveSubscriptionService implements OnModuleInit {
     };
   }
 
-  async verifySubscriptionPayment(reference: string): Promise<boolean> {
+  async verifySubscriptionPayment(
+    reference: string,
+  ): Promise<SubscriptionPaymentVerification> {
     if (!this.isConfigured()) {
-      return reference.startsWith('sub_');
+      return {
+        successful:
+          isDevPaymentMocksEnabled(this.configService) &&
+          reference.startsWith('sub_'),
+        amountNaira: undefined,
+        currency: 'NGN',
+      };
     }
 
-    const payload = await this.request<{ status?: string }>(
+    const payload = await this.request<{
+      status?: string;
+      amount?: number;
+      currency?: string;
+    }>(
       `/transactions/verify_by_reference?tx_ref=${encodeURIComponent(reference)}`,
       { method: 'GET' },
     );
 
-    return payload?.status === 'successful';
+    return {
+      successful: payload?.status === 'successful',
+      amountNaira: payload?.amount,
+      currency: payload?.currency,
+    };
   }
 
   async cancelSubscription(flutterwaveSubscriptionId: string): Promise<void> {

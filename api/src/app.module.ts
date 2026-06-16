@@ -13,6 +13,7 @@ import { ActiveSubscriptionGuard } from './common/guards/active-subscription.gua
 import { PlanFeatureGuard } from './common/guards/plan-feature.guard';
 import { RedisThrottlerStorage } from './common/storage/redis-throttler.storage';
 import { validateEnv } from './config/env.validation';
+import { EncryptionModule } from './lib/encryption.module';
 import { HealthModule } from './health/health.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { OrdersModule } from './orders/orders.module';
@@ -66,12 +67,18 @@ import { UploadsModule } from './uploads/uploads.module';
               ttl: 60_000,
               limit: 40,
             },
+            {
+              name: 'webhook',
+              ttl: 60_000,
+              limit: 300,
+            },
           ],
           ...(storage ? { storage } : {}),
         };
       },
     }),
     PrismaModule,
+    EncryptionModule,
     SecurityModule,
     CommonModule,
     NotificationsModule,

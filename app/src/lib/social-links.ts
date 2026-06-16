@@ -13,7 +13,11 @@ export function normalizeSocialHandle(value?: string | null): string | undefined
   }
 
   const normalized = value.trim().replace(/^@+/, "").toLowerCase();
-  return normalized || undefined;
+  if (!normalized || !/^[a-z0-9._]{1,30}$/.test(normalized)) {
+    return undefined;
+  }
+
+  return normalized;
 }
 
 export function buildInstagramUrl(handle: string): string {

@@ -152,6 +152,10 @@ class EnvironmentVariables {
   @IsOptional()
   @IsString()
   PAYMENT_ALLOW_WEBHOOK_ONLY_CONFIRM?: string;
+
+  @IsOptional()
+  @IsString()
+  ALLOW_DEV_PAYMENT_MOCKS?: string;
 }
 
 export function validateEnv(config: Record<string, unknown>) {
@@ -207,6 +211,17 @@ export function validateEnv(config: Record<string, unknown>) {
         'REDIS_URL is required in production for shared rate limiting across instances',
       );
     }
+
+  }
+
+  const totpKey = config.TOTP_ENCRYPTION_KEY;
+  if (
+    totpKey !== undefined &&
+    (typeof totpKey !== 'string' || totpKey.length !== 64)
+  ) {
+    throw new Error(
+      'TOTP_ENCRYPTION_KEY must be a 64-character hex string when set',
+    );
   }
 
   return validated;

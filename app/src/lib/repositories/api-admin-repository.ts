@@ -11,6 +11,11 @@ import type {
   AdminVerificationRequest,
 } from "@/data/admin-mock";
 import type { OrderStatus } from "@/types/orders";
+import type {
+  ListSecurityAuditParams,
+  SecurityAuditLogList,
+} from "@/types/security-audit";
+import type { HealthDetailResponse } from "@/types/health-detail";
 
 export type AdminBadges = {
   pendingVerifications: number;
@@ -46,6 +51,30 @@ export class ApiAdminRepository {
 
   listVerificationQueue(): Promise<AdminVerificationRequest[]> {
     return apiClient<AdminVerificationRequest[]>("/admin/verification");
+  }
+
+  listSecurityLogs(
+    params: ListSecurityAuditParams = {},
+  ): Promise<SecurityAuditLogList> {
+    const searchParams = new URLSearchParams();
+    if (params.limit != null) searchParams.set("limit", String(params.limit));
+    if (params.offset != null) {
+      searchParams.set("offset", String(params.offset));
+    }
+    if (params.action) searchParams.set("action", params.action);
+    if (params.search) searchParams.set("search", params.search);
+    if (params.category && params.category !== "all") {
+      searchParams.set("category", params.category);
+    }
+
+    const query = searchParams.toString();
+    return apiClient<SecurityAuditLogList>(
+      `/admin/security-logs${query ? `?${query}` : ""}`,
+    );
+  }
+
+  getHealthDetail(): Promise<HealthDetailResponse> {
+    return apiClient<HealthDetailResponse>("/health/detail");
   }
 
   approveVerification(vendorId: string): Promise<void> {

@@ -5,6 +5,7 @@ import {
   NotFoundException,
   UnprocessableEntityException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { randomBytes } from 'crypto';
 import {
@@ -16,6 +17,7 @@ import {
 } from '@prisma/client';
 import { DELIVERY_TYPE_IDS } from '../common/constants/delivery-types';
 import { deliveryRequiresAddress } from '../common/delivery.util';
+import { isDevPaymentMocksEnabled, isProductionEnv } from '../common/env.util';
 import { normalizePhone } from '../common/phone.util';
 import { verifyCustomerPhone } from '../common/order-phone.util';
 import { FlutterwaveService } from '../payments/flutterwave.service';
@@ -60,6 +62,7 @@ export class OrdersService {
     private readonly planEntitlementService: PlanEntitlementService,
     private readonly lowStockAlertService: LowStockAlertService,
     private readonly orderAccessAttempt: OrderAccessAttemptService,
+    private readonly configService: ConfigService,
   ) {}
 
   async checkout(dto: CheckoutPaymentDto, storeSlug: string) {
@@ -145,8 +148,13 @@ export class OrdersService {
       };
     }
 
-    const nodeEnv = process.env.NODE_ENV ?? 'development';
-    if (nodeEnv === 'production') {
+    if (isProductionEnv(this.configService)) {
+      throw new UnprocessableEntityException(
+        'Payment provider is not configured for this store.',
+      );
+    }
+
+    if (!isDevPaymentMocksEnabled(this.configService)) {
       throw new UnprocessableEntityException(
         'Payment provider is not configured for this store.',
       );
