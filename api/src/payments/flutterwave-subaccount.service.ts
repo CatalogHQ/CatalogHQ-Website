@@ -15,6 +15,11 @@ import {
   isFlutterwaveStaleSubaccountMessage,
   normalizeNigerianBankCode,
 } from './flutterwave-bank.util';
+import {
+  fetchPaystackNigerianBanks,
+  mergeNigerianBanks,
+  PAYSTACK_DIRECT_DEBIT_BANKS,
+} from './nigerian-bank-list.util';
 
 export type FlutterwaveBank = {
   code: string;
@@ -64,12 +69,14 @@ const FLUTTERWAVE_V3_BASE_URL = 'https://api.flutterwave.com/v3';
 export class FlutterwaveSubaccountService {
   private readonly logger = new Logger(FlutterwaveSubaccountService.name);
   private readonly secretKey: string | undefined;
+  private readonly paystackSecretKey: string | undefined;
   private readonly env: string | undefined;
   private banksCache: FlutterwaveBank[] | null = null;
   private banksCacheExpiresAt = 0;
 
   constructor(private readonly configService: ConfigService) {
     this.secretKey = this.configService.get<string>('FLUTTERWAVE_SECRET_KEY');
+    this.paystackSecretKey = this.configService.get<string>('PAYSTACK_SECRET_KEY');
     this.env = this.configService.get<string>('FLUTTERWAVE_ENV', 'sandbox');
   }
 
@@ -94,25 +101,42 @@ export class FlutterwaveSubaccountService {
   }
 
   private async fetchBanks(): Promise<FlutterwaveBank[]> {
-    if (!this.isConfigured()) {
-      return this.getFallbackBanks();
-    }
-
     const now = Date.now();
     if (this.banksCache && now < this.banksCacheExpiresAt) {
       return this.banksCache;
     }
 
-    const payload = await this.request<V3Bank[]>('/banks/NG', { method: 'GET' });
-    const banks = (payload ?? [])
-      .map((bank) => ({
-        code: normalizeNigerianBankCode(bank.code),
-        name: bank.name?.trim() ?? '',
-      }))
-      .filter((bank) => bank.code && bank.name)
-      .sort((a, b) => a.name.localeCompare(b.name));
+    const paystackBanks = this.paystackSecretKey?.trim()
+      ? await fetchPaystackNigerianBanks(this.paystackSecretKey)
+      : [];
 
-    this.banksCache = banks.length > 0 ? banks : this.getFallbackBanks();
+    let flutterwaveBanks: FlutterwaveBank[] = [];
+    if (this.isConfigured()) {
+      try {
+        const payload = await this.request<V3Bank[]>('/banks/NG', {
+          method: 'GET',
+        });
+        flutterwaveBanks = (payload ?? [])
+          .map((bank) => ({
+            code: normalizeNigerianBankCode(bank.code),
+            name: bank.name?.trim() ?? '',
+          }))
+          .filter((bank) => bank.code && bank.name);
+      } catch (error) {
+        this.logger.warn(
+          `Could not load Flutterwave bank list: ${error instanceof Error ? error.message : 'unknown'}`,
+        );
+      }
+    }
+
+    const banks = mergeNigerianBanks(
+      flutterwaveBanks,
+      paystackBanks,
+      PAYSTACK_DIRECT_DEBIT_BANKS,
+    );
+
+    this.banksCache =
+      banks.length > 0 ? banks : this.getFallbackBanks();
     this.banksCacheExpiresAt = now + 24 * 60 * 60 * 1000;
     return this.banksCache;
   }
@@ -242,13 +266,7 @@ export class FlutterwaveSubaccountService {
       return [{ code: FLUTTERWAVE_SANDBOX_BANK_CODE, name: 'Access Bank' }];
     }
 
-    return [
-      { code: '044', name: 'Access Bank' },
-      { code: '058', name: 'GTBank' },
-      { code: '033', name: 'UBA' },
-      { code: '057', name: 'Zenith Bank' },
-      { code: '011', name: 'First Bank' },
-    ];
+    return PAYSTACK_DIRECT_DEBIT_BANKS;
   }
 
   private async requestResult<T>(

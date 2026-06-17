@@ -4,6 +4,7 @@ import { authRepository } from "@/lib/repositories/local-auth-repository";
 import { orderRepository } from "@/lib/repositories/local-order-repository";
 import { storeRepository } from "@/lib/repositories/local-store-repository";
 import { STORAGE_KEYS } from "@/lib/storage-keys";
+import { NIGERIAN_BANKS } from "@/data/nigerian-banks";
 import type { CustomerOrder } from "@/types/orders";
 import type {
   PayoutBank,
@@ -13,11 +14,7 @@ import type {
   VendorPayoutAccount,
 } from "@/types/payout";
 
-const MOCK_BANKS: PayoutBank[] = [
-  { code: "044", name: "Access Bank" },
-  { code: "058", name: "GTBank" },
-  { code: "033", name: "UBA" },
-];
+const MOCK_BANKS: PayoutBank[] = NIGERIAN_BANKS;
 
 type StoredPayout = {
   vendorId: string;
