@@ -50,10 +50,10 @@ export class PaystackSubscriptionWebhookController {
     @Body() body: PaystackWebhookEvent,
   ) {
     const rawBody = getFlutterwaveWebhookRawBody(req);
-    const secret = this.configService.get<string>('PAYSTACK_WEBHOOK_SECRET');
+    const secret = this.configService.get<string>('PAYSTACK_SECRET_KEY');
 
     if (!secret?.trim()) {
-      throw new UnauthorizedException('Paystack webhook secret is not configured.');
+      throw new UnauthorizedException('Paystack secret key is not configured.');
     }
 
     try {

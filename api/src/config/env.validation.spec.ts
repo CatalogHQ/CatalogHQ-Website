@@ -14,7 +14,6 @@ describe('validateEnv production guards', () => {
     FLUTTERWAVE_WEBHOOK_SECRET: 'whsec',
     FLUTTERWAVE_CALLBACK_BASE_URL: 'https://cataloghq.store',
     PAYSTACK_SECRET_KEY: 'sk_test_paystack',
-    PAYSTACK_WEBHOOK_SECRET: 'paystack-whsec',
     PAYSTACK_CALLBACK_BASE_URL: 'https://cataloghq.store',
     REDIS_URL: 'redis://localhost:6379',
   };

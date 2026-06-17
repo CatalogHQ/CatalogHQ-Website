@@ -163,10 +163,6 @@ class EnvironmentVariables {
 
   @IsOptional()
   @IsString()
-  PAYSTACK_WEBHOOK_SECRET?: string;
-
-  @IsOptional()
-  @IsString()
   PAYSTACK_CALLBACK_BASE_URL?: string;
 }
 
@@ -219,7 +215,6 @@ export function validateEnv(config: Record<string, unknown>) {
 
     const requiredPaystackKeys = [
       'PAYSTACK_SECRET_KEY',
-      'PAYSTACK_WEBHOOK_SECRET',
       'PAYSTACK_CALLBACK_BASE_URL',
     ] as const;
 
