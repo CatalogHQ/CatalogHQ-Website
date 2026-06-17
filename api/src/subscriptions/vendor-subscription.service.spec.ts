@@ -6,11 +6,17 @@ describe('VendorSubscriptionService', () => {
     subscriptionPayment: {
       findUnique: jest.fn(),
       update: jest.fn(),
+      upsert: jest.fn(),
     },
     vendorSubscription: {
       upsert: jest.fn(),
       update: jest.fn(),
       findMany: jest.fn(),
+      findFirst: jest.fn(),
+    },
+    planCatalogEntry: {
+      findFirst: jest.fn(),
+      findUnique: jest.fn(),
     },
     user: {
       update: jest.fn(),
@@ -24,9 +30,10 @@ describe('VendorSubscriptionService', () => {
     listAdminCatalog: jest.fn(),
   };
 
-  const flutterwaveSubscriptionService = {
-    createSubscriptionCheckout: jest.fn(),
+  const paystackSubscriptionService = {
+    createDirectDebitCheckout: jest.fn(),
     cancelSubscription: jest.fn(),
+    fetchSubscription: jest.fn(),
     verifySubscriptionPayment: jest.fn(),
   };
 
@@ -49,7 +56,7 @@ describe('VendorSubscriptionService', () => {
     service = new VendorSubscriptionService(
       prisma as never,
       planCatalogService as never,
-      flutterwaveSubscriptionService as never,
+      paystackSubscriptionService as never,
       emailService as never,
       configService as never,
       securityAudit as never,
@@ -100,7 +107,7 @@ describe('VendorSubscriptionService', () => {
     );
   });
 
-  it('confirmCheckout verifies Flutterwave amount before activation', async () => {
+  it('confirmCheckout verifies Paystack amount before activation', async () => {
     prisma.subscriptionPayment.findUnique.mockResolvedValue({
       id: 'pay-1',
       vendorId: 'vendor-1',
@@ -108,9 +115,9 @@ describe('VendorSubscriptionService', () => {
       status: 'pending',
       amountKobo: 300000,
     });
-    flutterwaveSubscriptionService.verifySubscriptionPayment.mockResolvedValue({
+    paystackSubscriptionService.verifySubscriptionPayment.mockResolvedValue({
       successful: true,
-      amountNaira: 3000,
+      amountKobo: 300000,
       currency: 'NGN',
     });
     prisma.$transaction.mockImplementation(async (callback: (tx: unknown) => Promise<void>) =>
@@ -140,13 +147,13 @@ describe('VendorSubscriptionService', () => {
 
     await service.confirmCheckout('vendor-1', 'sub_checkout_1');
 
-    expect(flutterwaveSubscriptionService.verifySubscriptionPayment).toHaveBeenCalledWith(
+    expect(paystackSubscriptionService.verifySubscriptionPayment).toHaveBeenCalledWith(
       'sub_checkout_1',
     );
     expect(prisma.$transaction).toHaveBeenCalled();
   });
 
-  it('confirmCheckout rejects when Flutterwave amount is missing', async () => {
+  it('confirmCheckout rejects when Paystack amount is missing', async () => {
     prisma.subscriptionPayment.findUnique.mockResolvedValue({
       id: 'pay-1',
       vendorId: 'vendor-1',
@@ -154,9 +161,9 @@ describe('VendorSubscriptionService', () => {
       status: 'pending',
       amountKobo: 300000,
     });
-    flutterwaveSubscriptionService.verifySubscriptionPayment.mockResolvedValue({
+    paystackSubscriptionService.verifySubscriptionPayment.mockResolvedValue({
       successful: true,
-      amountNaira: undefined,
+      amountKobo: undefined,
       currency: 'NGN',
     });
 

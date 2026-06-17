@@ -1,14 +1,12 @@
 import { BadRequestException, Body, Controller, Headers, HttpCode, Logger, Post, RawBodyRequest, Req } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { Public } from '../common/decorators/public.decorator';
-import { VendorSubscriptionService } from '../subscriptions/vendor-subscription.service';
 import { FlutterwaveWebhookDto } from './dto/flutterwave-webhook.dto';
 import { FlutterwaveService } from './flutterwave.service';
 import { getFlutterwaveWebhookRawBody } from './flutterwave-webhook-raw-body.util';
 import {
   buildWebhookDedupeKey,
   isChargeCompletedEvent,
-  isChargeFailedEvent,
   isFailedTransferStatus,
   isSuccessfulPaymentStatus,
   isSuccessfulTransferStatus,
@@ -25,7 +23,6 @@ export class PaymentsController {
   constructor(
     private readonly paymentsService: PaymentsService,
     private readonly flutterwaveService: FlutterwaveService,
-    private readonly vendorSubscriptionService: VendorSubscriptionService,
   ) {}
 
   @Public()
@@ -78,30 +75,17 @@ export class PaymentsController {
 
     if (
       isChargeCompletedEvent(eventType) &&
-      isSuccessfulPaymentStatus(status)
+      isSuccessfulPaymentStatus(status) &&
+      !reference.startsWith('sub_')
     ) {
-      if (this.vendorSubscriptionService.isSubscriptionReference(reference)) {
-        await this.vendorSubscriptionService.activateFromPayment(reference, {
-          amountKobo: amount,
-          currency,
-        });
-      } else {
-        await this.paymentsService.confirmPayment(reference, {
-          amount,
-          currency,
-          paymentRef: normalized.paymentRefHint,
-          orderId: normalized.orderIdHint,
-          chargeId: normalized.chargeId,
-          fromWebhook: true,
-        });
-      }
-    }
-
-    if (
-      isChargeFailedEvent(eventType) &&
-      this.vendorSubscriptionService.isSubscriptionReference(reference)
-    ) {
-      await this.vendorSubscriptionService.markPaymentFailed(reference);
+      await this.paymentsService.confirmPayment(reference, {
+        amount,
+        currency,
+        paymentRef: normalized.paymentRefHint,
+        orderId: normalized.orderIdHint,
+        chargeId: normalized.chargeId,
+        fromWebhook: true,
+      });
     }
 
     if (isTransferDisburseEvent(eventType)) {

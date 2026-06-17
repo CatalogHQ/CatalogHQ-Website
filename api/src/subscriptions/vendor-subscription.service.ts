@@ -16,10 +16,9 @@ import { PlanCatalogService } from '../plans/plan-catalog.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { PingramEmailService } from '../notifications/pingram-email.service';
 import { SecurityAuditAction } from '../security/security-audit.actions';
-import { normalizeFlutterwaveAmountToNaira } from '../payments/flutterwave-amount.util';
 import { SecurityAuditService } from '../security/security-audit.service';
-import { FlutterwaveSubscriptionService } from './flutterwave-subscription.service';
 import { SubscriptionCheckoutDto } from './dto/subscription-checkout.dto';
+import { PaystackSubscriptionService } from './paystack-subscription.service';
 import {
   SubscriptionPaymentDto,
   VendorSubscriptionDto,
@@ -37,7 +36,7 @@ export class VendorSubscriptionService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly planCatalogService: PlanCatalogService,
-    private readonly flutterwaveSubscriptionService: FlutterwaveSubscriptionService,
+    private readonly paystackSubscriptionService: PaystackSubscriptionService,
     private readonly emailService: PingramEmailService,
     private readonly configService: ConfigService,
     private readonly securityAudit: SecurityAuditService,
@@ -101,7 +100,7 @@ export class VendorSubscriptionService {
     await this.ensureSubscriptionRecord(vendorId, dto.planTier);
 
     const checkout =
-      await this.flutterwaveSubscriptionService.createSubscriptionCheckout({
+      await this.paystackSubscriptionService.createDirectDebitCheckout({
         vendorId,
         email,
         planTier: dto.planTier,
@@ -121,7 +120,9 @@ export class VendorSubscriptionService {
     await this.prisma.vendorSubscription.update({
       where: { vendorId },
       data: {
-        flutterwaveSubscriptionId: checkout.flutterwaveSubscriptionId,
+        planTier: dto.planTier,
+        cancelAtPeriodEnd: false,
+        canceledAt: null,
       },
     });
 
@@ -141,10 +142,31 @@ export class VendorSubscriptionService {
       throw new NotFoundException('Subscription not found.');
     }
 
-    if (user.subscription.flutterwaveSubscriptionId) {
-      await this.flutterwaveSubscriptionService.cancelSubscription(
-        user.subscription.flutterwaveSubscriptionId,
+    const subscription = user.subscription;
+
+    if (
+      subscription.paystackSubscriptionCode &&
+      subscription.paystackEmailToken
+    ) {
+      await this.paystackSubscriptionService.cancelSubscription(
+        subscription.paystackSubscriptionCode,
+        subscription.paystackEmailToken,
       );
+    } else if (subscription.paystackSubscriptionCode) {
+      const remote = await this.paystackSubscriptionService.fetchSubscription(
+        subscription.paystackSubscriptionCode,
+      );
+      const emailToken = remote?.email_token;
+      if (emailToken) {
+        await this.paystackSubscriptionService.cancelSubscription(
+          subscription.paystackSubscriptionCode,
+          emailToken,
+        );
+      } else {
+        this.logger.warn(
+          `Paystack subscription ${subscription.paystackSubscriptionCode} missing email token; marked canceled locally only.`,
+        );
+      }
     }
 
     const updated = await this.prisma.vendorSubscription.update({
@@ -152,6 +174,21 @@ export class VendorSubscriptionService {
       data: {
         cancelAtPeriodEnd: true,
         canceledAt: new Date(),
+        status:
+          subscription.status === SubscriptionStatus.active
+            ? subscription.status
+            : SubscriptionStatus.canceled,
+      },
+    });
+
+    await this.securityAudit.log({
+      actorId: vendorId,
+      action: SecurityAuditAction.SUBSCRIPTION_CANCELED,
+      targetType: 'vendor_subscription',
+      targetId: vendorId,
+      metadata: {
+        paystackSubscriptionCode: subscription.paystackSubscriptionCode,
+        cancelAtPeriodEnd: true,
       },
     });
 
@@ -187,7 +224,7 @@ export class VendorSubscriptionService {
     }
 
     const verification =
-      await this.flutterwaveSubscriptionService.verifySubscriptionPayment(
+      await this.paystackSubscriptionService.verifySubscriptionPayment(
         reference,
       );
 
@@ -197,30 +234,311 @@ export class VendorSubscriptionService {
       );
     }
 
-    const expectedNaira = payment.amountKobo / 100;
-    const verifiedAmountNaira = normalizeFlutterwaveAmountToNaira(
-      verification.amountNaira,
-      expectedNaira,
-    );
-
-    if (verifiedAmountNaira === undefined) {
+    if (
+      verification.amountKobo === undefined ||
+      !this.subscriptionAmountMatches(payment.amountKobo, verification.amountKobo)
+    ) {
+      await this.securityAudit.log({
+        actorId: vendorId,
+        action: SecurityAuditAction.SUBSCRIPTION_AMOUNT_MISMATCH,
+        targetType: 'subscription_payment',
+        targetId: payment.id,
+        metadata: {
+          reference,
+          reason: 'confirm_amount_mismatch',
+          expectedAmountKobo: payment.amountKobo,
+          receivedAmountKobo: verification.amountKobo,
+        },
+      });
       throw new BadRequestException(
         'Could not verify subscription payment amount.',
       );
     }
 
+    if (verification.currency !== undefined && verification.currency !== 'NGN') {
+      throw new BadRequestException('Subscription currency must be NGN.');
+    }
+
     await this.activateFromPayment(reference, {
       currency: verification.currency ?? 'NGN',
-      amountKobo: Math.round(verifiedAmountNaira * 100),
+      amountKobo: verification.amountKobo,
+    });
+
+    await this.attachPaystackBillingDetails(reference, {
+      customerCode: verification.customerCode,
+      authorizationCode: verification.authorizationCode,
+      subscriptionCode: verification.subscriptionCode,
+      emailToken: verification.emailToken,
     });
 
     return this.getSubscription(vendorId);
+  }
+
+  async attachPaystackBillingDetails(
+    reference: string,
+    input: {
+      customerCode?: string;
+      authorizationCode?: string;
+      subscriptionCode?: string;
+      emailToken?: string;
+    },
+  ): Promise<void> {
+    const payment = await this.prisma.subscriptionPayment.findUnique({
+      where: { flutterwaveReference: reference },
+    });
+
+    if (!payment) {
+      return;
+    }
+
+    await this.prisma.vendorSubscription.update({
+      where: { vendorId: payment.vendorId },
+      data: {
+        ...(input.customerCode
+          ? { paystackCustomerCode: input.customerCode }
+          : {}),
+        ...(input.authorizationCode
+          ? { paystackAuthorizationCode: input.authorizationCode }
+          : {}),
+        ...(input.subscriptionCode
+          ? { paystackSubscriptionCode: input.subscriptionCode }
+          : {}),
+        ...(input.emailToken ? { paystackEmailToken: input.emailToken } : {}),
+      },
+    });
+  }
+
+  async syncPaystackSubscriptionRecord(input: {
+    subscriptionCode: string;
+    emailToken?: string;
+    customerCode?: string;
+    planCode?: string;
+    authorizationCode?: string;
+  }): Promise<void> {
+    const subscription = await this.prisma.vendorSubscription.findFirst({
+      where: {
+        OR: [
+          { paystackSubscriptionCode: input.subscriptionCode },
+          { paystackCustomerCode: input.customerCode ?? '__none__' },
+        ],
+      },
+    });
+
+    if (!subscription) {
+      return;
+    }
+
+    let planTier = subscription.planTier;
+    if (input.planCode) {
+      const catalogEntry = await this.prisma.planCatalogEntry.findFirst({
+        where: { paystackPlanCode: input.planCode },
+      });
+      if (catalogEntry) {
+        planTier = catalogEntry.tier;
+      }
+    }
+
+    await this.prisma.vendorSubscription.update({
+      where: { vendorId: subscription.vendorId },
+      data: {
+        paystackSubscriptionCode: input.subscriptionCode,
+        paystackEmailToken: input.emailToken ?? subscription.paystackEmailToken,
+        paystackCustomerCode:
+          input.customerCode ?? subscription.paystackCustomerCode,
+        paystackAuthorizationCode:
+          input.authorizationCode ?? subscription.paystackAuthorizationCode,
+        planTier,
+      },
+    });
+  }
+
+  async activateRenewalFromPaystack(input: {
+    subscriptionCode: string;
+    amountKobo: number;
+    currency: string;
+    reference: string;
+    customerCode?: string;
+    planCode?: string;
+  }): Promise<void> {
+    const subscription = await this.prisma.vendorSubscription.findFirst({
+      where: {
+        paystackSubscriptionCode: input.subscriptionCode,
+      },
+    });
+
+    if (!subscription || subscription.cancelAtPeriodEnd) {
+      return;
+    }
+
+    const catalogEntry = input.planCode
+      ? await this.prisma.planCatalogEntry.findFirst({
+          where: { paystackPlanCode: input.planCode },
+        })
+      : await this.prisma.planCatalogEntry.findUnique({
+          where: { tier: subscription.planTier },
+        });
+
+    if (!catalogEntry) {
+      return;
+    }
+
+    if (input.currency !== 'NGN') {
+      await this.securityAudit.log({
+        actorId: subscription.vendorId,
+        action: SecurityAuditAction.SUBSCRIPTION_AMOUNT_MISMATCH,
+        targetType: 'vendor_subscription',
+        targetId: subscription.vendorId,
+        metadata: {
+          reference: input.reference,
+          reason: 'renewal_currency_mismatch',
+          currency: input.currency,
+        },
+      });
+      return;
+    }
+
+    if (!this.subscriptionAmountMatches(catalogEntry.monthlyPriceKobo, input.amountKobo)) {
+      await this.securityAudit.log({
+        actorId: subscription.vendorId,
+        action: SecurityAuditAction.SUBSCRIPTION_AMOUNT_MISMATCH,
+        targetType: 'vendor_subscription',
+        targetId: subscription.vendorId,
+        metadata: {
+          reference: input.reference,
+          reason: 'renewal_amount_mismatch',
+          expectedAmountKobo: catalogEntry.monthlyPriceKobo,
+          receivedAmountKobo: input.amountKobo,
+        },
+      });
+      return;
+    }
+
+    const existing = await this.prisma.subscriptionPayment.findUnique({
+      where: { flutterwaveReference: input.reference },
+    });
+    if (existing?.status === SubscriptionPaymentStatus.paid) {
+      return;
+    }
+
+    const now = new Date();
+    const periodStart =
+      subscription.currentPeriodEnd && subscription.currentPeriodEnd > now
+        ? subscription.currentPeriodEnd
+        : now;
+    const periodEnd = new Date(periodStart);
+    periodEnd.setMonth(periodEnd.getMonth() + 1);
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.subscriptionPayment.upsert({
+        where: { flutterwaveReference: input.reference },
+        create: {
+          vendorId: subscription.vendorId,
+          planTier: catalogEntry.tier,
+          amountKobo: catalogEntry.monthlyPriceKobo,
+          flutterwaveReference: input.reference,
+          status: SubscriptionPaymentStatus.paid,
+          paidAt: now,
+        },
+        update: {
+          status: SubscriptionPaymentStatus.paid,
+          paidAt: now,
+        },
+      });
+
+      await tx.vendorSubscription.update({
+        where: { vendorId: subscription.vendorId },
+        data: {
+          status: SubscriptionStatus.active,
+          planTier: catalogEntry.tier,
+          currentPeriodStart: periodStart,
+          currentPeriodEnd: periodEnd,
+          graceEndsAt: null,
+          lastPaymentAt: now,
+          lastPaymentReference: input.reference,
+          paystackCustomerCode: input.customerCode ?? subscription.paystackCustomerCode,
+        },
+      });
+
+      await tx.user.update({
+        where: { id: subscription.vendorId },
+        data: { planTier: catalogEntry.tier },
+      });
+    });
+
+    await this.securityAudit.log({
+      actorId: subscription.vendorId,
+      action: SecurityAuditAction.SUBSCRIPTION_ACTIVATED,
+      targetType: 'vendor_subscription',
+      targetId: subscription.vendorId,
+      metadata: {
+        reference: input.reference,
+        renewal: true,
+        planTier: catalogEntry.tier,
+        amountKobo: input.amountKobo,
+      },
+    });
+  }
+
+  async markRenewalFailed(input: {
+    subscriptionCode: string;
+    reference: string;
+  }): Promise<void> {
+    const subscription = await this.prisma.vendorSubscription.findFirst({
+      where: { paystackSubscriptionCode: input.subscriptionCode },
+    });
+
+    if (!subscription) {
+      return;
+    }
+
+    await this.prisma.subscriptionPayment.upsert({
+      where: { flutterwaveReference: input.reference },
+      create: {
+        vendorId: subscription.vendorId,
+        planTier: subscription.planTier,
+        amountKobo: 0,
+        flutterwaveReference: input.reference,
+        status: SubscriptionPaymentStatus.failed,
+      },
+      update: {
+        status: SubscriptionPaymentStatus.failed,
+      },
+    });
+
+    await this.markPaymentFailedForVendor(subscription.vendorId);
+  }
+
+  async markPaystackSubscriptionCanceled(subscriptionCode: string): Promise<void> {
+    const subscription = await this.prisma.vendorSubscription.findFirst({
+      where: { paystackSubscriptionCode: subscriptionCode },
+    });
+
+    if (!subscription) {
+      return;
+    }
+
+    await this.prisma.vendorSubscription.update({
+      where: { vendorId: subscription.vendorId },
+      data: {
+        cancelAtPeriodEnd: true,
+        canceledAt: subscription.canceledAt ?? new Date(),
+        status: SubscriptionStatus.canceled,
+      },
+    });
   }
 
   private subscriptionAmountMatches(
     expectedAmountKobo: number,
     received?: number,
   ): boolean {
+    if (received === undefined) {
+      return false;
+    }
+
+    if (received === expectedAmountKobo) {
+      return true;
+    }
+
     const expectedNaira = expectedAmountKobo / 100;
     return flutterwaveAmountMatchesNaira(expectedNaira, received);
   }
@@ -354,7 +672,6 @@ export class VendorSubscriptionService {
 
     const payment = await this.prisma.subscriptionPayment.findUnique({
       where: { flutterwaveReference: reference },
-      include: { vendor: { include: { subscription: true } } },
     });
 
     if (!payment) {
@@ -366,19 +683,26 @@ export class VendorSubscriptionService {
       data: { status: SubscriptionPaymentStatus.failed },
     });
 
+    await this.markPaymentFailedForVendor(payment.vendorId);
+  }
+
+  private async markPaymentFailedForVendor(vendorId: string): Promise<void> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: vendorId },
+    });
+
     const graceEndsAt = new Date();
     graceEndsAt.setDate(graceEndsAt.getDate() + this.graceDays);
 
     await this.prisma.vendorSubscription.update({
-      where: { vendorId: payment.vendorId },
+      where: { vendorId },
       data: {
         status: SubscriptionStatus.grace,
         graceEndsAt,
       },
     });
 
-    const user = payment.vendor;
-    if (user.email) {
+    if (user?.email) {
       await this.emailService.sendEmail(
         user.email,
         'CatalogHQ subscription payment failed',

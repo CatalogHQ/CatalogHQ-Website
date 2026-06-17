@@ -31,6 +31,8 @@ export const SecurityAuditAction = {
   PAYMENT_PAYOUT_FAILED: 'payment.payout_failed',
   SUBSCRIPTION_ACTIVATED: 'subscription.activated',
   SUBSCRIPTION_AMOUNT_MISMATCH: 'subscription.amount_mismatch',
+  SUBSCRIPTION_CANCELED: 'subscription.canceled',
+  SUBSCRIPTION_WEBHOOK_SIGNATURE_INVALID: 'subscription.webhook_signature_invalid',
   VENDOR_PAYOUT_ACCOUNT_UPDATED: 'vendor.payout_account_updated',
   VENDOR_TEAM_MEMBER_ADDED: 'vendor.team_member_added',
   VENDOR_TEAM_MEMBER_REMOVED: 'vendor.team_member_removed',

@@ -156,6 +156,18 @@ class EnvironmentVariables {
   @IsOptional()
   @IsString()
   ALLOW_DEV_PAYMENT_MOCKS?: string;
+
+  @IsOptional()
+  @IsString()
+  PAYSTACK_SECRET_KEY?: string;
+
+  @IsOptional()
+  @IsString()
+  PAYSTACK_WEBHOOK_SECRET?: string;
+
+  @IsOptional()
+  @IsString()
+  PAYSTACK_CALLBACK_BASE_URL?: string;
 }
 
 export function validateEnv(config: Record<string, unknown>) {
@@ -199,6 +211,19 @@ export function validateEnv(config: Record<string, unknown>) {
     ] as const;
 
     for (const key of requiredFlutterwaveKeys) {
+      const value = config[key];
+      if (typeof value !== 'string' || !value.trim()) {
+        throw new Error(`${key} is required in production`);
+      }
+    }
+
+    const requiredPaystackKeys = [
+      'PAYSTACK_SECRET_KEY',
+      'PAYSTACK_WEBHOOK_SECRET',
+      'PAYSTACK_CALLBACK_BASE_URL',
+    ] as const;
+
+    for (const key of requiredPaystackKeys) {
       const value = config[key];
       if (typeof value !== 'string' || !value.trim()) {
         throw new Error(`${key} is required in production`);

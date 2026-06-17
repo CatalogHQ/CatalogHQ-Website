@@ -3,6 +3,7 @@ const ALLOWED_PAYMENT_HOSTS = new Set([
   "api.flutterwave.com",
   "standard.paystack.co",
   "checkout.paystack.com",
+  "paystack.co",
 ]);
 
 function hasEncodedTraversal(value: string): boolean {

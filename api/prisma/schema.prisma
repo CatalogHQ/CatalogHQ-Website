@@ -373,6 +373,7 @@ model PlanCatalogEntry {
   featureBullets           Json     @default("[]")
   sortOrder                Int      @default(0)
   flutterwavePaymentPlanId Int?
+  paystackPlanCode         String?
   updatedAt                DateTime @updatedAt
 }
 
@@ -383,6 +384,10 @@ model VendorSubscription {
   planTier                 PlanTier           @default(starter)
   flutterwaveSubscriptionId String?
   flutterwaveCustomerId    String?
+  paystackCustomerCode     String?
+  paystackSubscriptionCode String?
+  paystackAuthorizationCode String?
+  paystackEmailToken       String?
   currentPeriodStart       DateTime?
   currentPeriodEnd         DateTime?
   graceEndsAt              DateTime?

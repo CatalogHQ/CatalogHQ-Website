@@ -1,4 +1,5 @@
 import { Body, Controller, Get, Post } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { User } from '@prisma/client';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { SkipSubscriptionGuard } from '../common/decorators/plan-access.decorator';
@@ -24,6 +25,7 @@ export class SubscriptionsController {
   }
 
   @Post('checkout')
+  @Throttle({ checkout: { limit: 10, ttl: 60_000 } })
   checkout(@CurrentUser() user: User, @Body() dto: SubscriptionCheckoutDto) {
     return this.vendorSubscriptionService.startCheckout(
       user.id,
@@ -33,6 +35,7 @@ export class SubscriptionsController {
   }
 
   @Post('cancel')
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
   cancel(@CurrentUser() user: User) {
     return this.vendorSubscriptionService.cancelAtPeriodEnd(user.id);
   }
@@ -47,6 +50,7 @@ export class SubscriptionsController {
   }
 
   @Post('confirm')
+  @Throttle({ checkout: { limit: 20, ttl: 60_000 } })
   confirm(@CurrentUser() user: User, @Body() dto: ConfirmSubscriptionDto) {
     return this.vendorSubscriptionService.confirmCheckout(
       user.id,

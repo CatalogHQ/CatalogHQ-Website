@@ -187,7 +187,8 @@ export default function Billing() {
           <CardHeader>
             <CardTitle className="text-base">Complete your subscription</CardTitle>
             <CardDescription>
-              If you finished payment on Flutterwave, confirm activation below.
+              If you finished Direct Debit authorization on Paystack, confirm
+              activation below.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -211,8 +212,8 @@ export default function Billing() {
             {subscription.subscriptionExempt
               ? "This account is comped by CatalogHQ admin."
               : hasPaidPlan
-                ? "Monthly billing through Flutterwave."
-                : "All plans are paid monthly. Choose one below to activate your store."}
+                ? "Monthly billing through Paystack Direct Debit."
+                : "All plans are paid monthly by bank Direct Debit. Choose one below to activate your store."}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
@@ -245,9 +246,16 @@ export default function Billing() {
           ) : null}
 
           {subscription.status === "active" && !subscription.cancelAtPeriodEnd ? (
-            <Button variant="outline" size="sm" onClick={handleCancel}>
-              Cancel at period end
+            <Button variant="outline" size="sm" onClick={() => void handleCancel()}>
+              Cancel subscription
             </Button>
+          ) : null}
+
+          {subscription.cancelAtPeriodEnd ? (
+            <p className="text-sm text-gray-600">
+              Cancellation scheduled. Access continues until the end of the current
+              billing period.
+            </p>
           ) : null}
         </CardContent>
       </Card>
