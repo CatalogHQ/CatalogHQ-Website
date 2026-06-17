@@ -72,6 +72,26 @@ export type AdminPlatformPayout = {
   failedAt?: string;
 };
 
+export type AdminSubscriptionPaymentStatus = "pending" | "paid" | "failed";
+
+export type AdminSubscriptionPayment = {
+  id: string;
+  vendorId: string;
+  vendorEmail: string;
+  storeName: string;
+  storeSlug: string;
+  planTier: PlanTier;
+  amountNaira: number;
+  currency: string;
+  reference: string;
+  status: AdminSubscriptionPaymentStatus;
+  subscriptionStatus?: string;
+  subscriptionExempt: boolean;
+  paystackSubscriptionCode?: string;
+  paidAt?: string;
+  createdAt: string;
+};
+
 export type AdminTicketStatus = "open" | "in_progress" | "resolved";
 export type AdminTicketType = "vendor" | "customer";
 export type AdminTicketPriority = "low" | "medium" | "high";
@@ -430,6 +450,73 @@ export const ADMIN_MOCK_PAYOUTS: AdminPlatformPayout[] = [
     status: "settled",
     createdAt: "2026-06-01T14:00:00.000Z",
     settledAt: "2026-06-01T14:10:00.000Z",
+  },
+];
+
+export const ADMIN_MOCK_SUBSCRIPTIONS: AdminSubscriptionPayment[] = [
+  {
+    id: "sub-pay-1",
+    vendorId: "v1",
+    vendorEmail: "vendor@lagosfabrics.com",
+    storeName: "Lagos Fabrics Co.",
+    storeSlug: "lagos-fabrics",
+    planTier: "pro",
+    amountNaira: 5_000,
+    currency: "NGN",
+    reference: "sub_a1b2c3d4e5f6",
+    status: "paid",
+    subscriptionStatus: "active",
+    subscriptionExempt: false,
+    paystackSubscriptionCode: "SUB_lagos_pro",
+    paidAt: "2026-06-05T09:15:00.000Z",
+    createdAt: "2026-06-05T09:10:00.000Z",
+  },
+  {
+    id: "sub-pay-2",
+    vendorId: "v2",
+    vendorEmail: "hello@abujasneakers.com",
+    storeName: "Abuja Sneaker Hub",
+    storeSlug: "abujasneakers",
+    planTier: "starter",
+    amountNaira: 3_000,
+    currency: "NGN",
+    reference: "sub_f6e5d4c3b2a1",
+    status: "paid",
+    subscriptionStatus: "active",
+    subscriptionExempt: false,
+    paystackSubscriptionCode: "SUB_abuja_starter",
+    paidAt: "2026-06-01T11:00:00.000Z",
+    createdAt: "2026-06-01T10:55:00.000Z",
+  },
+  {
+    id: "sub-pay-3",
+    vendorId: "v3",
+    vendorEmail: "team@kanoorganics.ng",
+    storeName: "Kano Organics",
+    storeSlug: "kano-organics",
+    planTier: "growth",
+    amountNaira: 8_000,
+    currency: "NGN",
+    reference: "sub_pending123456",
+    status: "pending",
+    subscriptionStatus: "pending",
+    subscriptionExempt: false,
+    createdAt: "2026-06-06T16:20:00.000Z",
+  },
+  {
+    id: "sub-pay-4",
+    vendorId: "v4",
+    vendorEmail: "failed@example.com",
+    storeName: "Test Store",
+    storeSlug: "test-store",
+    planTier: "starter",
+    amountNaira: 3_000,
+    currency: "NGN",
+    reference: "sub_failed789012",
+    status: "failed",
+    subscriptionStatus: "grace",
+    subscriptionExempt: false,
+    createdAt: "2026-06-04T08:00:00.000Z",
   },
 ];
 

@@ -18,6 +18,7 @@ import {
   AdminPlanDistributionDto,
   AdminPlatformOrderDto,
   AdminPlatformPayoutDto,
+  AdminSubscriptionPaymentDto,
   AdminPlatformStatsDto,
   AdminRevenueByDayDto,
   AdminSupportTicketDto,
@@ -25,6 +26,7 @@ import {
   AdminVerificationRequestDto,
   toAdminPlatformOrderDto,
   toAdminPlatformPayoutDto,
+  toAdminSubscriptionPaymentDto,
   toAdminTicketDto,
   toAdminVendorDto,
   toAdminVerificationDto,
@@ -267,6 +269,37 @@ export class AdminService {
     });
 
     return payouts.map(toAdminPlatformPayoutDto);
+  }
+
+  async listSubscriptionPayments(
+    range: ParsedAdminDateRange = {},
+  ): Promise<AdminSubscriptionPaymentDto[]> {
+    const paidAt = buildCreatedAtFilter(range);
+    const payments = await this.prisma.subscriptionPayment.findMany({
+      where: paidAt
+        ? {
+            OR: [
+              { paidAt },
+              { paidAt: null, createdAt: paidAt },
+            ],
+          }
+        : undefined,
+      include: {
+        vendor: {
+          select: {
+            email: true,
+            subscriptionExempt: true,
+            store: { select: { businessName: true, slug: true } },
+            subscription: {
+              select: { status: true, paystackSubscriptionCode: true },
+            },
+          },
+        },
+      },
+      orderBy: [{ paidAt: 'desc' }, { createdAt: 'desc' }],
+    });
+
+    return payments.map(toAdminSubscriptionPaymentDto);
   }
 
   async listTickets(): Promise<AdminSupportTicketDto[]> {

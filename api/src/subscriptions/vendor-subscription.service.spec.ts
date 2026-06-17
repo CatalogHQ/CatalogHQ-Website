@@ -107,6 +107,28 @@ describe('VendorSubscriptionService', () => {
     );
   });
 
+  it('rejects activation when Paystack kobo equals expected naira (underpay)', async () => {
+    prisma.subscriptionPayment.findUnique.mockResolvedValue({
+      id: 'pay-1',
+      vendorId: 'vendor-1',
+      planTier: 'starter',
+      status: 'pending',
+      amountKobo: 300_000,
+    });
+
+    await service.activateFromPayment('sub_kobo_naira_confusion', {
+      amountKobo: 3_000,
+      currency: 'NGN',
+    });
+
+    expect(prisma.$transaction).not.toHaveBeenCalled();
+    expect(securityAudit.log).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: 'subscription.amount_mismatch',
+      }),
+    );
+  });
+
   it('confirmCheckout verifies Paystack amount before activation', async () => {
     prisma.subscriptionPayment.findUnique.mockResolvedValue({
       id: 'pay-1',

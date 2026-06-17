@@ -5,6 +5,7 @@ import type {
   AdminPlanDistribution,
   AdminPlatformOrder,
   AdminPlatformPayout,
+  AdminSubscriptionPayment,
   AdminPlatformStats,
   AdminRevenueByDay,
   AdminSupportTicket,
@@ -57,6 +58,14 @@ export class ApiAdminRepository {
   listPayouts(range: AdminListDateRange = {}): Promise<AdminPlatformPayout[]> {
     return apiClient<AdminPlatformPayout[]>(
       `/admin/payouts${buildAdminDateRangeQuery(range)}`,
+    );
+  }
+
+  listSubscriptions(
+    range: AdminListDateRange = {},
+  ): Promise<AdminSubscriptionPayment[]> {
+    return apiClient<AdminSubscriptionPayment[]>(
+      `/admin/subscriptions${buildAdminDateRangeQuery(range)}`,
     );
   }
 

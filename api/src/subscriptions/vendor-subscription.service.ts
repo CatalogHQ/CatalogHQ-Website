@@ -11,7 +11,6 @@ import {
   SubscriptionStatus,
 } from '@prisma/client';
 import { randomUUID } from 'crypto';
-import { flutterwaveAmountMatchesNaira } from '../payments/flutterwave-amount.util';
 import { PlanCatalogService } from '../plans/plan-catalog.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { PingramEmailService } from '../notifications/pingram-email.service';
@@ -527,20 +526,16 @@ export class VendorSubscriptionService {
     });
   }
 
+  /** Paystack amounts are always kobo; require an exact match (no naira/kobo fallback). */
   private subscriptionAmountMatches(
     expectedAmountKobo: number,
     received?: number,
   ): boolean {
-    if (received === undefined) {
-      return false;
-    }
-
-    if (received === expectedAmountKobo) {
-      return true;
-    }
-
-    const expectedNaira = expectedAmountKobo / 100;
-    return flutterwaveAmountMatchesNaira(expectedNaira, received);
+    return (
+      received !== undefined &&
+      Number.isFinite(received) &&
+      Math.round(received) === Math.round(expectedAmountKobo)
+    );
   }
 
   async activateFromPayment(

@@ -175,6 +175,24 @@ export class AdminController {
     return this.adminService.listPayouts(parseAdminDateRange(query));
   }
 
+  @Get('subscriptions')
+  async listSubscriptions(
+    @CurrentUser() user: AuthenticatedUser,
+    @Req() req: Request,
+    @Query() query: AdminDateRangeQueryDto,
+  ) {
+    await this.auditAdminRead(
+      user,
+      req,
+      SecurityAuditAction.ADMIN_VIEW_SUBSCRIPTIONS,
+      {
+        from: query.from ?? null,
+        to: query.to ?? null,
+      },
+    );
+    return this.adminService.listSubscriptionPayments(parseAdminDateRange(query));
+  }
+
   @Get('tickets')
   listTickets() {
     return this.adminService.listTickets();

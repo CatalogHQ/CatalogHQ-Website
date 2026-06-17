@@ -178,6 +178,12 @@ export class PaystackSubscriptionService implements OnModuleInit {
     }
 
     if (!this.isConfigured()) {
+      if (!isDevPaymentMocksEnabled(this.configService)) {
+        throw new ServiceUnavailableException(
+          'Subscription billing is not configured. Contact support.',
+        );
+      }
+
       return {
         authorizationUrl: `${this.callbackBaseUrl}/dashboard/billing?status=success&reference=${encodeURIComponent(input.reference)}`,
         reference: input.reference,

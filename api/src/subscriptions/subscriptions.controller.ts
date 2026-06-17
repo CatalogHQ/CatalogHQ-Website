@@ -41,6 +41,7 @@ export class SubscriptionsController {
   }
 
   @Post('change-plan')
+  @Throttle({ checkout: { limit: 10, ttl: 60_000 } })
   changePlan(@CurrentUser() user: User, @Body() dto: SubscriptionCheckoutDto) {
     return this.vendorSubscriptionService.changePlan(
       user.id,

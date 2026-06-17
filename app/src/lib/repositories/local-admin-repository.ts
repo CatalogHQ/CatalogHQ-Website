@@ -3,6 +3,7 @@ import {
   ADMIN_MOCK_CUSTOMERS,
   ADMIN_MOCK_ORDERS,
   ADMIN_MOCK_PAYOUTS,
+  ADMIN_MOCK_SUBSCRIPTIONS,
   ADMIN_MOCK_REVENUE_BY_DAY,
   ADMIN_MOCK_STATS,
   ADMIN_MOCK_TICKETS,
@@ -15,6 +16,7 @@ import {
   type AdminPlanDistribution,
   type AdminPlatformOrder,
   type AdminPlatformPayout,
+  type AdminSubscriptionPayment,
   type AdminPlatformStats,
   type AdminRevenueByDay,
   type AdminSupportTicket,
@@ -131,6 +133,17 @@ export class LocalAdminRepository implements ApiAdminRepository {
       ADMIN_MOCK_PAYOUTS.filter((payout) =>
         isWithinAdminDateRange(payout.createdAt, range),
       ),
+    );
+  }
+
+  listSubscriptions(
+    range: AdminListDateRange = {},
+  ): Promise<AdminSubscriptionPayment[]> {
+    return Promise.resolve(
+      ADMIN_MOCK_SUBSCRIPTIONS.filter((payment) => {
+        const date = payment.paidAt ?? payment.createdAt;
+        return isWithinAdminDateRange(date, range);
+      }),
     );
   }
 

@@ -5,6 +5,9 @@ import {
   PlanTier,
   PayoutStatus,
   Store,
+  SubscriptionPayment,
+  SubscriptionPaymentStatus,
+  SubscriptionStatus,
   SupportTicket,
   User,
   VendorPayout,
@@ -130,6 +133,24 @@ export type AdminBadgesDto = {
   openTickets: number;
 };
 
+export type AdminSubscriptionPaymentDto = {
+  id: string;
+  vendorId: string;
+  vendorEmail: string;
+  storeName: string;
+  storeSlug: string;
+  planTier: PlanTier;
+  amountNaira: number;
+  currency: string;
+  reference: string;
+  status: SubscriptionPaymentStatus;
+  subscriptionStatus?: SubscriptionStatus;
+  subscriptionExempt: boolean;
+  paystackSubscriptionCode?: string;
+  paidAt?: string;
+  createdAt: string;
+};
+
 export type AdminPlatformPayoutDto = {
   id: string;
   orderId: string;
@@ -221,6 +242,34 @@ export function toAdminTicketDto(ticket: SupportTicket): AdminSupportTicketDto {
     orderRef: ticket.orderRef ?? undefined,
     createdAt: ticket.createdAt.toISOString(),
     updatedAt: ticket.updatedAt.toISOString(),
+  };
+}
+
+export function toAdminSubscriptionPaymentDto(
+  payment: SubscriptionPayment & {
+    vendor: Pick<User, 'email' | 'subscriptionExempt'> & {
+      store: Pick<Store, 'businessName' | 'slug'> | null;
+      subscription: { status: SubscriptionStatus; paystackSubscriptionCode: string | null } | null;
+    };
+  },
+): AdminSubscriptionPaymentDto {
+  return {
+    id: payment.id,
+    vendorId: payment.vendorId,
+    vendorEmail: payment.vendor.email,
+    storeName: payment.vendor.store?.businessName ?? '—',
+    storeSlug: payment.vendor.store?.slug ?? '',
+    planTier: payment.planTier,
+    amountNaira: Math.round(payment.amountKobo / 100),
+    currency: payment.currency,
+    reference: payment.flutterwaveReference,
+    status: payment.status,
+    subscriptionStatus: payment.vendor.subscription?.status,
+    subscriptionExempt: payment.vendor.subscriptionExempt,
+    paystackSubscriptionCode:
+      payment.vendor.subscription?.paystackSubscriptionCode ?? undefined,
+    paidAt: payment.paidAt?.toISOString(),
+    createdAt: payment.createdAt.toISOString(),
   };
 }
 

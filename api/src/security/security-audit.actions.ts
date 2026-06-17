@@ -19,6 +19,7 @@ export const SecurityAuditAction = {
   ADMIN_VIEW_CUSTOMERS: 'admin.view_customers',
   ADMIN_VIEW_ORDERS: 'admin.view_orders',
   ADMIN_VIEW_PAYOUTS: 'admin.view_payouts',
+  ADMIN_VIEW_SUBSCRIPTIONS: 'admin.view_subscriptions',
   ADMIN_VIEW_VERIFICATION_QUEUE: 'admin.view_verification_queue',
   ADMIN_VIEW_HEALTH: 'admin.view_health',
   ADMIN_VIEW_SECURITY_LOGS: 'admin.view_security_logs',
