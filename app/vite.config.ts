@@ -15,6 +15,10 @@ const { buildCspMetaTag } = require("./scripts/content-security-policy.mjs") as 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "")
   const isDev = mode === "development"
+  const siteUrl = (env.VITE_SITE_URL || "https://cataloghq.store").replace(
+    /\/$/,
+    "",
+  )
   const cspMetaTag = buildCspMetaTag(env.VITE_API_URL, {
     allowDataImages: isDev,
   })
@@ -31,10 +35,11 @@ export default defineConfig(({ mode }) => {
     {
       name: "inject-csp-meta",
       transformIndexHtml(html) {
-        if (html.includes("http-equiv=\"Content-Security-Policy\"")) {
-          return html
+        let next = html.replaceAll("__CATALOGHQ_SITE_URL__", siteUrl)
+        if (next.includes('http-equiv="Content-Security-Policy"')) {
+          return next
         }
-        return html.replace("<head>", `<head>\n    ${cspMetaTag}`)
+        return next.replace("<head>", `<head>\n    ${cspMetaTag}`)
       },
     },
   ],
