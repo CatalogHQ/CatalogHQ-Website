@@ -15,32 +15,36 @@ const Toaster = ({ ...props }: ToasterProps) => {
     <Sonner
       theme={theme as ToasterProps["theme"]}
       position="top-center"
-      richColors
       closeButton
+      expand
       className="toaster group"
-      icons={{
-        success: <CircleCheckIcon className="size-4" />,
-        info: <InfoIcon className="size-4" />,
-        warning: <TriangleAlertIcon className="size-4" />,
-        error: <CircleAlertIcon className="size-4" />,
-        loading: <Loader2Icon className="size-4 animate-spin" />,
+      offset="1rem"
+      mobileOffset={{
+        top: "max(1rem, env(safe-area-inset-top))",
+        bottom: "max(1.25rem, env(safe-area-inset-bottom))",
       }}
-      style={
-        {
-          "--normal-bg": "var(--popover)",
-          "--normal-text": "var(--popover-foreground)",
-          "--normal-border": "var(--border)",
-          "--border-radius": "var(--radius)",
-          "--toast-close-button-start": "unset",
-          "--toast-close-button-end": "0.75rem",
-          "--toast-close-button-transform": "translateY(-50%)",
-        } as React.CSSProperties
-      }
+      icons={{
+        success: <CircleCheckIcon className="size-4 shrink-0" />,
+        info: <InfoIcon className="size-4 shrink-0" />,
+        warning: <TriangleAlertIcon className="size-4 shrink-0" />,
+        error: <CircleAlertIcon className="size-4 shrink-0" />,
+        loading: <Loader2Icon className="size-4 shrink-0 animate-spin" />,
+      }}
       toastOptions={{
         classNames: {
-          toast: "pr-10",
+          toast:
+            "group toast w-full items-start gap-3 rounded-xl border border-border bg-background px-4 py-3 pr-10 text-foreground shadow-lg sm:items-center",
+          title: "text-sm font-semibold leading-snug",
+          description: "text-sm leading-snug text-muted-foreground",
           closeButton:
             "!top-1/2 !left-auto !right-3 !translate-x-0 !-translate-y-1/2 !border-0 !bg-transparent hover:!bg-muted/60",
+          error:
+            "!border-destructive/35 !bg-destructive/10 !text-destructive [&_[data-description]]:!text-destructive/90",
+          success:
+            "!border-green-200 !bg-green-50 !text-green-900 [&_[data-description]]:!text-green-800",
+          warning:
+            "!border-amber-200 !bg-amber-50 !text-amber-950 [&_[data-description]]:!text-amber-900",
+          info: "!border-blue-200 !bg-blue-50 !text-blue-950 [&_[data-description]]:!text-blue-900",
         },
       }}
       {...props}
