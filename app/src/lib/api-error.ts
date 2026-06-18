@@ -29,3 +29,16 @@ export function isSubscriptionBlocked(error: unknown): boolean {
       error.code === SUBSCRIPTION_EXPIRED_CODE)
   );
 }
+
+export function isAdminTotpSignInError(error: unknown): boolean {
+  if (!(error instanceof ApiError)) {
+    return false;
+  }
+
+  const message = error.message.toLowerCase();
+  return (
+    message.includes("2fa") ||
+    message.includes("two-factor") ||
+    message.includes("totp")
+  );
+}

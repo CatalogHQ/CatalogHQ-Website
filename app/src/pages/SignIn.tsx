@@ -22,7 +22,7 @@ import {
 } from "@/components/auth/auth-minimal";
 import { authMinimalMessageClass } from "@/components/auth/auth-minimal-styles";
 import { useAuth } from "@/contexts/AuthContext";
-import { isSignupVerificationPending } from "@/lib/api-error";
+import { isAdminTotpSignInError, isSignupVerificationPending } from "@/lib/api-error";
 import { storeRepository } from "@/lib/repositories";
 import {
   getPostAuthDashboardPath,
@@ -42,11 +42,15 @@ export default function SignIn() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { signIn, verifySignUp, resendSignUpOtp } = useAuth();
+  const returnTo = safeReturnTo(searchParams.get("returnTo"));
   const [loading, setLoading] = useState(false);
   const [resending, setResending] = useState(false);
   const [pendingVerification, setPendingVerification] = useState(false);
   const [pendingEmail, setPendingEmail] = useState("");
   const [pendingPassword, setPendingPassword] = useState("");
+  const [showAdminTotp, setShowAdminTotp] = useState(
+    () => returnTo?.startsWith("/admin") ?? false,
+  );
 
   const form = useForm<SignInFormValues>({
     resolver: zodResolver(signInSchema),
@@ -113,6 +117,10 @@ export default function SignIn() {
       toast.error(
         error instanceof Error ? error.message : "Could not sign in.",
       );
+
+      if (isAdminTotpSignInError(error)) {
+        setShowAdminTotp(true);
+      }
     } finally {
       setLoading(false);
     }
@@ -261,30 +269,34 @@ export default function SignIn() {
             )}
           />
 
-          <FormField
-            control={form.control}
-            name="totpCode"
-            render={({ field, fieldState }) => (
-              <FormItem>
-                <FormLabel className="text-sm text-gray-600">
-                  2FA code (admin accounts only)
-                </FormLabel>
-                <FormControl>
-                  <Input
-                    inputMode="numeric"
-                    maxLength={6}
-                    placeholder="6-digit code"
-                    {...field}
+          {showAdminTotp ? (
+            <FormField
+              control={form.control}
+              name="totpCode"
+              render={({ field, fieldState }) => (
+                <FormItem>
+                  <FormLabel className="text-sm text-gray-600">
+                    Admin 2FA code
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      inputMode="numeric"
+                      maxLength={6}
+                      autoComplete="one-time-code"
+                      placeholder="6-digit code"
+                      autoFocus
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage
+                    className={authMinimalMessageClass(!!fieldState.error)}
                   />
-                </FormControl>
-                <FormMessage
-                  className={authMinimalMessageClass(!!fieldState.error)}
-                />
-              </FormItem>
-            )}
-          />
+                </FormItem>
+              )}
+            />
+          ) : null}
 
-          <div className="flex justify-end">
+          <div className="flex items-center justify-between gap-3">
             <button
               type="button"
               onClick={() => navigate("/forgot-password")}
@@ -292,6 +304,15 @@ export default function SignIn() {
             >
               Forgot password?
             </button>
+            {!showAdminTotp ? (
+              <button
+                type="button"
+                onClick={() => setShowAdminTotp(true)}
+                className="text-[11px] text-gray-400 transition-colors hover:text-gray-600"
+              >
+                Admin sign in
+              </button>
+            ) : null}
           </div>
 
           <Button type="submit" disabled={loading} className={submitButtonClass}>
