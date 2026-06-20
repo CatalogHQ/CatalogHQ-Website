@@ -12,6 +12,10 @@ import { normalizeNigerianBankCode } from '../payments/flutterwave-bank.util';
 import { PrismaService } from '../prisma/prisma.service';
 import { SecurityAuditAction } from '../security/security-audit.actions';
 import { SecurityAuditService } from '../security/security-audit.service';
+import {
+  BANK_ACCOUNT_NAME_MISMATCH_MESSAGE,
+  verifiedLegalNameMatchesBankAccount,
+} from '../verification/nin-identity.util';
 import { UpdatePayoutDto } from './dto/update-payout.dto';
 import { OrderDto, toOrderDto, toOrderDtoFromPayoutRecord } from '../orders/orders.mapper';
 
@@ -80,8 +84,14 @@ export class VendorPayoutService {
 
     const bank = await this.findPayoutBank(dto.bankCode);
     const accountNumber = dto.accountNumber.trim();
+    const resolved = await this.subaccountService.resolveAccount(
+      bank.code,
+      accountNumber,
+    );
 
-    return this.subaccountService.resolveAccount(bank.code, accountNumber);
+    this.assertBankAccountMatchesVerifiedIdentity(store, resolved.accountName);
+
+    return resolved;
   }
 
   async updatePayoutAccount(
@@ -110,6 +120,8 @@ export class VendorPayoutService {
       bank.code,
       accountNumber,
     );
+
+    this.assertBankAccountMatchesVerifiedIdentity(store, resolved.accountName);
 
     const withBankDetails = await this.prisma.store.update({
       where: { vendorId },
@@ -182,6 +194,15 @@ export class VendorPayoutService {
     });
 
     return orders.map(toOrderDto);
+  }
+
+  private assertBankAccountMatchesVerifiedIdentity(
+    store: { legalFirstName?: string | null; legalLastName?: string | null },
+    bankAccountName: string,
+  ): void {
+    if (!verifiedLegalNameMatchesBankAccount(store, bankAccountName)) {
+      throw new BadRequestException(BANK_ACCOUNT_NAME_MISMATCH_MESSAGE);
+    }
   }
 
   private async findPayoutBank(

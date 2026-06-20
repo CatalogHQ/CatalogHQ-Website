@@ -7,6 +7,7 @@ import { FlutterwaveTransferService } from '../payments/flutterwave-transfer.ser
 import { PrismaService } from '../prisma/prisma.service';
 import { SecurityAuditService } from '../security/security-audit.service';
 import { VendorPayoutService } from './vendor-payout.service';
+import { BANK_ACCOUNT_NAME_MISMATCH_MESSAGE } from '../verification/nin-identity.util';
 
 describe('VendorPayoutService', () => {
   const prisma = {
@@ -82,6 +83,8 @@ describe('VendorPayoutService', () => {
     prisma.store.findUnique.mockResolvedValue({
       vendorId: 'vendor-1',
       verificationStatus: VendorVerificationStatus.verified,
+      legalFirstName: 'Ada',
+      legalLastName: 'Lovelace',
       businessName: 'Ada Store',
       whatsapp: '08012345678',
       flutterwaveTransferRecipientId: null,
@@ -150,6 +153,8 @@ describe('VendorPayoutService', () => {
     prisma.store.findUnique.mockResolvedValue({
       vendorId: 'vendor-1',
       verificationStatus: VendorVerificationStatus.verified,
+      legalFirstName: 'Ada',
+      legalLastName: 'Lovelace',
       businessName: 'Ada Store',
       whatsapp: '08012345678',
       flutterwaveTransferRecipientId: null,
@@ -205,6 +210,8 @@ describe('VendorPayoutService', () => {
     prisma.store.findUnique.mockResolvedValue({
       vendorId: 'vendor-1',
       verificationStatus: VendorVerificationStatus.verified,
+      legalFirstName: 'Ada',
+      legalLastName: 'Lovelace',
     });
     subaccountService.listBanks.mockResolvedValue({
       banks: [{ code: '044', name: 'Access Bank' }],
@@ -225,6 +232,84 @@ describe('VendorPayoutService', () => {
       '044',
       '0123456789',
     );
+  });
+
+  it('rejects payout accounts that do not match verified NIN legal name', async () => {
+    prisma.store.findUnique.mockResolvedValue({
+      vendorId: 'vendor-1',
+      verificationStatus: VendorVerificationStatus.verified,
+      legalFirstName: 'Godwin',
+      legalLastName: 'Adigun',
+    });
+    subaccountService.listBanks.mockResolvedValue({
+      banks: [{ code: '044', name: 'Access Bank' }],
+      sandboxMode: false,
+    });
+    subaccountService.resolveAccount.mockResolvedValue({
+      accountNumber: '0123456789',
+      accountName: 'Jane Smith',
+    });
+
+    await expect(
+      service.updatePayoutAccount('vendor-1', {
+        bankCode: '044',
+        accountNumber: '0123456789',
+      }),
+    ).rejects.toThrow(BANK_ACCOUNT_NAME_MISMATCH_MESSAGE);
+  });
+
+  it('accepts reordered bank account names that match verified legal name', async () => {
+    prisma.store.findUnique.mockResolvedValue({
+      vendorId: 'vendor-1',
+      verificationStatus: VendorVerificationStatus.verified,
+      legalFirstName: 'Godwin',
+      legalLastName: 'Adigun',
+      businessName: 'Godwin Store',
+      whatsapp: '08012345678',
+      flutterwaveTransferRecipientId: null,
+    });
+    subaccountService.listBanks.mockResolvedValue({
+      banks: [{ code: '044', name: 'Access Bank' }],
+      sandboxMode: false,
+    });
+    subaccountService.resolveAccount.mockResolvedValue({
+      accountNumber: '0123456789',
+      accountName: 'Adigun Godwin Toluwashe',
+    });
+    prisma.store.update
+      .mockResolvedValueOnce({
+        vendorId: 'vendor-1',
+        verificationStatus: VendorVerificationStatus.verified,
+        payoutBankCode: '044',
+        payoutBankName: 'Access Bank',
+        payoutAccountNumber: '0123456789',
+        payoutAccountName: 'Adigun Godwin Toluwashe',
+        flutterwaveTransferRecipientId: null,
+        payoutSetupComplete: false,
+        payoutSetupAt: null,
+      })
+      .mockResolvedValueOnce({
+        vendorId: 'vendor-1',
+        verificationStatus: VendorVerificationStatus.verified,
+        payoutBankCode: '044',
+        payoutBankName: 'Access Bank',
+        payoutAccountNumber: '0123456789',
+        payoutAccountName: 'Adigun Godwin Toluwashe',
+        flutterwaveTransferRecipientId: 'rcb_VENDOR_1',
+        flutterwaveSubaccountId: null,
+        payoutSetupComplete: true,
+        payoutSetupAt: new Date('2026-06-14T12:00:00.000Z'),
+      });
+    transferService.createNgnBankRecipient.mockResolvedValue({
+      recipientId: 'rcb_VENDOR_1',
+    });
+
+    const result = await service.updatePayoutAccount('vendor-1', {
+      bankCode: '044',
+      accountNumber: '0123456789',
+    });
+
+    expect(result.payoutSetupComplete).toBe(true);
   });
 
   it('throws when store is missing', async () => {
