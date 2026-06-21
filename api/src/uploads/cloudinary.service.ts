@@ -44,6 +44,8 @@ export class CloudinaryService {
           folder,
           public_id: filename,
           resource_type: 'image',
+          format: 'webp',
+          quality: 'auto:good',
         },
         (error, result: UploadApiResponse | undefined) => {
           if (error || !result?.secure_url) {

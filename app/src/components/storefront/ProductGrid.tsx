@@ -43,6 +43,8 @@ export default function ProductGrid({ products, storeSlug }: ProductGridProps) {
                 <img
                   src={primaryImage}
                   alt={product.name}
+                  loading="lazy"
+                  decoding="async"
                   className="h-full w-full object-cover"
                 />
               ) : (

@@ -10,7 +10,8 @@
     "test": "vitest run",
     "preview": "vite preview",
     "generate:pdf": "node scripts/generate-pdf.mjs",
-    "generate:social-og": "node scripts/generate-social-og.mjs"
+    "generate:social-og": "node scripts/generate-social-og.mjs",
+    "generate:hero-webp": "node scripts/convert-hero-images.mjs"
   },
   "dependencies": {
     "@fontsource/inter": "^5.2.8",

@@ -3,6 +3,41 @@ import useEmblaCarousel from "embla-carousel-react";
 import { ShoppingBag } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+type ProductImageProps = {
+  src: string;
+  alt: string;
+  className?: string;
+  priority?: boolean;
+};
+
+function ProductImage({
+  src,
+  alt,
+  className,
+  imageClassName,
+  priority = false,
+}: ProductImageProps & { imageClassName?: string }) {
+  const [loaded, setLoaded] = useState(false);
+
+  return (
+    <div className={cn("relative h-full w-full bg-gray-900", className)}>
+      <img
+        src={src}
+        alt={alt}
+        loading={priority ? "eager" : "lazy"}
+        decoding="async"
+        onLoad={() => setLoaded(true)}
+        className={cn(
+          "h-full w-full object-cover transition-opacity duration-300",
+          imageClassName,
+          loaded ? "opacity-100" : "opacity-0",
+        )}
+        draggable={false}
+      />
+    </div>
+  );
+}
+
 type ProductImageSwipeGalleryProps = {
   images: string[];
   alt: string;
@@ -70,14 +105,13 @@ export default function ProductImageSwipeGallery({
 
   if (images.length === 1) {
     return (
-      <div className={cn("h-full w-full", className)}>
-        <img
-          src={images[0]}
-          alt={alt}
-          className={cn("h-full w-full object-cover", imageClassName)}
-          draggable={false}
-        />
-      </div>
+      <ProductImage
+        src={images[0]}
+        alt={alt}
+        className={className}
+        imageClassName={imageClassName}
+        priority
+      />
     );
   }
 
@@ -90,11 +124,11 @@ export default function ProductImageSwipeGallery({
               key={`${index}-${image.slice(0, 32)}`}
               className="h-full min-w-0 shrink-0 grow-0 basis-full"
             >
-              <img
+              <ProductImage
                 src={image}
                 alt={`${alt} ${index + 1}`}
-                className={cn("h-full w-full object-cover", imageClassName)}
-                draggable={false}
+                imageClassName={imageClassName}
+                priority={index === 0}
               />
             </div>
           ))}

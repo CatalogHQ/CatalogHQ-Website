@@ -1,11 +1,16 @@
 import type { Product } from "@/types/domain";
+import { optimizeProductImageUrl } from "@/lib/image-url";
 
 export function getProductImages(product: Product): string[] {
-  if (product.images?.length) return product.images;
-  if (product.imageUrl) return [product.imageUrl];
-  return [];
-}
+  const raw =
+    product.images?.length
+      ? product.images
+      : product.imageUrl
+        ? [product.imageUrl]
+        : [];
 
+  return raw.map(optimizeProductImageUrl);
+}
 export function getProductPrimaryImage(product: Product): string | undefined {
   return getProductImages(product)[0];
 }
