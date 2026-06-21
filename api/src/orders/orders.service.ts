@@ -44,6 +44,8 @@ import { CheckoutPaymentDto } from './dto/checkout-payment.dto';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { OrderDto, PublicOrderDto, toOrderDto, toPublicOrderDto } from './orders.mapper';
 import { OrderAccessAttemptService } from './order-access-attempt.service';
+import { RESERVED_STOCK_HOLD_MS } from './order-stock.constants';
+import { ReservedOrderExpiryService } from './reserved-order-expiry.service';
 
 type DeliveryZone = { id: string; name: string; fee: number };
 
@@ -69,6 +71,7 @@ export class OrdersService {
     const pricing = await this.resolvePricing(dto);
     const paymentRef = generatePaymentRef();
     const gatewayReference = buildFlutterwaveReference(paymentRef);
+    const reservedUntil = new Date(Date.now() + RESERVED_STOCK_HOLD_MS);
 
     const order = await this.prisma.$transaction(async (tx) => {
       if (pricing.discountRecordId) {
@@ -107,6 +110,7 @@ export class OrdersService {
           status: OrderStatus.reserved,
           paymentStatus: PaymentStatus.pending,
           gatewayReference,
+          reservedUntil,
           stockHeldAt: new Date(),
         },
       });
@@ -181,7 +185,7 @@ export class OrdersService {
     }
 
     const pricing = await this.resolvePricing(dto);
-    const reservedUntil = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    const reservedUntil = new Date(Date.now() + RESERVED_STOCK_HOLD_MS);
 
     const order = await this.prisma.$transaction(async (tx) => {
       if (pricing.discountRecordId) {
@@ -467,6 +471,75 @@ export class OrdersService {
         vendorPayoutSeenAt: null,
       },
     });
+  }
+
+  async expireStaleReservedOrders(limit = 100): Promise<number> {
+    const cutoff = new Date(Date.now() - RESERVED_STOCK_HOLD_MS);
+    const staleOrders = await this.prisma.order.findMany({
+      where: {
+        status: OrderStatus.reserved,
+        paymentStatus: PaymentStatus.pending,
+        stockHeldAt: { lte: cutoff },
+      },
+      select: {
+        id: true,
+        storeId: true,
+        productId: true,
+        quantity: true,
+        discountCode: true,
+      },
+      orderBy: { stockHeldAt: 'asc' },
+      take: limit,
+    });
+
+    let expired = 0;
+
+    for (const order of staleOrders) {
+      const released = await this.prisma.$transaction(async (tx) => {
+        const updated = await tx.order.updateMany({
+          where: {
+            id: order.id,
+            status: OrderStatus.reserved,
+            paymentStatus: PaymentStatus.pending,
+            stockHeldAt: { not: null },
+          },
+          data: {
+            status: OrderStatus.cancelled,
+            paymentStatus: PaymentStatus.failed,
+            stockHeldAt: null,
+            reservedUntil: null,
+          },
+        });
+
+        if (updated.count === 0) {
+          return false;
+        }
+
+        await tx.product.update({
+          where: { id: order.productId, storeId: order.storeId },
+          data: { stock: { increment: order.quantity } },
+        });
+
+        if (order.discountCode) {
+          await tx.discountCode.updateMany({
+            where: {
+              storeId: order.storeId,
+              code: order.discountCode,
+              useCount: { gt: 0 },
+            },
+            data: { useCount: { decrement: 1 } },
+          });
+        }
+
+        return true;
+      });
+
+      if (released) {
+        expired += 1;
+      }
+    }
+
+    return expired;
   }
 
   async getCustomerOrderCount(

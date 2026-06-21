@@ -164,7 +164,7 @@ export default function PublicProduct() {
         deliveryAddress: details.deliveryAddress,
       });
       setCheckoutOpen(false);
-      toast.success(`Reserved until ${order.reservedUntil ? new Date(order.reservedUntil).toLocaleString("en-NG") : "24h"}. Ref: ${order.paymentRef}`);
+      toast.success(`Reserved until ${order.reservedUntil ? new Date(order.reservedUntil).toLocaleString("en-NG") : "5 hours"}. Ref: ${order.paymentRef}`);
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Could not reserve order.",

@@ -121,6 +121,13 @@ export class PaymentsService {
       return;
     }
 
+    if (order.status === OrderStatus.cancelled) {
+      this.logger.warn(
+        `Ignoring payment for cancelled order ${order.paymentRef}`,
+      );
+      return;
+    }
+
     const verifyReference =
       order.gatewayReference ?? buildFlutterwaveReference(order.paymentRef);
 
@@ -222,6 +229,7 @@ export class PaymentsService {
       const updated = await tx.order.updateMany({
         where: {
           id: order.id,
+          status: OrderStatus.reserved,
           paymentStatus: {
             in: [PaymentStatus.pending, PaymentStatus.failed],
           },

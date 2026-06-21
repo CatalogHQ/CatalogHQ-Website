@@ -337,7 +337,7 @@ export default function FlutterwaveCheckout({
                   })();
                 }}
               >
-                Reserve for 24 hours (pay later)
+                Reserve for 5 hours (pay later)
               </Button>
             )}
 

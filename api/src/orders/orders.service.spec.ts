@@ -277,4 +277,69 @@ describe('OrdersService', () => {
       expect.objectContaining({ orderId: 'order-1' }),
     );
   });
+
+  describe('expireStaleReservedOrders', () => {
+    it('releases stock and cancels orders held longer than 5 hours', async () => {
+      const staleOrder = {
+        id: 'order-stale',
+        storeId: 'store-1',
+        productId: 'product-1',
+        quantity: 2,
+        discountCode: null,
+      };
+
+      prisma.order.findMany.mockResolvedValue([staleOrder]);
+
+      const tx = {
+        order: {
+          updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+        },
+        product: {
+          update: jest.fn().mockResolvedValue({}),
+        },
+        discountCode: {
+          updateMany: jest.fn(),
+        },
+      };
+
+      prisma.$transaction.mockImplementation(async (fn: (t: typeof tx) => Promise<boolean>) =>
+        fn(tx),
+      );
+
+      const expired = await service.expireStaleReservedOrders();
+
+      expect(expired).toBe(1);
+      expect(prisma.order.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            status: OrderStatus.reserved,
+            paymentStatus: PaymentStatus.pending,
+          }),
+        }),
+      );
+      expect(tx.order.updateMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({ id: 'order-stale' }),
+          data: expect.objectContaining({
+            status: OrderStatus.cancelled,
+            paymentStatus: PaymentStatus.failed,
+            stockHeldAt: null,
+          }),
+        }),
+      );
+      expect(tx.product.update).toHaveBeenCalledWith({
+        where: { id: 'product-1', storeId: 'store-1' },
+        data: { stock: { increment: 2 } },
+      });
+    });
+
+    it('returns 0 when no stale reserved orders exist', async () => {
+      prisma.order.findMany.mockResolvedValue([]);
+
+      const expired = await service.expireStaleReservedOrders();
+
+      expect(expired).toBe(0);
+      expect(prisma.$transaction).not.toHaveBeenCalled();
+    });
+  });
 });

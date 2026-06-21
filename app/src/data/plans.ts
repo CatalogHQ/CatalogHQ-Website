@@ -269,7 +269,7 @@ export const FEATURES: Feature[] = [
   },
   {
     id: "reserved-orders",
-    title: "24-hour reserved orders",
+    title: "5-hour reserved orders",
     description: "Hold stock while friends and family pay later.",
     category: "sales",
     tier: "starter",

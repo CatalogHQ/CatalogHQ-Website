@@ -6,11 +6,12 @@ import { AbandonedCartService } from './abandoned-cart.service';
 import { OrderAccessAttemptService } from './order-access-attempt.service';
 import { OrdersController } from './orders.controller';
 import { OrdersService } from './orders.service';
+import { ReservedOrderExpiryService } from './reserved-order-expiry.service';
 
 @Module({
   imports: [PaymentsModule, PlansModule, StoresModule],
   controllers: [OrdersController],
-  providers: [OrdersService, AbandonedCartService, OrderAccessAttemptService],
+  providers: [OrdersService, AbandonedCartService, OrderAccessAttemptService, ReservedOrderExpiryService],
   exports: [OrdersService, OrderAccessAttemptService],
 })
 export class OrdersModule {}

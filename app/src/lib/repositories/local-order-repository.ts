@@ -102,7 +102,7 @@ export class LocalOrderRepository implements OrderRepository {
     const order = buildOrder(input, {
       status: "reserved",
       paymentStatus: "pending",
-      reservedUntil: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+      reservedUntil: new Date(Date.now() + 5 * 60 * 60 * 1000).toISOString(),
     });
     const orders = this.getOrders();
     orders.push(order);
