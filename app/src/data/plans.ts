@@ -23,7 +23,6 @@ export type Feature = {
   title: string;
   description: string;
   category: FeatureCategory;
-  tier: PlanTier;
   pricingLabel?: string;
   showOnLanding?: boolean;
   comingSoon?: boolean;
@@ -45,14 +44,35 @@ export const PRODUCT_LIMITS: Record<PlanTier, number> = {
   business: 100,
 };
 
-export const UNLOCK_ALL_PRO_FEATURES = false;
-
 export function getProductLimit(tier: PlanTier): number {
-  if (UNLOCK_ALL_PRO_FEATURES) {
-    return PRODUCT_LIMITS.pro;
-  }
   return PRODUCT_LIMITS[tier];
 }
+
+export const SHARED_PRICING_FEATURES = [
+  "Shareable storefront link",
+  "Flutterwave checkout",
+  "NIN-verified vendor badge",
+  "Sell 24/7 while offline",
+  "Order notifications",
+  "Basic order management",
+  "Buyer order status page",
+  "WhatsApp share on products",
+  "Product variants (size, color)",
+  "Inventory tracking with sold-out hide",
+  "Low-stock alerts",
+  "Verified buyer reviews",
+  "Sales analytics dashboard",
+  "Delivery zones and fees",
+  "Discount codes and flash sales",
+  "Order search and bulk actions",
+  "Abandoned cart SMS recovery",
+  "Staff roles and activity log",
+  "Multi-location inventory",
+  "Advanced analytics (repeat rate, AOV)",
+  `Customer referral links${COMING_SOON}`,
+  `Loyalty points${COMING_SOON}`,
+  "WhatsApp order confirmations",
+] as const;
 
 export const PLANS: Plan[] = [
   {
@@ -70,7 +90,7 @@ export const PLANS: Plan[] = [
     price: "₦5,000",
     priceSubtext: "less than ₦167 a day",
     tagline:
-      "For vendors who are already selling and want to grow without chaos. Inventory that manages itself, analytics that tell you what's working, and tools that turn browsers into buyers.",
+      "For vendors who are already selling and want to grow without chaos.",
     cta: "Get Pro",
     popular: true,
   },
@@ -80,20 +100,18 @@ export const PLANS: Plan[] = [
     price: "₦8,000",
     priceSubtext: "less than ₦267 a day",
     tagline:
-      "Everything in Pro, plus room for a bigger catalog. Built for vendors with a wide product range who need more space without switching platforms.",
+      "For vendors with a growing catalog who need more product slots without switching platforms.",
     cta: "Get Growth",
   },
 ];
 
 export const FEATURES: Feature[] = [
-  // Core — Starter
   {
     id: "storefront-link",
     title: "Your store, one link",
     description:
       "Drop it in your bio, WhatsApp Status, or a broadcast. Buyers browse your full catalog. No DM needed.",
     category: "core",
-    tier: "starter",
     showOnLanding: true,
   },
   {
@@ -102,7 +120,6 @@ export const FEATURES: Feature[] = [
     description:
       'Card, bank transfer, USSD. Flutterwave confirms every payment before your order is accepted. No fake screenshots. No "I\'ve sent it."',
     category: "core",
-    tier: "starter",
     showOnLanding: true,
   },
   {
@@ -111,7 +128,6 @@ export const FEATURES: Feature[] = [
     description:
       "Your store takes orders, confirms payment, and sends buyers their receipt, around the clock.",
     category: "core",
-    tier: "starter",
     showOnLanding: true,
   },
   {
@@ -120,7 +136,6 @@ export const FEATURES: Feature[] = [
     description:
       "Every vendor on CatalogHQ completes NIN verification. Customers see a verified badge and know exactly who they are buying from.",
     category: "core",
-    tier: "starter",
     showOnLanding: true,
   },
   {
@@ -128,14 +143,12 @@ export const FEATURES: Feature[] = [
     title: "Order notifications",
     description: "Get alerted instantly when a new order is placed and paid.",
     category: "core",
-    tier: "starter",
   },
   {
     id: "order-management",
     title: "Basic order management",
     description: "View orders, update status, and fulfil from one dashboard.",
     category: "core",
-    tier: "starter",
   },
   {
     id: "order-status-page",
@@ -143,7 +156,6 @@ export const FEATURES: Feature[] = [
     description:
       'Customers follow their order status on their own. "Where is my package?" becomes a message you never receive again.',
     category: "core",
-    tier: "starter",
     showOnLanding: true,
   },
   {
@@ -151,15 +163,6 @@ export const FEATURES: Feature[] = [
     title: "WhatsApp share button",
     description: "One tap to share any product to Status, groups, or chats.",
     category: "core",
-    tier: "starter",
-  },
-  {
-    id: "product-limit",
-    title: "Up to 15 products",
-    description: "Enough room to launch and grow your first catalog.",
-    category: "catalog",
-    tier: "starter",
-    pricingLabel: "Up to 15 products",
   },
   {
     id: "product-variants",
@@ -167,7 +170,6 @@ export const FEATURES: Feature[] = [
     description:
       'List every size, color, and option once. Buyers pick what they want. "Which size do you have?" stops immediately.',
     category: "catalog",
-    tier: "starter",
     showOnLanding: true,
   },
   {
@@ -175,7 +177,6 @@ export const FEATURES: Feature[] = [
     title: "Basic inventory tracking",
     description: "Track stock levels on every product and avoid overselling.",
     category: "catalog",
-    tier: "starter",
   },
   {
     id: "delivery-types",
@@ -183,25 +184,14 @@ export const FEATURES: Feature[] = [
     description:
       "Offer pickup from vendor or delivery on each product.",
     category: "operations",
-    tier: "starter",
   },
 
-  // Pro
-  {
-    id: "product-limit-pro",
-    title: "Up to 30 products",
-    description: "Room to grow your catalog without hitting limits.",
-    category: "catalog",
-    tier: "pro",
-    pricingLabel: "Up to 30 products",
-  },
   {
     id: "advanced-inventory-tracking",
     title: "Inventory that manages itself",
     description:
       "Stock counts down automatically on every order. When something sells out, it vanishes from your store. No overselling, no awkward refunds.",
     category: "catalog",
-    tier: "pro",
     showOnLanding: true,
   },
   {
@@ -209,7 +199,6 @@ export const FEATURES: Feature[] = [
     title: "Low-stock alerts",
     description: "Know when to restock before you miss another sale.",
     category: "catalog",
-    tier: "pro",
   },
   {
     id: "verified-reviews",
@@ -217,7 +206,6 @@ export const FEATURES: Feature[] = [
     description:
       "After delivery, CatalogHQ collects a review from your buyer and displays it on the product. Social proof without asking for it.",
     category: "sales",
-    tier: "pro",
     showOnLanding: true,
   },
   {
@@ -226,7 +214,6 @@ export const FEATURES: Feature[] = [
     description:
       "Total revenue, best-selling products, and full order history in one dashboard. Stop guessing what's working.",
     category: "operations",
-    tier: "pro",
     showOnLanding: true,
   },
   {
@@ -235,7 +222,6 @@ export const FEATURES: Feature[] = [
     description:
       "Every customer gets a referral link. They share it. You get new buyers for free.",
     category: "sales",
-    tier: "pro",
     comingSoon: true,
   },
   {
@@ -244,7 +230,6 @@ export const FEATURES: Feature[] = [
     description:
       "Run promos at scale. No price negotiation in DMs. Set a code, share it, watch it work.",
     category: "sales",
-    tier: "pro",
     showOnLanding: true,
   },
   {
@@ -253,7 +238,6 @@ export const FEATURES: Feature[] = [
     description:
       'Set a time limit on a discount. Buyers who were "just browsing" suddenly need to decide. Urgency converts.',
     category: "sales",
-    tier: "pro",
     showOnLanding: true,
   },
   {
@@ -261,85 +245,66 @@ export const FEATURES: Feature[] = [
     title: "Delivery zones and fees",
     description: "Set Lagos, Abuja, or nationwide delivery fees upfront.",
     category: "operations",
-    tier: "pro",
   },
   {
     id: "payment-links",
     title: "Flutterwave payment links",
     description: "Send a payment link in chat instead of account numbers.",
     category: "sales",
-    tier: "starter",
   },
   {
     id: "quick-reply-templates",
     title: "Quick-reply templates",
     description: "Copy-paste payment details, delivery time, and store link blocks.",
     category: "operations",
-    tier: "starter",
   },
   {
     id: "reserved-orders",
     title: "5-hour reserved orders",
     description: "Hold stock while friends and family pay later.",
     category: "sales",
-    tier: "starter",
   },
   {
     id: "verifiable-receipts",
     title: "Verifiable digital receipts",
     description: "Buyers can verify payment with an order reference link.",
     category: "core",
-    tier: "starter",
   },
   {
     id: "order-search",
     title: "Order search and bulk actions",
     description: "Find orders by phone or ref and update many at once.",
     category: "operations",
-    tier: "starter",
   },
   {
     id: "abandoned-cart",
     title: "Abandoned cart recovery",
     description: "Win back buyers who left without paying.",
     category: "sales",
-    tier: "pro",
-  },
-  {
-    id: "product-limit-growth",
-    title: "Up to 50 products",
-    description: "Scale your catalog without jumping to enterprise pricing.",
-    category: "catalog",
-    tier: "growth",
-    pricingLabel: "Up to 50 products",
   },
   {
     id: "staff-roles",
     title: "Staff roles and activity log",
     description: "Let helpers fulfil orders without full store access.",
     category: "operations",
-    tier: "business",
   },
   {
     id: "multi-location-stock",
     title: "Multi-location inventory",
     description: "Track stock across shop and warehouse locations.",
     category: "catalog",
-    tier: "business",
   },
   {
     id: "advanced-analytics",
     title: "Advanced analytics",
     description: "Repeat rate, AOV, and top customers by city.",
     category: "operations",
-    tier: "business",
   },
   {
     id: "loyalty-points",
     title: "Loyalty points",
     description: "Reward repeat buyers and keep them coming back.",
     category: "sales",
-    tier: "pro",
     comingSoon: true,
   },
   {
@@ -347,15 +312,8 @@ export const FEATURES: Feature[] = [
     title: "WhatsApp order confirmations",
     description: "Buyers get instant order updates on WhatsApp automatically.",
     category: "reach",
-    tier: "pro",
   },
 ];
-
-const TIER_ORDER: PlanTier[] = ["starter", "pro", "growth", "business"];
-
-export function tierIncludes(tier: PlanTier, featureTier: PlanTier): boolean {
-  return TIER_ORDER.indexOf(tier) >= TIER_ORDER.indexOf(featureTier);
-}
 
 export function getFeatureById(id: string): Feature | undefined {
   return FEATURES.find((f) => f.id === id);
@@ -363,65 +321,21 @@ export function getFeatureById(id: string): Feature | undefined {
 
 export const PLAN_FEATURE_IDS = FEATURES.map((feature) => feature.id);
 
-export function hasFeature(tier: PlanTier, featureId: string): boolean {
+export function hasFeature(_tier: PlanTier, featureId: string): boolean {
   // UX-only feature gating; backend must enforce plan limits on API routes.
   const feature = getFeatureById(featureId);
-  if (!feature) return false;
-  if (UNLOCK_ALL_PRO_FEATURES && !feature.comingSoon) {
-    return true;
+  if (!feature || feature.comingSoon) {
+    return false;
   }
-  return tierIncludes(tier, feature.tier);
+  return true;
 }
 
-export function getFeaturesForTier(tier: PlanTier): Feature[] {
-  return FEATURES.filter((f) => tierIncludes(tier, f.tier));
+export function getFeaturesForTier(_tier: PlanTier): Feature[] {
+  return FEATURES.filter((feature) => !feature.comingSoon);
 }
 
 export function getPricingFeaturesForTier(tier: PlanTier): string[] {
-  const tierSpecific: Record<PlanTier, string[]> = {
-    starter: [
-      "Shareable storefront link",
-      "Flutterwave checkout",
-      "Sell 24/7 while offline",
-      "Order notifications",
-      "Basic order management",
-      "Buyer order status page",
-      "WhatsApp share on products",
-      "Up to 15 products",
-      "Product variants (size, color)",
-      "Basic inventory tracking",
-      "Delivery types",
-    ],
-    pro: [
-      "Everything in Starter, plus:",
-      "Up to 30 products",
-      "Advanced inventory tracking + sold-out hide",
-      "Low-stock alerts",
-      "Verified buyer reviews",
-      "Sales analytics dashboard",
-      "Delivery zones and fees",
-      "Discount codes and flash sales",
-      "Order search and bulk actions",
-      "Abandoned cart SMS recovery",
-      `Customer referral links${COMING_SOON}`,
-      `Loyalty points${COMING_SOON}`,
-      "WhatsApp order confirmations",
-    ],
-    growth: [
-      "Everything in Pro, plus:",
-      "Up to 50 products",
-    ],
-    business: [
-      "Everything in Pro, plus:",
-      "Up to 100 products",
-      "Staff roles and activity log",
-      "Multi-location inventory",
-      "Advanced analytics (repeat rate, AOV)",
-      "Priority support",
-    ],
-  };
-
-  return tierSpecific[tier];
+  return [`Up to ${PRODUCT_LIMITS[tier]} products`, ...SHARED_PRICING_FEATURES];
 }
 
 export function getLandingFeatures(): Feature[] {

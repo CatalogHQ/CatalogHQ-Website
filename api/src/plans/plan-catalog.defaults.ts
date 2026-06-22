@@ -16,47 +16,48 @@ export type PlanCatalogDefault = {
 
 const COMING_SOON = ' (Coming soon)';
 
+const SHARED_PRICING_FEATURE_BULLETS = [
+  'Shareable storefront link',
+  'Flutterwave checkout',
+  'NIN-verified vendor badge',
+  'Sell 24/7 while offline',
+  'Order notifications',
+  'Basic order management',
+  'Buyer order status page',
+  'WhatsApp share on products',
+  'Product variants (size, color)',
+  'Inventory tracking with sold-out hide',
+  'Low-stock alerts',
+  'Verified buyer reviews',
+  'Sales analytics dashboard',
+  'Delivery zones and fees',
+  'Discount codes and flash sales',
+  'Order search and bulk actions',
+  'Abandoned cart SMS recovery',
+  'Staff roles and activity log',
+  'Multi-location inventory',
+  'Advanced analytics (repeat rate, AOV)',
+  `Customer referral links${COMING_SOON}`,
+  `Loyalty points${COMING_SOON}`,
+  'WhatsApp order confirmations',
+] as const;
+
+const PRODUCT_LIMITS: Record<PlanTier, number> = {
+  [PlanTier.starter]: 15,
+  [PlanTier.pro]: 30,
+  [PlanTier.growth]: 50,
+  [PlanTier.business]: 100,
+};
+
+function buildFeatureBullets(tier: PlanTier): string[] {
+  return [`Up to ${PRODUCT_LIMITS[tier]} products`, ...SHARED_PRICING_FEATURE_BULLETS];
+}
+
 export const DEFAULT_PRICING_FEATURE_BULLETS: Record<PlanTier, string[]> = {
-  starter: [
-    'Shareable storefront link',
-    'Flutterwave checkout',
-    'Sell 24/7 while offline',
-    'Order notifications',
-    'Basic order management',
-    'Buyer order status page',
-    'WhatsApp share on products',
-    'Up to 15 products',
-    'Product variants (size, color)',
-    'Basic inventory tracking',
-    'Delivery types',
-  ],
-  pro: [
-    'Everything in Starter, plus:',
-    'Up to 30 products',
-    'Advanced inventory tracking + sold-out hide',
-    'Low-stock alerts',
-    'Verified buyer reviews',
-    'Sales analytics dashboard',
-    'Delivery zones and fees',
-    'Discount codes and flash sales',
-    'Order search and bulk actions',
-    'Abandoned cart SMS recovery',
-    `Customer referral links${COMING_SOON}`,
-    `Loyalty points${COMING_SOON}`,
-    'WhatsApp order confirmations',
-  ],
-  growth: [
-    'Everything in Pro, plus:',
-    'Up to 50 products',
-  ],
-  business: [
-    'Everything in Pro, plus:',
-    'Up to 100 products',
-    'Staff roles and activity log',
-    'Multi-location inventory',
-    'Advanced analytics (repeat rate, AOV)',
-    'Priority support',
-  ],
+  starter: buildFeatureBullets(PlanTier.starter),
+  pro: buildFeatureBullets(PlanTier.pro),
+  growth: buildFeatureBullets(PlanTier.growth),
+  business: buildFeatureBullets(PlanTier.business),
 };
 
 export const DEFAULT_PLAN_CATALOG: PlanCatalogDefault[] = [
@@ -80,7 +81,7 @@ export const DEFAULT_PLAN_CATALOG: PlanCatalogDefault[] = [
     monthlyPriceKobo: 500_000,
     priceSubtext: 'less than ₦167 a day',
     tagline:
-      "For vendors who are already selling and want to grow without chaos. Inventory that manages itself, analytics that tell you what's working, and tools that turn browsers into buyers.",
+      'For vendors who are already selling and want to grow without chaos.',
     cta: 'Get Pro',
     popular: true,
     productLimit: 30,
@@ -94,7 +95,7 @@ export const DEFAULT_PLAN_CATALOG: PlanCatalogDefault[] = [
     monthlyPriceKobo: 800_000,
     priceSubtext: 'less than ₦267 a day',
     tagline:
-      'Everything in Pro, plus room for a bigger catalog. Built for vendors with a wide product range who need more space without switching platforms.',
+      'For vendors with a growing catalog who need more product slots without switching platforms.',
     cta: 'Get Growth',
     popular: false,
     productLimit: 50,

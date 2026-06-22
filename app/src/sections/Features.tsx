@@ -37,11 +37,6 @@ const ICON_MAP: Record<string, LucideIcon> = {
   "abandoned-cart": RotateCcw,
 };
 
-const TIER_BADGE: Record<string, string> = {
-  starter: "All plans",
-  pro: "Pro",
-};
-
 export default function Features() {
   const features = getLandingFeatures();
 
@@ -64,7 +59,6 @@ export default function Features() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 mt-8 sm:mt-12">
           {features.map((feature, index) => {
             const Icon = ICON_MAP[feature.id] ?? Package;
-            const badge = TIER_BADGE[feature.tier] ?? "Pro+";
 
             return (
               <motion.div
@@ -85,14 +79,6 @@ export default function Features() {
                             className="text-[10px] px-2 py-0 border-amber-300 text-amber-700 bg-amber-50"
                           >
                             Coming soon
-                          </Badge>
-                        )}
-                        {feature.tier !== "starter" && (
-                          <Badge
-                            variant="outline"
-                            className="text-[10px] px-2 py-0 border-whatsapp-green/30 text-whatsapp-dark"
-                          >
-                            {badge}
                           </Badge>
                         )}
                       </div>

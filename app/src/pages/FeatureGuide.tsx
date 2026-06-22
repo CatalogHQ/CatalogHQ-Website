@@ -6,7 +6,6 @@ import { usePlanCatalog } from "@/contexts/PlanCatalogContext";
 import {
   FEATURES,
   CATEGORY_LABELS,
-  PLAN_TIER_LABELS,
   type FeatureCategory,
 } from "@/data/plans";
 
@@ -129,11 +128,13 @@ export default function FeatureGuide() {
                       <span className="font-medium text-gray-800">
                         {f.title}
                       </span>{" "}
-                      {f.description}{" "}
-                      <span className="text-whatsapp-dark text-xs font-medium uppercase">
-                        ({PLAN_TIER_LABELS[f.tier]}
-                        {f.comingSoon ? ", coming soon" : ""})
-                      </span>
+                      {f.description}
+                      {f.comingSoon ? (
+                        <span className="text-whatsapp-dark text-xs font-medium uppercase">
+                          {" "}
+                          (Coming soon)
+                        </span>
+                      ) : null}
                     </li>
                   ))}
                 </ul>

@@ -45,7 +45,7 @@ const faqs = [
   {
     question: "What is the difference between Starter, Pro, and Growth?",
     answer:
-      "Starter (₦3,000/month) includes your storefront, checkout, order management, buyer tracking, variants, and basic inventory for up to 15 products. Pro (₦5,000/month) adds up to 30 products, advanced inventory with auto-hide sold-out, low-stock alerts, verified reviews, sales analytics, and WhatsApp order confirmations. Growth (₦8,000/month) includes everything in Pro with up to 50 products.",
+      "Every paid plan includes the same features: storefront, Flutterwave checkout, inventory tools, analytics, discount codes, flash sales, and more. The only difference is how many products you can list. Starter allows up to 15 products, Pro up to 30, and Growth up to 50.",
   },
   {
     question: "What if a social platform restricts my account?",
