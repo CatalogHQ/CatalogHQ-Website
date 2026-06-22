@@ -100,7 +100,7 @@ export const FEATURES: Feature[] = [
     id: "flutterwave-checkout",
     title: "Flutterwave checkout, built in",
     description:
-      'Card, bank transfer, USSD. Customers pay on your store. No screenshots. No "I\'ve sent it." No disputes.',
+      'Card, bank transfer, USSD. Flutterwave confirms every payment before your order is accepted. No fake screenshots. No "I\'ve sent it."',
     category: "core",
     tier: "starter",
     showOnLanding: true,
@@ -110,6 +110,15 @@ export const FEATURES: Feature[] = [
     title: "Sell at 3am without being awake",
     description:
       "Your store takes orders, confirms payment, and sends buyers their receipt, around the clock.",
+    category: "core",
+    tier: "starter",
+    showOnLanding: true,
+  },
+  {
+    id: "nin-verified-vendors",
+    title: "NIN-verified vendors",
+    description:
+      "Every vendor on CatalogHQ completes NIN verification. Customers see a verified badge and know exactly who they are buying from.",
     category: "core",
     tier: "starter",
     showOnLanding: true,
@@ -453,7 +462,13 @@ export const COMPARISON_ROWS: ComparisonRow[] = [
     cataloghq: "yes",
   },
   {
-    feature: "No manual bank transfer",
+    feature: "No fake transfer screenshots",
+    whatsappTexting: "no",
+    whatsappCatalog: "no",
+    cataloghq: "yes",
+  },
+  {
+    feature: "NIN-verified vendors",
     whatsappTexting: "no",
     whatsappCatalog: "no",
     cataloghq: "yes",

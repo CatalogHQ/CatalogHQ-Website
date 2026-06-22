@@ -20,7 +20,12 @@ const faqs = [
   {
     question: "How does payment work for my customers?",
     answer:
-      "Flutterwave handles all payments securely. Customers pay by bank transfer to a dedicated account. Payment is confirmed automatically before the order is accepted. You never need to chase a transfer again.",
+      "Customers pay through Flutterwave checkout on your store. Card, bank transfer, or USSD. Flutterwave confirms the payment before the order is accepted, so there is no chasing transfers and no fake \"I've sent it\" screenshots like you get selling on WhatsApp.",
+  },
+  {
+    question: "Can customers trust vendors on CatalogHQ?",
+    answer:
+      "Yes. Every vendor completes NIN verification before selling on CatalogHQ. Customers see a verified badge on the storefront, so they know who they are paying and that the seller is a real, identified business.",
   },
   {
     question: "What if I am not good with technology?",

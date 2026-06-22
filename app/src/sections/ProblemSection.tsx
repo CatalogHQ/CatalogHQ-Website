@@ -13,7 +13,7 @@ const VENDOR_USE_CASES: VendorUseCase[] = [
     id: "whatsapp",
     icon: MessageCircle,
     title: "If you sell on WhatsApp",
-    body: 'You wake up to 40 unread messages. Half are "how much?" The other half are buyers who already moved on. You\'re doing customer service, chasing transfers, and managing delivery, all on one phone, all by yourself.',
+    body: 'You wake up to 40 unread messages. Half are "how much?" The other half are buyers who already moved on. You\'re chasing transfers, disputing fake screenshots, and managing delivery, all on one phone, all by yourself.',
   },
   {
     id: "social",
@@ -79,7 +79,7 @@ export default function ProblemSection() {
           <p className="text-white text-base sm:text-lg mt-3 leading-relaxed">
             The buyers are there. The money is there. But the moment someone is
             ready to pay, the process breaks. They&apos;re waiting for a reply,
-            hunting for your account number, or wondering if you&apos;re legit.
+            sending fake transfer screenshots, or wondering if you&apos;re legit.
             You lose the sale not because your product is wrong, but because the
             experience around it is exhausting.
           </p>

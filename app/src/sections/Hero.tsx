@@ -40,9 +40,11 @@ export default function Hero() {
               <span className="text-whatsapp-green">Even when you&apos;re not.</span>
             </h1>
 
-            <p className="mt-3 max-w-xs text-base leading-snug text-gray-500 sm:mt-4 sm:max-w-md sm:text-lg">
-              Add your products. Share your link. Let Flutterwave handle payments.
-              No coding. No website. No more &quot;send your account number.&quot;
+            <p className="mt-3 max-w-xs text-base leading-snug text-gray-500 sm:mt-4 sm:max-w-lg sm:text-lg">
+              Add your products. Share your link. Flutterwave confirms every
+              payment, so customers cannot fake a transfer like they do on
+              WhatsApp. Every vendor is NIN-verified, so buyers know who they
+              are paying.
             </p>
 
             <div className="mt-5 flex w-full max-w-sm flex-col gap-2 sm:mt-6 lg:max-w-md">

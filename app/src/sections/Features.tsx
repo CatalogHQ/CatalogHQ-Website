@@ -14,6 +14,7 @@ import {
   Tag,
   ClipboardList,
   RotateCcw,
+  ShieldCheck,
   type LucideIcon,
 } from "lucide-react";
 import { getLandingFeatures } from "@/data/plans";
@@ -32,6 +33,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
   "discount-codes": Tag,
   "order-status-page": ClipboardList,
   "storefront-link": Link2,
+  "nin-verified-vendors": ShieldCheck,
   "abandoned-cart": RotateCcw,
 };
 

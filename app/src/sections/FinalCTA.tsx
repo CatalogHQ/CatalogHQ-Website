@@ -19,7 +19,7 @@ export default function FinalCTA() {
             Your products deserve a real storefront.
           </h2>
           <p className="text-base sm:text-lg text-whatsapp-light opacity-90 text-pretty">
-            Stop losing sales to slow replies and manual transfers.
+            Stop losing sales to slow replies and fake transfer screenshots.
           </p>
           <p className="text-sm sm:text-base text-whatsapp-light opacity-70">
             Plans from ₦3,000/month. Up and running in 60 seconds.

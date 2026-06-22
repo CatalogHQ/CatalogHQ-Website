@@ -22,7 +22,7 @@ const steps = [
     icon: BadgeCheck,
     title: "Customers order and pay, without you",
     description:
-      "They browse, pick, and pay via Flutterwave checkout. You get a notification. You pack and ship. That's it.",
+      "They browse, pick, and pay via Flutterwave checkout. Payment is confirmed before you get notified. You pack and ship. That's it.",
   },
 ];
 
