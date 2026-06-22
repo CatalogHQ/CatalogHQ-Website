@@ -512,9 +512,9 @@ export const COMPARISON_ROWS: ComparisonRow[] = [
 ];
 
 export const COMPARISON_SCORES = {
-  whatsappTexting: "1/10",
-  whatsappCatalog: "4/10",
-  cataloghq: "9/10",
+  whatsappTexting: "1/11",
+  whatsappCatalog: "4/11",
+  cataloghq: "11/11",
 } as const;
 
 export const CATEGORY_LABELS: Record<FeatureCategory, string> = {
