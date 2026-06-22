@@ -419,48 +419,88 @@ export function getLandingFeatures(): Feature[] {
   return FEATURES.filter((f) => f.showOnLanding);
 }
 
-export const COMPARISON_ROWS = [
+export type ComparisonCell =
+  | "yes"
+  | "no"
+  | "partial"
+  | "basic"
+  | "moderate";
+
+export type ComparisonRow = {
+  feature: string;
+  whatsappTexting: ComparisonCell;
+  whatsappCatalog: ComparisonCell;
+  cataloghq: ComparisonCell;
+};
+
+export const COMPARISON_ROWS: ComparisonRow[] = [
   {
-    feature: "Automatic payment confirmation (no transfer screenshots)",
-    whatsapp: false,
-    cataloghq: true,
+    feature: "Shareable store link",
+    whatsappTexting: "no",
+    whatsappCatalog: "partial",
+    cataloghq: "yes",
   },
   {
-    feature: "Takes orders while you are offline",
-    whatsapp: false,
-    cataloghq: true,
+    feature: "Works on IG, FB, X too",
+    whatsappTexting: "no",
+    whatsappCatalog: "no",
+    cataloghq: "yes",
   },
   {
-    feature: "Inventory tracking with sold-out auto-hide",
-    whatsapp: false,
-    cataloghq: true,
+    feature: "Integrated payment checkout",
+    whatsappTexting: "no",
+    whatsappCatalog: "no",
+    cataloghq: "yes",
   },
   {
-    feature: "Product variants and delivery options",
-    whatsapp: false,
-    cataloghq: true,
+    feature: "No manual bank transfer",
+    whatsappTexting: "no",
+    whatsappCatalog: "no",
+    cataloghq: "yes",
   },
   {
-    feature: "Order tracking for buyers",
-    whatsapp: false,
-    cataloghq: true,
+    feature: "Professional storefront",
+    whatsappTexting: "no",
+    whatsappCatalog: "basic",
+    cataloghq: "yes",
   },
   {
-    feature: "Protected if Meta restricts your account",
-    whatsapp: false,
-    cataloghq: true,
+    feature: "Browse without signing up",
+    whatsappTexting: "no",
+    whatsappCatalog: "partial",
+    cataloghq: "yes",
   },
   {
-    feature: "Sales analytics dashboard",
-    whatsapp: false,
-    cataloghq: true,
+    feature: "Organized product catalog",
+    whatsappTexting: "no",
+    whatsappCatalog: "yes",
+    cataloghq: "yes",
   },
   {
-    feature: "Flash sales, referrals, and loyalty (Pro)",
-    whatsapp: false,
-    cataloghq: true,
+    feature: "Order tracking / management",
+    whatsappTexting: "no",
+    whatsappCatalog: "no",
+    cataloghq: "yes",
+  },
+  {
+    feature: "No technical setup needed",
+    whatsappTexting: "yes",
+    whatsappCatalog: "moderate",
+    cataloghq: "yes",
+  },
+  {
+    feature: "Built for small vendors",
+    whatsappTexting: "yes",
+    whatsappCatalog: "yes",
+    cataloghq: "yes",
   },
 ];
+
+export const COMPARISON_SCORES = {
+  whatsappTexting: "1/10",
+  whatsappCatalog: "4/10",
+  cataloghq: "9/10",
+} as const;
 
 export const CATEGORY_LABELS: Record<FeatureCategory, string> = {
   core: "Core automation",
