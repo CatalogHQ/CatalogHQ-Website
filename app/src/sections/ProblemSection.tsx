@@ -13,19 +13,19 @@ const VENDOR_USE_CASES: VendorUseCase[] = [
     id: "whatsapp",
     icon: MessageCircle,
     title: "If you sell on WhatsApp",
-    body: "You wake up to dozens of unread messages. Buyers wait, lose interest, and buy elsewhere. You are running customer service, payments, and delivery on one phone.",
+    body: 'You wake up to 40 unread messages. Half are "how much?" The other half are buyers who already moved on. You\'re doing customer service, chasing transfers, and managing delivery, all on one phone, all by yourself.',
   },
   {
     id: "social",
     icon: Share2,
-    title: "If you sell on Instagram, Facebook, X, or TikTok",
-    body: 'Your best posts disappear in 24 hours. "Price?" comments go cold. Link-in-bio was never built to take an order, and in-app checkout still is not available to Nigerian vendors.',
+    title: "If you sell on Instagram, Facebook, or X",
+    body: 'You post a fire photo, the comments blow up, then it dies in 24 hours. "Price?" goes unanswered. Someone DMs you at 2am, you reply at 9am, they\'ve already bought from someone else. Your link-in-bio was never built to close a sale. In-app checkout? Still not available in Nigeria.',
   },
   {
     id: "offline",
     icon: Store,
-    title: "If you have never sold online",
-    body: "People tell you to go digital, but every platform feels too complex. So you stay offline and miss customers who never knew you existed.",
+    title: "If you've never sold online",
+    body: 'Everyone tells you to "go digital" but nobody explains how without a developer, a payment gateway, a business registration, and three weeks to figure it out. So you keep selling in person and miss every customer who searched for what you sell and found someone else.',
   },
 ];
 
@@ -40,12 +40,8 @@ export default function ProblemSection() {
           transition={{ duration: 0.4 }}
           className="text-center max-w-3xl mx-auto"
         >
-          <p className="text-xs font-semibold text-whatsapp-green uppercase tracking-[0.08em]">
-            THE PROBLEM
-          </p>
-          <h2 className="section-heading text-white mt-4">
-            Millions of Nigerians are selling every day on platforms that were
-            never built for selling.
+          <h2 className="section-heading text-white">
+            Why selling online in Nigeria is still broken
           </h2>
         </motion.div>
 
@@ -81,10 +77,15 @@ export default function ProblemSection() {
             What all three have in common
           </p>
           <p className="text-white text-base sm:text-lg mt-3 leading-relaxed">
-            People want what you sell. Then the process gets in the way: repeated
-            questions, manual transfers, slow replies, buyers who cannot find you
-            when they are ready to spend. Today&apos;s buyers are cautious; a bad
-            experience means they may not come back.
+            The buyers are there. The money is there. But the moment someone is
+            ready to pay, the process breaks. They&apos;re waiting for a reply,
+            hunting for your account number, or wondering if you&apos;re legit.
+            You lose the sale not because your product is wrong, but because the
+            experience around it is exhausting.
+          </p>
+          <p className="text-white text-base sm:text-lg mt-4 leading-relaxed">
+            Nigerian buyers in 2026 have options. A bad checkout doesn&apos;t
+            just lose one sale. It loses that customer.
           </p>
         </motion.div>
 
@@ -93,15 +94,11 @@ export default function ProblemSection() {
           whileInView={{ opacity: 1 }}
           viewport={{ once: true, amount: 0.1 }}
           transition={{ duration: 0.4, delay: 0.45 }}
-          className="text-center mt-8 sm:mt-10 max-w-2xl mx-auto space-y-3"
+          className="text-center mt-8 sm:mt-10 max-w-2xl mx-auto"
         >
           <p className="text-white font-semibold text-lg sm:text-xl leading-snug">
-            Your store should work for you. Right now it is working against you.
-          </p>
-          <p className="text-gray-400 text-sm sm:text-base leading-relaxed">
-            CatalogHQ gives you one link with your catalog, prices, stock, and
-            Flutterwave checkout, whether you sell on WhatsApp, social media, or you
-            are going online for the first time.
+            Your store should close sales automatically. Right now it&apos;s
+            costing you them.
           </p>
         </motion.div>
       </div>

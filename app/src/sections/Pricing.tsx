@@ -23,10 +23,10 @@ export default function Pricing() {
           className="text-center"
         >
           <h2 className="section-heading text-gray-900">
-            Simple, honest pricing.
+            Straightforward pricing. No surprises.
           </h2>
           <p className="section-subheading">
-            Plans from {lowestPrice}/month. Upgrade as your catalog grows.
+            Start from {lowestPrice}/month. Less than a cup of coffee a day.
           </p>
         </motion.div>
 

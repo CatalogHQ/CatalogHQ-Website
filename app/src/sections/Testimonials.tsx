@@ -9,19 +9,19 @@ const testimonials = [
     initials: "AO",
     name: "Amaka O.",
     city: "Lagos",
-    text: "I used to spend my whole day confirming transfers and answering the same questions. Now I wake up and orders are already paid and waiting. I cannot go back to the old way.",
+    text: 'I used to spend my entire morning just confirming transfers and answering "how much?" Now I wake up and orders are already paid. The store just runs. I\'ll never go back to the way things were.',
   },
   {
     initials: "TA",
     name: "Tunde A.",
     city: "Abuja",
-    text: "My customers started asking if I have a proper website because my store looked so professional. My sales have tripled since I set this up.",
+    text: "My regular customers started asking if I built a website. That's how professional the store looks. My sales have tripled since I set it up, and I did the whole thing in under 10 minutes.",
   },
   {
     initials: "CE",
     name: "Chidinma E.",
     city: "Port Harcourt",
-    text: "I ran a 6-hour flash sale on a Saturday and made 180,000 naira before evening. The countdown timer made people act fast.",
+    text: "I ran a 6-hour flash sale on a Saturday afternoon. By evening I had made ₦180,000. The countdown timer did something to people. They stopped waiting and just bought.",
   },
 ];
 
@@ -36,7 +36,7 @@ export default function Testimonials() {
           transition={{ duration: 0.4 }}
           className="section-heading text-gray-900 text-center"
         >
-          Nigerian vendors already growing.
+          Real vendors. Real results.
         </motion.h2>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 mt-8 sm:mt-12">
@@ -50,7 +50,6 @@ export default function Testimonials() {
             >
               <Card className="bg-whatsapp-light border-0 rounded-3xl relative h-full">
                 <CardContent className="p-5 sm:p-6">
-                  {/* Header */}
                   <div className="flex items-start gap-3">
                     <Avatar className="h-10 w-10 flex-shrink-0">
                       <AvatarFallback className="bg-whatsapp-dark text-white text-sm font-semibold">
@@ -74,12 +73,10 @@ export default function Testimonials() {
                     </div>
                   </div>
 
-                  {/* Body */}
                   <p className="text-sm text-gray-700 leading-relaxed mt-4">
                     {testimonial.text}
                   </p>
 
-                  {/* Footer with read receipt */}
                   <div className="flex justify-end items-center gap-1 mt-4">
                     <span className="text-[10px] text-gray-400">
                       10:{30 + index * 2} AM

@@ -53,12 +53,10 @@ export default function Features() {
           transition={{ duration: 0.4 }}
           className="text-center"
         >
-          <h2 className="section-heading text-gray-900">
-            Automate the messages you repeat every day.
+          <h2 className="section-heading text-gray-900 max-w-2xl mx-auto">
+            Every question you answer in DMs every day? Your store answers it
+            automatically.
           </h2>
-          <p className="section-subheading">
-            Prices, payments, stock, and orders, handled before the chat starts.
-          </p>
         </motion.div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 mt-8 sm:mt-12">

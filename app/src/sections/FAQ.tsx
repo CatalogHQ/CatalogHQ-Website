@@ -60,7 +60,7 @@ export default function FAQ() {
           transition={{ duration: 0.4 }}
           className="section-heading text-gray-900 text-center mb-8 sm:mb-10"
         >
-          Questions vendors always ask.
+          Questions vendors ask before they start.
         </motion.h2>
 
         <motion.div

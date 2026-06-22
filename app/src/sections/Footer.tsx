@@ -1,6 +1,5 @@
 import { motion } from "framer-motion";
 import { Separator } from "@/components/ui/separator";
-import { MapPin } from "lucide-react";
 import CatalogHqLogo from "@/components/brand/CatalogHqLogo";
 
 const footerLinks = [
@@ -28,12 +27,15 @@ export default function Footer() {
       className="bg-whatsapp-bg py-12 px-5 sm:px-6"
     >
       <div className="max-w-7xl mx-auto">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 text-center md:text-left">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 text-center md:text-left">
           {/* Left: Logo + Tagline */}
           <div>
             <CatalogHqLogo variant="wordmark" onDark className="h-9 w-[172px] sm:h-10 sm:w-[188px]" />
             <p className="text-sm text-gray-400 mt-2">
-              Built for Nigerian vendors online.
+              Your storefront for social selling.
+            </p>
+            <p className="text-sm text-gray-400 mt-1">
+              Built for Nigerian vendors. Made in Nigeria. 🇳🇬
             </p>
           </div>
 
@@ -48,12 +50,6 @@ export default function Footer() {
                 {link.label}
               </button>
             ))}
-          </div>
-
-          {/* Right: Location */}
-          <div className="flex items-center justify-center gap-1 md:justify-end">
-            <MapPin className="h-4 w-4 text-gray-400 mt-0.5" />
-            <span className="text-sm text-gray-400">Made in Nigeria</span>
           </div>
         </div>
 

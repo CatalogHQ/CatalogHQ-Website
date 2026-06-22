@@ -90,13 +90,13 @@ export default function Navbar() {
               onClick={goToSignIn}
               className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
             >
-              Sign in
+              Log in
             </button>
             <Button
               onClick={goToSignUp}
               className="bg-whatsapp-green hover:bg-whatsapp-green/90 text-white font-semibold text-sm px-5 py-2 rounded-lg transition-all hover:scale-[1.02]"
             >
-              Create my store
+              Start free →
             </Button>
           </div>
 
@@ -133,7 +133,7 @@ export default function Navbar() {
                     onClick={goToSignIn}
                     className="block w-full text-left text-lg font-medium text-gray-700 py-3 px-6 hover:bg-gray-50 transition-colors border-b border-gray-50"
                   >
-                    Sign in
+                    Log in
                   </button>
                 </div>
                 <div className="p-4 border-t border-gray-100">
@@ -141,7 +141,7 @@ export default function Navbar() {
                     onClick={goToSignUp}
                     className="w-full bg-whatsapp-green hover:bg-whatsapp-green/90 text-white font-semibold py-3 rounded-lg"
                   >
-                    Create my store
+                    Start free →
                   </Button>
                 </div>
               </div>

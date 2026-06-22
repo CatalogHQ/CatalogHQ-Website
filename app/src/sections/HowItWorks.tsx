@@ -6,23 +6,23 @@ const steps = [
   {
     number: "1",
     icon: UserPlus,
-    title: "Sign up and add your products",
+    title: "Add your products",
     description:
-      "Upload photos, set prices, and write descriptions. Your store is ready in minutes.",
+      "Upload a photo, set your price, write a short description. Repeat for every item. Your store is ready before your next post goes up.",
   },
   {
     number: "2",
     icon: Share2,
     title: "Share your link everywhere",
     description:
-      "Paste your store link in your bio, stories, posts, or DMs on WhatsApp, Instagram, Facebook, or X. Anyone with a browser can visit.",
+      "One link works across WhatsApp status, Instagram bio, Facebook posts, and X. Your customers don't need an app or an account, just a phone and a browser.",
   },
   {
     number: "3",
     icon: BadgeCheck,
-    title: "Customers order and pay automatically",
+    title: "Customers order and pay, without you",
     description:
-      "Flutterwave handles checkout. You get notified. You just fulfil the order.",
+      "They browse, pick, and pay via Flutterwave checkout. You get a notification. You pack and ship. That's it.",
   },
 ];
 
@@ -38,15 +38,11 @@ export default function HowItWorks() {
           className="text-center"
         >
           <h2 className="section-heading text-gray-900">
-            Up and running in under 1 minute
+            From zero to open for business in under 60 seconds.
           </h2>
-          <p className="section-subheading">
-            Three simple steps to turn social selling into a real store
-          </p>
         </motion.div>
 
         <div className="relative mt-10 sm:mt-16">
-          {/* Connecting line (desktop only) */}
           <div className="hidden md:block absolute top-12 left-[20%] right-[20%] h-0.5 border-t-2 border-dashed border-gray-200" />
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">

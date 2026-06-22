@@ -59,18 +59,18 @@ export const PLANS: Plan[] = [
     id: "starter",
     name: "Starter",
     price: "₦3,000",
-    priceSubtext: "Less than ₦100 a day",
+    priceSubtext: "less than ₦100 a day",
     tagline:
-      "Perfect for new vendors. Stop chasing transfers and answering \"how much?\" all day.",
+      'For vendors who are tired of chasing transfers and answering the same questions all day. Get a real store, a real checkout, and your time back.',
     cta: "Get Starter",
   },
   {
     id: "pro",
     name: "Pro",
     price: "₦5,000",
-    priceSubtext: "Less than ₦167 a day",
+    priceSubtext: "less than ₦167 a day",
     tagline:
-      "Advanced inventory, analytics, and growth tools for stores ready to scale.",
+      "For vendors who are already selling and want to grow without chaos. Inventory that manages itself, analytics that tell you what's working, and tools that turn browsers into buyers.",
     cta: "Get Pro",
     popular: true,
   },
@@ -78,9 +78,9 @@ export const PLANS: Plan[] = [
     id: "growth",
     name: "Growth",
     price: "₦8,000",
-    priceSubtext: "Less than ₦267 a day",
+    priceSubtext: "less than ₦267 a day",
     tagline:
-      "More catalog room and the same Pro tools for vendors with a larger inventory.",
+      "Everything in Pro, plus room for a bigger catalog. Built for vendors with a wide product range who need more space without switching platforms.",
     cta: "Get Growth",
   },
 ];
@@ -89,27 +89,27 @@ export const FEATURES: Feature[] = [
   // Core — Starter
   {
     id: "storefront-link",
-    title: "Shareable storefront link",
+    title: "Your store, one link",
     description:
-      "One link for your bio, Status, and broadcasts. Buyers browse without DMing you.",
+      "Drop it in your bio, WhatsApp Status, or a broadcast. Buyers browse your full catalog. No DM needed.",
     category: "core",
     tier: "starter",
     showOnLanding: true,
   },
   {
     id: "flutterwave-checkout",
-    title: "Automatic Flutterwave checkout",
+    title: "Flutterwave checkout, built in",
     description:
-      "Customers pay directly on your store. No transfer screenshots, no disputes.",
+      'Card, bank transfer, USSD. Customers pay on your store. No screenshots. No "I\'ve sent it." No disputes.',
     category: "core",
     tier: "starter",
     showOnLanding: true,
   },
   {
     id: "sell-offline",
-    title: "Sell while you sleep",
+    title: "Sell at 3am without being awake",
     description:
-      "Your store takes and confirms orders 24 hours a day, 7 days a week.",
+      "Your store takes orders, confirms payment, and sends buyers their receipt, around the clock.",
     category: "core",
     tier: "starter",
     showOnLanding: true,
@@ -130,9 +130,9 @@ export const FEATURES: Feature[] = [
   },
   {
     id: "order-status-page",
-    title: "Buyer order status page",
+    title: "Order tracking for your buyers",
     description:
-      "Customers track their order without asking \"where is my package?\"",
+      'Customers follow their order status on their own. "Where is my package?" becomes a message you never receive again.',
     category: "core",
     tier: "starter",
     showOnLanding: true,
@@ -154,9 +154,9 @@ export const FEATURES: Feature[] = [
   },
   {
     id: "product-variants",
-    title: "Product variants",
+    title: "Variants: sizes, colors, options",
     description:
-      "Sell sizes, colors, and options. No more \"which size do you have?\"",
+      'List every size, color, and option once. Buyers pick what they want. "Which size do you have?" stops immediately.',
     category: "catalog",
     tier: "starter",
     showOnLanding: true,
@@ -188,9 +188,9 @@ export const FEATURES: Feature[] = [
   },
   {
     id: "advanced-inventory-tracking",
-    title: "Advanced inventory tracking",
+    title: "Inventory that manages itself",
     description:
-      "Stock auto-decrements on orders. Sold-out products disappear from your store.",
+      "Stock counts down automatically on every order. When something sells out, it vanishes from your store. No overselling, no awkward refunds.",
     category: "catalog",
     tier: "pro",
     showOnLanding: true,
@@ -204,18 +204,18 @@ export const FEATURES: Feature[] = [
   },
   {
     id: "verified-reviews",
-    title: "Verified buyer reviews",
+    title: "Reviews that build trust automatically",
     description:
-      "Reviews collected automatically after delivery and displayed on every product.",
+      "After delivery, CatalogHQ collects a review from your buyer and displays it on the product. Social proof without asking for it.",
     category: "sales",
     tier: "pro",
     showOnLanding: true,
   },
   {
     id: "analytics-dashboard",
-    title: "Sales analytics dashboard",
+    title: "Know your numbers",
     description:
-      "See your best vendors, total revenue, and order history in one place.",
+      "Total revenue, best-selling products, and full order history in one dashboard. Stop guessing what's working.",
     category: "operations",
     tier: "pro",
     showOnLanding: true,
@@ -232,16 +232,17 @@ export const FEATURES: Feature[] = [
   {
     id: "discount-codes",
     title: "Discount codes",
-    description: "Run promotions without negotiating price in the DMs.",
+    description:
+      "Run promos at scale. No price negotiation in DMs. Set a code, share it, watch it work.",
     category: "sales",
     tier: "pro",
     showOnLanding: true,
   },
   {
     id: "flash-sales",
-    title: "Flash sales with countdown",
+    title: "Flash sales with a countdown timer",
     description:
-      "Set a timed discount and watch browsers become buyers under pressure.",
+      'Set a time limit on a discount. Buyers who were "just browsing" suddenly need to decide. Urgency converts.',
     category: "sales",
     tier: "pro",
     showOnLanding: true,
