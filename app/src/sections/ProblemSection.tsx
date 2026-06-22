@@ -13,19 +13,19 @@ const VENDOR_USE_CASES: VendorUseCase[] = [
     id: "whatsapp",
     icon: MessageCircle,
     title: "If you sell on WhatsApp",
-    body: 'You wake up to 40 unread messages. Half are "how much?" The other half are buyers who already moved on. You\'re chasing transfers, disputing fake screenshots, and managing delivery, all on one phone, all by yourself.',
+    body: "Unread messages, fake transfer screenshots, and delivery updates. All on one phone.",
   },
   {
     id: "social",
     icon: Share2,
     title: "If you sell on Instagram, Facebook, or X",
-    body: 'You post a fire photo, the comments blow up, then it dies in 24 hours. "Price?" goes unanswered. Someone DMs you at 2am, you reply at 9am, they\'ve already bought from someone else. Your link-in-bio was never built to close a sale. In-app checkout? Still not available in Nigeria.',
+    body: "Posts fade in 24 hours. DMs go cold. Your link-in-bio was never built to take payment.",
   },
   {
     id: "offline",
     icon: Store,
     title: "If you've never sold online",
-    body: 'Everyone tells you to "go digital" but nobody explains how without a developer, a payment gateway, a business registration, and three weeks to figure it out. So you keep selling in person and miss every customer who searched for what you sell and found someone else.',
+    body: "Going digital sounds complicated. So you stay offline and buyers never find you.",
   },
 ];
 
@@ -38,14 +38,17 @@ export default function ProblemSection() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.1 }}
           transition={{ duration: 0.4 }}
-          className="text-center max-w-3xl mx-auto"
+          className="text-center max-w-2xl mx-auto"
         >
           <h2 className="section-heading text-white">
             Why selling online in Nigeria is still broken
           </h2>
+          <p className="mt-3 text-base text-gray-400 sm:text-lg">
+            The buyers are there. The checkout is what breaks.
+          </p>
         </motion.div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 mt-8 sm:mt-12">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 mt-8 sm:mt-10">
           {VENDOR_USE_CASES.map((useCase, index) => (
             <motion.div
               key={useCase.id}
@@ -66,41 +69,16 @@ export default function ProblemSection() {
           ))}
         </div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.1 }}
-          transition={{ duration: 0.4, delay: 0.35 }}
-          className="mt-6 sm:mt-8 rounded-2xl border border-white/10 bg-whatsapp-dark/40 p-5 sm:p-8 max-w-4xl mx-auto"
-        >
-          <p className="text-xs font-semibold text-whatsapp-green uppercase tracking-[0.08em]">
-            What all three have in common
-          </p>
-          <p className="text-white text-base sm:text-lg mt-3 leading-relaxed">
-            The buyers are there. The money is there. But the moment someone is
-            ready to pay, the process breaks. They&apos;re waiting for a reply,
-            sending fake transfer screenshots, or wondering if you&apos;re legit.
-            You lose the sale not because your product is wrong, but because the
-            experience around it is exhausting.
-          </p>
-          <p className="text-white text-base sm:text-lg mt-4 leading-relaxed">
-            Nigerian buyers in 2026 have options. A bad checkout doesn&apos;t
-            just lose one sale. It loses that customer.
-          </p>
-        </motion.div>
-
-        <motion.div
+        <motion.p
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
           viewport={{ once: true, amount: 0.1 }}
-          transition={{ duration: 0.4, delay: 0.45 }}
-          className="text-center mt-8 sm:mt-10 max-w-2xl mx-auto"
+          transition={{ duration: 0.4, delay: 0.35 }}
+          className="text-center mt-8 sm:mt-10 max-w-xl mx-auto text-white font-semibold text-lg sm:text-xl leading-snug"
         >
-          <p className="text-white font-semibold text-lg sm:text-xl leading-snug">
-            Your store should close sales automatically. Right now it&apos;s
-            costing you them.
-          </p>
-        </motion.div>
+          Your store should close sales automatically. Right now it&apos;s
+          costing you them.
+        </motion.p>
       </div>
     </section>
   );
